@@ -61,9 +61,9 @@ public class LogData {
      * Save an action to the log file
      * @param user the user logged in
      * @param action the action attempted
-     * @param description the table/entity being affected
+     * @param target the table/entity being affected
      */
-    public static void logAction(String user, String action, String description) {
-        saveLog(new Log(user, action, description));
+    public static void logAction(String user, String action, String target) {
+        saveLog(new Log(user, action, target));
     }
 }
