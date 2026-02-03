@@ -2,6 +2,7 @@ package com.sait.workshop05.models;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 public class Log {
     private  String user;
