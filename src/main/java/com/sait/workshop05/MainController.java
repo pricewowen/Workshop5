@@ -104,6 +104,10 @@ public class MainController {
 
     }
 
+    /**
+     * Load page in contentArea of main application
+     * @param view the .fxml file to be displayed
+     */
     private void loadPage(String view) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(view));
@@ -123,6 +127,9 @@ public class MainController {
         }
     }
 
+    /**
+     * Show the dashboard view
+     */
     private void showDashboard() {
         loadPage("dashboard-view.fxml");
     }
