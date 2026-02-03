@@ -6,7 +6,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.time.LocalDateTime;
 
 public class LogData {
     final static String fileName = "Log.txt";
@@ -16,9 +15,10 @@ public class LogData {
      * @param log the log to be saved
      */
     public static void saveLog(Log log) {
-        if (log.getUser() != null && log.getAction() != null && log.getDescription() != null) {
+        if (log.getUser() != null && log.getAction() != null && log.getTarget() != null) {
             try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName, true)))){
-                String line = ("USER="+ log.getUser() + " | " + log.getAction() + "=" + log.getDescription() + " | " + log.getCurrentDate());
+                String line = log.getCurrentDate() + " | USER=" + log.getUser() + " | ACTION=" + log.getAction()
+                        + " | TARGET=" + log.getTarget();
                 out.append(line);
                 out.println();
             } catch (IOException e) {
@@ -32,14 +32,16 @@ public class LogData {
      * @param log the log to be saved
      */
     public static void logError(Log log) {
-        if (log.getUser() != null && log.getAction() != null && log.getDescription() != null) {
+        if (log.getUser() != null && log.getAction() != null && log.getTarget() != null) {
             try (PrintWriter out =  new PrintWriter(new BufferedWriter(new FileWriter(fileName, true)))) {
-                String line = ("USER=" + log.getUser() + " | " + log.getAction() + "_FAILED=" + log.getDescription() + " | " + log.getCurrentDate());
+                String line = log.getCurrentDate() + " | USER=" + log.getUser() + " | ACTION=" + log.getAction()
+                        + "_FAILED | TARGET=" + log.getTarget();
                 out.append(line);
                 out.println();
             } catch (IOException e) {
                 System.err.println("ERROR: Could not write to log file");
-                System.err.println("USER=" + log.getUser() + " | " + log.getAction() + "_FAILED=" + log.getDescription() + " | " + log.getCurrentDate());
+                System.err.println(log.getCurrentDate() + " | USER=" + log.getUser() + " | ACTION=" + log.getAction()
+                        + "_FAILED | TARGET=" + log.getTarget());
                 e.printStackTrace();
             }
         }

@@ -5,27 +5,28 @@ import java.time.LocalDateTime;
 public class Log {
     private  String user;
     private String action;
-    private String description;
-    private LocalDateTime currentDate;
+    private String target;
+    private String currentDate;
 
     public Log(String user, String action, String description) {
         LocalDateTime currentTime = LocalDateTime.now();
 
-//        String currentTimeString = (currentTime.getYear() + "-" + currentTime.getMonthValue() + "-"
-//                + currentTime.getDayOfMonth() + "|" + currentTime.getHour() + ":" + currentTime.getMinute()
-//                + ":" + currentTime.getSecond());
+        // formats the date and time to a more human-readable format
+        String currentTimeString = (currentTime.getYear() + "-" + currentTime.getMonthValue() + "-"
+                + currentTime.getDayOfMonth() + " " + currentTime.getHour() + ":" + currentTime.getMinute()
+                + ":" + currentTime.getSecond());
 
         this.user = user.toUpperCase();
         this.action = action.toUpperCase();
-        this.description = description.toUpperCase();
-        this.currentDate = currentTime;
+        this.target = description.toUpperCase();
+        this.currentDate = currentTimeString;
     }
 
-    public LocalDateTime getCurrentDate() {
+    public String getCurrentDate() {
         return currentDate;
     }
 
-    public void setCurrentDate(LocalDateTime currentDate) {
+    public void setCurrentDate(String currentDate) {
         this.currentDate = currentDate;
     }
 
@@ -45,16 +46,16 @@ public class Log {
         this.action = action;
     }
 
-    public String getDescription() {
-        return description;
+    public String getTarget() {
+        return target;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setTarget(String target) {
+        this.target = target;
     }
 
     @Override
     public String toString() {
-        return "USER=" + user + " | " + action + "=" + description + " | " + currentDate;
+        return currentDate + " | USER=" + user + " | ACTION=" + action + " | TARGET=" + target;
     }
 }
