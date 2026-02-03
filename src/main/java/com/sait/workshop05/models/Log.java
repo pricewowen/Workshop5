@@ -1,6 +1,7 @@
 package com.sait.workshop05.models;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Log {
     private  String user;
@@ -8,13 +9,13 @@ public class Log {
     private String target;
     private String currentDate;
 
+    private final static DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     public Log(String user, String action, String description) {
         LocalDateTime currentTime = LocalDateTime.now();
 
         // formats the date and time to a more human-readable format
-        String currentTimeString = (currentTime.getYear() + "-" + currentTime.getMonthValue() + "-"
-                + currentTime.getDayOfMonth() + " " + currentTime.getHour() + ":" + currentTime.getMinute()
-                + ":" + currentTime.getSecond());
+        String currentTimeString = currentTime.format(FORMATTER);
 
         this.user = user.toUpperCase();
         this.action = action.toUpperCase();
