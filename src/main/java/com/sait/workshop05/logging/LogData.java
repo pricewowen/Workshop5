@@ -46,7 +46,7 @@ public class LogData {
     }
 
     /**
-     * Called in Catch blocks to log error messages
+     * Log error messages to the log file
      * @param user User logged in
      * @param action action being attempted
      * @param e error message returned
