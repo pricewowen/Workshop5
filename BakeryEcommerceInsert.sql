@@ -1,8 +1,10 @@
+-- MySQL-compatible INSERTS
+USE BakeryEcommerce;
+
+SET FOREIGN_KEY_CHECKS = 0;
 -- INSERT dummy data into BakeryEcommerce database.
 
 USE BakeryEcommerce;
-GO
-
 
 -- TABLE: Address
 INSERT INTO Address (addressLine1, addressLine2, addressCity, addressProvince, addressPostalCode)
@@ -29,8 +31,8 @@ VALUES
 ('10 King St W', 'Floor 12', 'Toronto', 'AB', 'M5H 1A1'),
 ('220 Bloor St W', 'Unit 7', 'Toronto', 'AB', 'M5S 1T8'),
 ('30 Wellington St W', NULL, 'Toronto', 'AB', 'M5L 1E2'),
-('1555 Rue Sainte-Catherine O', 'Suite 400', 'Montréal', 'AB', 'H3G 1P2'),
-('1000 Rue De La Gauchetière O', NULL, 'Montréal', 'AB', 'H3B 4W5'),
+('1555 Rue Sainte-Catherine O', 'Suite 400', 'Montral', 'AB', 'H3G 1P2'),
+('1000 Rue De La Gauchetire O', NULL, 'Montral', 'AB', 'H3B 4W5'),
 ('300 Prince of Wales Dr', 'Unit 18', 'Ottawa', 'AB', 'K2C 3T2'),
 ('99 Bank St', 'Suite 500', 'Ottawa', 'AB', 'K1P 5N2'),
 ('75 Queen St', NULL, 'Ottawa', 'AB', 'K1P 1N2'),
@@ -48,38 +50,34 @@ VALUES
 ('1300 1 St SE', 'Unit 12', 'Calgary', 'AB', 'T2G 0G8'),
 ('410 10 St NW', NULL, 'Calgary', 'AB', 'T2N 1V7'),
 ('5800 2 St SW', 'Unit 8', 'Calgary', 'AB', 'T2H 0H2');
-GO
 
-
--- TABLE: [User]
-INSERT INTO [User] (userUsername, userEmail, userPasswordHash, userRole, userCreatedAt)
+-- TABLE: `User`
+INSERT INTO `User` (userUsername, userEmail, userPasswordHash, userRole, userCreatedAt)
 VALUES
-('alicia.nguyen', 'alicia.nguyen@northharbourmail.ca', 'HASHEDPW_001', 'Admin', DATEADD(day, -120, GETDATE())),
-('mason.clark', 'mason.clark@northharbourmail.ca', 'HASHEDPW_002', 'Employee', DATEADD(day, -95, GETDATE())),
-('sophia.patel', 'sophia.patel@northharbourmail.ca', 'HASHEDPW_003', 'Employee', DATEADD(day, -90, GETDATE())),
-('ethan.wright', 'ethan.wright@northharbourmail.ca', 'HASHEDPW_004', 'Employee', DATEADD(day, -82, GETDATE())),
-('isabella.chen', 'isabella.chen@northharbourmail.ca', 'HASHEDPW_005', 'Employee', DATEADD(day, -80, GETDATE())),
-('noah.martin', 'noah.martin@northharbourmail.ca', 'HASHEDPW_006', 'Employee', DATEADD(day, -76, GETDATE())),
-('ava.roberts', 'ava.roberts@northharbourmail.ca', 'HASHEDPW_007', 'Employee', DATEADD(day, -70, GETDATE())),
-('logan.scott', 'logan.scott@northharbourmail.ca', 'HASHEDPW_008', 'Employee', DATEADD(day, -66, GETDATE())),
-('mia.kim', 'mia.kim@northharbourmail.ca', 'HASHEDPW_009', 'Employee', DATEADD(day, -62, GETDATE())),
-('jackson.hall', 'jackson.hall@northharbourmail.ca', 'HASHEDPW_010', 'Employee', DATEADD(day, -60, GETDATE())),
-('olivia.brown', 'olivia.brown@northharbourmail.ca', 'HASHEDPW_011', 'Customer', DATEADD(day, -58, GETDATE())),
-('liam.thompson', 'liam.thompson@northharbourmail.ca', 'HASHEDPW_012', 'Customer', DATEADD(day, -55, GETDATE())),
-('emma.wilson', 'emma.wilson@northharbourmail.ca', 'HASHEDPW_013', 'Customer', DATEADD(day, -50, GETDATE())),
-('benjamin.lee', 'benjamin.lee@northharbourmail.ca', 'HASHEDPW_014', 'Customer', DATEADD(day, -45, GETDATE())),
-('amelia.johnson', 'amelia.johnson@northharbourmail.ca', 'HASHEDPW_015', 'Customer', DATEADD(day, -42, GETDATE())),
-('lucas.anderson', 'lucas.anderson@northharbourmail.ca', 'HASHEDPW_016', 'Customer', DATEADD(day, -40, GETDATE())),
-('charlotte.miller', 'charlotte.miller@northharbourmail.ca', 'HASHEDPW_017', 'Customer', DATEADD(day, -38, GETDATE())),
-('henry.davis', 'henry.davis@northharbourmail.ca', 'HASHEDPW_018', 'Customer', DATEADD(day, -35, GETDATE())),
-('evelyn.moore', 'evelyn.moore@northharbourmail.ca', 'HASHEDPW_019', 'Customer', DATEADD(day, -30, GETDATE())),
-('daniel.taylor', 'daniel.taylor@northharbourmail.ca', 'HASHEDPW_020', 'Customer', DATEADD(day, -28, GETDATE())),
-('harper.jackson', 'harper.jackson@northharbourmail.ca', 'HASHEDPW_021', 'Customer', DATEADD(day, -24, GETDATE())),
-('sebastian.white', 'sebastian.white@northharbourmail.ca', 'HASHEDPW_022', 'Customer', DATEADD(day, -22, GETDATE())),
-('nora.harris', 'nora.harris@northharbourmail.ca', 'HASHEDPW_023', 'Customer', DATEADD(day, -20, GETDATE())),
-('wyatt.martinez', 'wyatt.martinez@northharbourmail.ca', 'HASHEDPW_024', 'Customer', DATEADD(day, -18, GETDATE()));
-GO
-
+('alicia.nguyen', 'alicia.nguyen@northharbourmail.ca', 'HASHEDPW_001', 'Admin', '2025-08-22 12:00:00'),
+('mason.clark', 'mason.clark@northharbourmail.ca', 'HASHEDPW_002', 'Employee', '2025-09-16 12:00:00'),
+('sophia.patel', 'sophia.patel@northharbourmail.ca', 'HASHEDPW_003', 'Employee', '2025-09-21 12:00:00'),
+('ethan.wright', 'ethan.wright@northharbourmail.ca', 'HASHEDPW_004', 'Employee', '2025-09-29 12:00:00'),
+('isabella.chen', 'isabella.chen@northharbourmail.ca', 'HASHEDPW_005', 'Employee', '2025-10-01 12:00:00'),
+('noah.martin', 'noah.martin@northharbourmail.ca', 'HASHEDPW_006', 'Employee', '2025-10-05 12:00:00'),
+('ava.roberts', 'ava.roberts@northharbourmail.ca', 'HASHEDPW_007', 'Employee', '2025-10-11 12:00:00'),
+('logan.scott', 'logan.scott@northharbourmail.ca', 'HASHEDPW_008', 'Employee', '2025-10-15 12:00:00'),
+('mia.kim', 'mia.kim@northharbourmail.ca', 'HASHEDPW_009', 'Employee', '2025-10-19 12:00:00'),
+('jackson.hall', 'jackson.hall@northharbourmail.ca', 'HASHEDPW_010', 'Employee', '2025-10-21 12:00:00'),
+('olivia.brown', 'olivia.brown@northharbourmail.ca', 'HASHEDPW_011', 'Customer', '2025-10-23 12:00:00'),
+('liam.thompson', 'liam.thompson@northharbourmail.ca', 'HASHEDPW_012', 'Customer', '2025-10-26 12:00:00'),
+('emma.wilson', 'emma.wilson@northharbourmail.ca', 'HASHEDPW_013', 'Customer', '2025-10-31 12:00:00'),
+('benjamin.lee', 'benjamin.lee@northharbourmail.ca', 'HASHEDPW_014', 'Customer', '2025-11-05 12:00:00'),
+('amelia.johnson', 'amelia.johnson@northharbourmail.ca', 'HASHEDPW_015', 'Customer', '2025-11-08 12:00:00'),
+('lucas.anderson', 'lucas.anderson@northharbourmail.ca', 'HASHEDPW_016', 'Customer', '2025-11-10 12:00:00'),
+('charlotte.miller', 'charlotte.miller@northharbourmail.ca', 'HASHEDPW_017', 'Customer', '2025-11-12 12:00:00'),
+('henry.davis', 'henry.davis@northharbourmail.ca', 'HASHEDPW_018', 'Customer', '2025-11-15 12:00:00'),
+('evelyn.moore', 'evelyn.moore@northharbourmail.ca', 'HASHEDPW_019', 'Customer', '2025-11-20 12:00:00'),
+('daniel.taylor', 'daniel.taylor@northharbourmail.ca', 'HASHEDPW_020', 'Customer', '2025-11-22 12:00:00'),
+('harper.jackson', 'harper.jackson@northharbourmail.ca', 'HASHEDPW_021', 'Customer', '2025-11-26 12:00:00'),
+('sebastian.white', 'sebastian.white@northharbourmail.ca', 'HASHEDPW_022', 'Customer', '2025-11-28 12:00:00'),
+('nora.harris', 'nora.harris@northharbourmail.ca', 'HASHEDPW_023', 'Customer', '2025-11-30 12:00:00'),
+('wyatt.martinez', 'wyatt.martinez@northharbourmail.ca', 'HASHEDPW_024', 'Customer', '2025-12-02 12:00:00');
 
 -- TABLE: RewardTier
 INSERT INTO RewardTier (rewardTierName, rewardTierMinPoints, rewardTierMaxPoints, rewardTierDiscountRate)
@@ -88,8 +86,6 @@ VALUES
 ('Silver', 100000, 249999, 5.00),
 ('Gold', 250000, 499999, 10.00),
 ('Platinum', 500000, NULL, 15.00);
-GO
-
 
 -- TABLE: Bakery
 INSERT INTO Bakery (addressId, bakeryName, bakeryPhone, bakeryEmail)
@@ -97,8 +93,6 @@ VALUES
 (1, 'North Harbour Bakery - Downtown', '(403) 555-2101', 'downtown@northharbourbakery.ca'),
 (11, 'North Harbour Bakery - Edmonton Central', '(780) 555-4302', 'edmonton@northharbourbakery.ca'),
 (20, 'North Harbour Bakery - Toronto Financial', '(416) 555-9012', 'toronto@northharbourbakery.ca');
-GO
-
 
 -- TABLE: BakeryHours
 INSERT INTO BakeryHours (bakeryId, dayOfWeek, openTime, closeTime, isClosed)
@@ -126,8 +120,6 @@ VALUES
 (3, 5, '07:00', '18:30', 0),
 (3, 6, '08:00', '17:00', 0),
 (3, 7, '09:00', '14:00', 0);
-GO
-
 
 -- TABLE: Supplier
 INSERT INTO Supplier (addressId, supplierName, supplierPhone, supplierEmail)
@@ -137,8 +129,6 @@ VALUES
 (33, 'Riverbend Dairy Co.', '(780) 555-7003', 'sales@riverbenddairy.ca'),
 (16, 'Coastal Produce Distributors', '(604) 555-7004', 'info@coastalproduce.ca'),
 (24, 'St. Lawrence Dry Goods', '(514) 555-7005', 'service@stlawrencedrygoods.ca');
-GO
-
 
 -- TABLE: Tag
 INSERT INTO Tag (tagName)
@@ -155,8 +145,6 @@ VALUES
 ('Dessert'),
 ('Nut-Free'),
 ('Whole Grain');
-GO
-
 
 -- TABLE: Product
 INSERT INTO Product (productName, productDescription, productBasePrice)
@@ -187,8 +175,6 @@ VALUES
 ('Whole Wheat Scone', 'Scone made with whole wheat flour', 3.25),
 ('Raspberry Danish', 'Danish pastry with raspberry filling', 4.75),
 ('Chocolate Eclair', 'Choux pastry with cream and chocolate topping', 5.25);
-GO
-
 
 -- TABLE: ProductTag
 INSERT INTO ProductTag (productId, tagId)
@@ -233,8 +219,6 @@ VALUES
 (24, 12),
 (25, 3),
 (26, 3);
-GO
-
 
 -- TABLE: Employee
 INSERT INTO Employee (
@@ -252,8 +236,6 @@ VALUES
 (8, 8, 'Logan', 'J', 'Scott', 'Quality Control', '(403) 555-3107', '(403) 555-4107', 'logan.scott@northharbourbakery.ca'),
 (9, 9, 'Mia', NULL, 'Kim', 'Baker', '(403) 555-3108', '(403) 555-4108', 'mia.kim@northharbourbakery.ca'),
 (10, 10, 'Jackson', NULL, 'Hall', 'Baker', '(403) 555-3109', '(403) 555-4109', 'jackson.hall@northharbourbakery.ca');
-GO
-
 
 -- TABLE: Customer
 INSERT INTO Customer (
@@ -263,22 +245,20 @@ INSERT INTO Customer (
     customerRewardBalance, customerTierAssignedDate, customerEmail
 )
 VALUES
-(11, 21, 1, 'Olivia', NULL, 'Brown', 'Customer', '(416) 555-1201', NULL, 120000, DATEADD(day, -30, GETDATE()), 'olivia.brown@northharbourmail.ca'),
-(12, 22, 1, 'Liam', NULL, 'Thompson', 'Customer', '(416) 555-1202', NULL, 240000, DATEADD(day, -28, GETDATE()), 'liam.thompson@northharbourmail.ca'),
-(13, 23, 2, 'Emma', 'J', 'Wilson', 'Customer', '(514) 555-1203', NULL, 520000, DATEADD(day, -26, GETDATE()), 'emma.wilson@northharbourmail.ca'),
-(14, 25, 1, 'Benjamin', NULL, 'Lee', 'Customer', '(613) 555-1204', NULL, 80000, DATEADD(day, -24, GETDATE()), 'benjamin.lee@northharbourmail.ca'),
-(15, 26, 2, 'Amelia', NULL, 'Johnson', 'Customer', '(613) 555-1205', NULL, 740000, DATEADD(day, -22, GETDATE()), 'amelia.johnson@northharbourmail.ca'),
-(16, 27, 1, 'Lucas', 'A', 'Anderson', 'Customer', '(613) 555-1206', NULL, 60000, DATEADD(day, -20, GETDATE()), 'lucas.anderson@northharbourmail.ca'),
-(17, 31, 1, 'Charlotte', NULL, 'Miller', 'Customer', '(403) 555-1207', NULL, 210000, DATEADD(day, -18, GETDATE()), 'charlotte.miller@northharbourmail.ca'),
-(18, 32, 3, 'Henry', NULL, 'Davis', 'Customer', '(403) 555-1208', NULL, 1120000, DATEADD(day, -16, GETDATE()), 'henry.davis@northharbourmail.ca'),
-(19, 34, 2, 'Evelyn', NULL, 'Moore', 'Customer', '(403) 555-1209', NULL, 680000, DATEADD(day, -14, GETDATE()), 'evelyn.moore@northharbourmail.ca'),
-(20, 35, 1, 'Daniel', NULL, 'Taylor', 'Customer', '(403) 555-1210', NULL, 140000, DATEADD(day, -12, GETDATE()), 'daniel.taylor@northharbourmail.ca'),
-(21, 36, 2, 'Harper', NULL, 'Jackson', 'Customer', '(403) 555-1211', NULL, 810000, DATEADD(day, -10, GETDATE()), 'harper.jackson@northharbourmail.ca'),
-(22, 37, 1, 'Sebastian', NULL, 'White', 'Customer', '(403) 555-1212', NULL, 95000, DATEADD(day, -9, GETDATE()), 'sebastian.white@northharbourmail.ca'),
-(23, 38, 1, 'Nora', NULL, 'Harris', 'Customer', '(403) 555-1213', NULL, 260000, DATEADD(day, -8, GETDATE()), 'nora.harris@northharbourmail.ca'),
-(24, 39, 1, 'Wyatt', NULL, 'Martinez', 'Customer', '(403) 555-1214', NULL, 180000, DATEADD(day, -7, GETDATE()), 'wyatt.martinez@northharbourmail.ca');
-GO
-
+(11, 21, 1, 'Olivia', NULL, 'Brown', 'Customer', '(416) 555-1201', NULL, 120000, '2025-11-20 12:00:00', 'olivia.brown@northharbourmail.ca'),
+(12, 22, 1, 'Liam', NULL, 'Thompson', 'Customer', '(416) 555-1202', NULL, 240000, '2025-11-22 12:00:00', 'liam.thompson@northharbourmail.ca'),
+(13, 23, 2, 'Emma', 'J', 'Wilson', 'Customer', '(514) 555-1203', NULL, 520000, '2025-11-24 12:00:00', 'emma.wilson@northharbourmail.ca'),
+(14, 25, 1, 'Benjamin', NULL, 'Lee', 'Customer', '(613) 555-1204', NULL, 80000, '2025-11-26 12:00:00', 'benjamin.lee@northharbourmail.ca'),
+(15, 26, 2, 'Amelia', NULL, 'Johnson', 'Customer', '(613) 555-1205', NULL, 740000, '2025-11-28 12:00:00', 'amelia.johnson@northharbourmail.ca'),
+(16, 27, 1, 'Lucas', 'A', 'Anderson', 'Customer', '(613) 555-1206', NULL, 60000, '2025-11-30 12:00:00', 'lucas.anderson@northharbourmail.ca'),
+(17, 31, 1, 'Charlotte', NULL, 'Miller', 'Customer', '(403) 555-1207', NULL, 210000, '2025-12-02 12:00:00', 'charlotte.miller@northharbourmail.ca'),
+(18, 32, 3, 'Henry', NULL, 'Davis', 'Customer', '(403) 555-1208', NULL, 1120000, '2025-12-04 12:00:00', 'henry.davis@northharbourmail.ca'),
+(19, 34, 2, 'Evelyn', NULL, 'Moore', 'Customer', '(403) 555-1209', NULL, 680000, '2025-12-06 12:00:00', 'evelyn.moore@northharbourmail.ca'),
+(20, 35, 1, 'Daniel', NULL, 'Taylor', 'Customer', '(403) 555-1210', NULL, 140000, '2025-12-08 12:00:00', 'daniel.taylor@northharbourmail.ca'),
+(21, 36, 2, 'Harper', NULL, 'Jackson', 'Customer', '(403) 555-1211', NULL, 810000, '2025-12-10 12:00:00', 'harper.jackson@northharbourmail.ca'),
+(22, 37, 1, 'Sebastian', NULL, 'White', 'Customer', '(403) 555-1212', NULL, 95000, '2025-12-11 12:00:00', 'sebastian.white@northharbourmail.ca'),
+(23, 38, 1, 'Nora', NULL, 'Harris', 'Customer', '(403) 555-1213', NULL, 260000, '2025-12-12 12:00:00', 'nora.harris@northharbourmail.ca'),
+(24, 39, 1, 'Wyatt', NULL, 'Martinez', 'Customer', '(403) 555-1214', NULL, 180000, '2025-12-13 12:00:00', 'wyatt.martinez@northharbourmail.ca');
 
 -- TABLE: Inventory
 INSERT INTO Inventory (
@@ -313,8 +293,6 @@ VALUES
 (3, 2, 'Bakery boxes (10 inch)', 'Packaging', 900.000, 'count'),
 (3, 2, 'Paper bags', 'Packaging', 3000.000, 'count'),
 (3, 5, 'Baking powder', 'Ingredient', 65.000, 'kg');
-GO
-
 
 -- TABLE: Batch
 INSERT INTO Batch (
@@ -322,98 +300,92 @@ INSERT INTO Batch (
     batchProductionDate, batchExpiryDate, batchQuantityProduced
 )
 VALUES
-(1, 1, 1, DATEADD(day, -6, CAST(GETDATE() AS date)), DATEADD(day, -1, CAST(GETDATE() AS date)), 60),
-(1, 3, 2, DATEADD(day, -3, CAST(GETDATE() AS date)), DATEADD(day, 2, CAST(GETDATE() AS date)), 90),
-(1, 5, 3, DATEADD(day, -2, CAST(GETDATE() AS date)), DATEADD(day, 2, CAST(GETDATE() AS date)), 120),
-(1, 8, 4, DATEADD(day, -4, CAST(GETDATE() AS date)), DATEADD(day, 6, CAST(GETDATE() AS date)), 200),
-(1, 13, 3, DATEADD(day, -1, CAST(GETDATE() AS date)), DATEADD(day, 3, CAST(GETDATE() AS date)), 12),
-(1, 21, 2, CAST(GETDATE() AS date), DATEADD(day, 5, CAST(GETDATE() AS date)), 80),
+(1, 1, 1, '2025-12-14 12:00:00', '2025-12-19 12:00:00', 60),
+(1, 3, 2, '2025-12-17 12:00:00', '2025-12-22 12:00:00', 90),
+(1, 5, 3, '2025-12-18 12:00:00', '2025-12-22 12:00:00', 120),
+(1, 8, 4, '2025-12-16 12:00:00', '2025-12-26 12:00:00', 200),
+(1, 13, 3, '2025-12-19 12:00:00', '2025-12-23 12:00:00', 12),
+(1, 21, 2, '2025-12-20', '2025-12-25 12:00:00', 80),
 
-(2, 2, 5, DATEADD(day, -5, CAST(GETDATE() AS date)), DATEADD(day, 2, CAST(GETDATE() AS date)), 55),
-(2, 6, 6, DATEADD(day, -2, CAST(GETDATE() AS date)), DATEADD(day, 3, CAST(GETDATE() AS date)), 140),
-(2, 10, 7, DATEADD(day, -2, CAST(GETDATE() AS date)), DATEADD(day, 4, CAST(GETDATE() AS date)), 110),
-(2, 14, 8, DATEADD(day, -1, CAST(GETDATE() AS date)), DATEADD(day, 3, CAST(GETDATE() AS date)), 40),
-(2, 18, 9, CAST(GETDATE() AS date), DATEADD(day, 6, CAST(GETDATE() AS date)), 90),
+(2, 2, 5, '2025-12-15 12:00:00', '2025-12-22 12:00:00', 55),
+(2, 6, 6, '2025-12-18 12:00:00', '2025-12-23 12:00:00', 140),
+(2, 10, 7, '2025-12-18 12:00:00', '2025-12-24 12:00:00', 110),
+(2, 14, 8, '2025-12-19 12:00:00', '2025-12-23 12:00:00', 40),
+(2, 18, 9, '2025-12-20', '2025-12-26 12:00:00', 90),
 
-(3, 4, 6, DATEADD(day, -3, CAST(GETDATE() AS date)), DATEADD(day, 2, CAST(GETDATE() AS date)), 70),
-(3, 7, 7, DATEADD(day, -6, CAST(GETDATE() AS date)), DATEADD(day, 1, CAST(GETDATE() AS date)), 120),
-(3, 12, 8, DATEADD(day, -2, CAST(GETDATE() AS date)), DATEADD(day, 5, CAST(GETDATE() AS date)), 30),
-(3, 15, 9, DATEADD(day, -1, CAST(GETDATE() AS date)), DATEADD(day, 3, CAST(GETDATE() AS date)), 75),
-(3, 16, 5, CAST(GETDATE() AS date), DATEADD(day, 4, CAST(GETDATE() AS date)), 65),
-(3, 17, 4, CAST(GETDATE() AS date), DATEADD(day, 4, CAST(GETDATE() AS date)), 40),
-(3, 26, 2, DATEADD(day, -1, CAST(GETDATE() AS date)), DATEADD(day, 2, CAST(GETDATE() AS date)), 50);
-GO
-
+(3, 4, 6, '2025-12-17 12:00:00', '2025-12-22 12:00:00', 70),
+(3, 7, 7, '2025-12-14 12:00:00', '2025-12-21 12:00:00', 120),
+(3, 12, 8, '2025-12-18 12:00:00', '2025-12-25 12:00:00', 30),
+(3, 15, 9, '2025-12-19 12:00:00', '2025-12-23 12:00:00', 75),
+(3, 16, 5, '2025-12-20', '2025-12-24 12:00:00', 65),
+(3, 17, 4, '2025-12-20', '2025-12-24 12:00:00', 40),
+(3, 26, 2, '2025-12-19 12:00:00', '2025-12-22 12:00:00', 50);
 
 -- TABLE: BatchInventory
 INSERT INTO BatchInventory (batchId, inventoryId, quantityUsed, unitOfMeasureAtTime, rewardTransactionDate)
 VALUES
-(1, 1, 18.500, 'kg', DATEADD(day, -6, GETDATE())),
-(1, 3, 6.000, 'kg', DATEADD(day, -6, GETDATE())),
-(2, 1, 22.000, 'kg', DATEADD(day, -3, GETDATE())),
-(2, 4, 18.000, 'L',  DATEADD(day, -3, GETDATE())),
-(3, 1, 20.000, 'kg', DATEADD(day, -2, GETDATE())),
-(3, 3, 9.000,  'kg', DATEADD(day, -2, GETDATE())),
-(4, 1, 14.500, 'kg', DATEADD(day, -4, GETDATE())),
-(4, 2, 7.500,  'kg', DATEADD(day, -4, GETDATE())),
-(4, 8, 3.200,  'kg', DATEADD(day, -4, GETDATE())),
-(5, 1, 25.000, 'kg', DATEADD(day, -1, GETDATE())),
-(5, 2, 12.000, 'kg', DATEADD(day, -1, GETDATE())),
-(5, 8, 4.500,  'kg', DATEADD(day, -1, GETDATE())),
-(6, 1, 16.000, 'kg', GETDATE()),
-(6, 2, 9.000,  'kg', GETDATE()),
+(1, 1, 18.500, 'kg', '2025-12-14 12:00:00'),
+(1, 3, 6.000, 'kg', '2025-12-14 12:00:00'),
+(2, 1, 22.000, 'kg', '2025-12-17 12:00:00'),
+(2, 4, 18.000, 'L',  '2025-12-17 12:00:00'),
+(3, 1, 20.000, 'kg', '2025-12-18 12:00:00'),
+(3, 3, 9.000,  'kg', '2025-12-18 12:00:00'),
+(4, 1, 14.500, 'kg', '2025-12-16 12:00:00'),
+(4, 2, 7.500,  'kg', '2025-12-16 12:00:00'),
+(4, 8, 3.200,  'kg', '2025-12-16 12:00:00'),
+(5, 1, 25.000, 'kg', '2025-12-19 12:00:00'),
+(5, 2, 12.000, 'kg', '2025-12-19 12:00:00'),
+(5, 8, 4.500,  'kg', '2025-12-19 12:00:00'),
+(6, 1, 16.000, 'kg', '2025-12-20 12:00:00'),
+(6, 2, 9.000,  'kg', '2025-12-20 12:00:00'),
 
-(7, 9, 16.500, 'kg', DATEADD(day, -5, GETDATE())),
-(7, 11, 5.500, 'kg', DATEADD(day, -5, GETDATE())),
-(8, 9, 18.000, 'kg', DATEADD(day, -2, GETDATE())),
-(8, 10, 8.000, 'kg', DATEADD(day, -2, GETDATE())),
-(9, 9, 12.000, 'kg', DATEADD(day, -2, GETDATE())),
-(9, 10, 6.000, 'kg', DATEADD(day, -2, GETDATE())),
-(10, 9, 10.500, 'kg', DATEADD(day, -1, GETDATE())),
-(10, 10, 4.500, 'kg', DATEADD(day, -1, GETDATE())),
-(11, 9, 11.000, 'kg', GETDATE()),
-(11, 10, 5.000, 'kg', GETDATE()),
+(7, 9, 16.500, 'kg', '2025-12-15 12:00:00'),
+(7, 11, 5.500, 'kg', '2025-12-15 12:00:00'),
+(8, 9, 18.000, 'kg', '2025-12-18 12:00:00'),
+(8, 10, 8.000, 'kg', '2025-12-18 12:00:00'),
+(9, 9, 12.000, 'kg', '2025-12-18 12:00:00'),
+(9, 10, 6.000, 'kg', '2025-12-18 12:00:00'),
+(10, 9, 10.500, 'kg', '2025-12-19 12:00:00'),
+(10, 10, 4.500, 'kg', '2025-12-19 12:00:00'),
+(11, 9, 11.000, 'kg', '2025-12-20 12:00:00'),
+(11, 10, 5.000, 'kg', '2025-12-20 12:00:00'),
 
-(12, 17, 13.000, 'kg', DATEADD(day, -3, GETDATE())),
-(12, 19, 6.500, 'kg', DATEADD(day, -3, GETDATE())),
-(13, 17, 9.000,  'kg', DATEADD(day, -6, GETDATE())),
-(13, 20, 4.000,  'kg', DATEADD(day, -6, GETDATE())),
-(14, 17, 7.000,  'kg', DATEADD(day, -2, GETDATE())),
-(14, 18, 3.500,  'kg', DATEADD(day, -2, GETDATE())),
-(15, 21, 8.000,  'kg', DATEADD(day, -1, GETDATE())),
-(15, 22, 900.000,'count', DATEADD(day, -1, GETDATE())),
-(16, 21, 6.500,  'kg', GETDATE()),
-(16, 23, 1200.000,'count', GETDATE()),
-(17, 21, 4.800,  'kg', GETDATE()),
-(17, 20, 3.000,  'kg', GETDATE()),
-(18, 17, 5.500,  'kg', DATEADD(day, -1, GETDATE())),
-(18, 18, 2.200,  'kg', DATEADD(day, -1, GETDATE()));
-GO
+(12, 17, 13.000, 'kg', '2025-12-17 12:00:00'),
+(12, 19, 6.500, 'kg', '2025-12-17 12:00:00'),
+(13, 17, 9.000,  'kg', '2025-12-14 12:00:00'),
+(13, 20, 4.000,  'kg', '2025-12-14 12:00:00'),
+(14, 17, 7.000,  'kg', '2025-12-18 12:00:00'),
+(14, 18, 3.500,  'kg', '2025-12-18 12:00:00'),
+(15, 21, 8.000,  'kg', '2025-12-19 12:00:00'),
+(15, 22, 900.000,'count', '2025-12-19 12:00:00'),
+(16, 21, 6.500,  'kg', '2025-12-20 12:00:00'),
+(16, 23, 1200.000,'count', '2025-12-20 12:00:00'),
+(17, 21, 4.800,  'kg', '2025-12-20 12:00:00'),
+(17, 20, 3.000,  'kg', '2025-12-20 12:00:00'),
+(18, 17, 5.500,  'kg', '2025-12-19 12:00:00'),
+(18, 18, 2.200,  'kg', '2025-12-19 12:00:00');
 
-
--- TABLE: [Order]
-INSERT INTO [Order] (
+-- TABLE: `Order`
+INSERT INTO `Order` (
     customerId, bakeryId, addressId,
     orderPlacedDateTime, orderScheduledDateTime, orderDeliveredDateTime,
     orderMethod, orderComment, orderTotal, orderDiscount, orderStatus
 )
 VALUES
-(1, 3, 21, DATEADD(day, -12, GETDATE()), DATEADD(day, -11, GETDATE()), DATEADD(day, -11, GETDATE()), 'Delivery', 'Ring buzzer upon arrival', 26.95, 0.00, 'Completed'),
-(2, 3, NULL, DATEADD(day, -10, GETDATE()), DATEADD(day, -10, GETDATE()), DATEADD(day, -10, GETDATE()), 'Pickup', NULL, 12.98, 0.00, 'Completed'),
-(3, 2, 23, DATEADD(day, -9, GETDATE()), DATEADD(day, -8, GETDATE()), DATEADD(day, -8, GETDATE()), 'Delivery', 'Leave with concierge', 34.20, 2.00, 'Completed'),
-(4, 2, NULL, DATEADD(day, -8, GETDATE()), DATEADD(day, -8, GETDATE()), DATEADD(day, -8, GETDATE()), 'Pickup', NULL, 9.75, 0.00, 'Completed'),
-(5, 1, 26, DATEADD(day, -7, GETDATE()), DATEADD(day, -6, GETDATE()), DATEADD(day, -6, GETDATE()), 'Delivery', 'Call on arrival', 41.90, 4.00, 'Completed'),
-(6, 1, NULL, DATEADD(day, -6, GETDATE()), DATEADD(day, -6, GETDATE()), DATEADD(day, -6, GETDATE()), 'Pickup', NULL, 18.20, 0.00, 'Completed'),
-(7, 1, 31, DATEADD(day, -5, GETDATE()), DATEADD(day, -5, GETDATE()), NULL, 'Delivery', 'Please ensure items are sealed', 22.45, 0.00, 'Scheduled'),
-(8, 1, NULL, DATEADD(day, -5, GETDATE()), DATEADD(day, -5, GETDATE()), DATEADD(day, -5, GETDATE()), 'Pickup', NULL, 7.25, 0.00, 'Completed'),
-(9, 3, 34, DATEADD(day, -4, GETDATE()), DATEADD(day, -3, GETDATE()), DATEADD(day, -3, GETDATE()), 'Delivery', NULL, 58.48, 5.00, 'Completed'),
-(10, 3, NULL, DATEADD(day, -3, GETDATE()), DATEADD(day, -3, GETDATE()), NULL, 'Pickup', NULL, 6.49, 0.00, 'Placed'),
-(11, 2, 36, DATEADD(day, -3, GETDATE()), DATEADD(day, -2, GETDATE()), DATEADD(day, -2, GETDATE()), 'Delivery', 'Front desk drop-off', 27.70, 0.00, 'Completed'),
-(12, 2, NULL, DATEADD(day, -2, GETDATE()), DATEADD(day, -2, GETDATE()), DATEADD(day, -2, GETDATE()), 'Pickup', NULL, 14.50, 0.00, 'Completed'),
-(13, 1, 38, DATEADD(day, -2, GETDATE()), DATEADD(day, -1, GETDATE()), DATEADD(day, -1, GETDATE()), 'Delivery', NULL, 19.95, 0.00, 'Completed'),
-(14, 1, NULL, DATEADD(day, -1, GETDATE()), DATEADD(day, -1, GETDATE()), NULL, 'Pickup', NULL, 29.99, 0.00, 'Placed');
-GO
-
+(1, 3, 21, '2025-12-08 12:00:00', '2025-12-09 12:00:00', '2025-12-09 12:00:00', 'Delivery', 'Ring buzzer upon arrival', 26.95, 0.00, 'Completed'),
+(2, 3, NULL, '2025-12-10 12:00:00', '2025-12-10 12:00:00', '2025-12-10 12:00:00', 'Pickup', NULL, 12.98, 0.00, 'Completed'),
+(3, 2, 23, '2025-12-11 12:00:00', '2025-12-12 12:00:00', '2025-12-12 12:00:00', 'Delivery', 'Leave with concierge', 34.20, 2.00, 'Completed'),
+(4, 2, NULL, '2025-12-12 12:00:00', '2025-12-12 12:00:00', '2025-12-12 12:00:00', 'Pickup', NULL, 9.75, 0.00, 'Completed'),
+(5, 1, 26, '2025-12-13 12:00:00', '2025-12-14 12:00:00', '2025-12-14 12:00:00', 'Delivery', 'Call on arrival', 41.90, 4.00, 'Completed'),
+(6, 1, NULL, '2025-12-14 12:00:00', '2025-12-14 12:00:00', '2025-12-14 12:00:00', 'Pickup', NULL, 18.20, 0.00, 'Completed'),
+(7, 1, 31, '2025-12-15 12:00:00', '2025-12-15 12:00:00', NULL, 'Delivery', 'Please ensure items are sealed', 22.45, 0.00, 'Scheduled'),
+(8, 1, NULL, '2025-12-15 12:00:00', '2025-12-15 12:00:00', '2025-12-15 12:00:00', 'Pickup', NULL, 7.25, 0.00, 'Completed'),
+(9, 3, 34, '2025-12-16 12:00:00', '2025-12-17 12:00:00', '2025-12-17 12:00:00', 'Delivery', NULL, 58.48, 5.00, 'Completed'),
+(10, 3, NULL, '2025-12-17 12:00:00', '2025-12-17 12:00:00', NULL, 'Pickup', NULL, 6.49, 0.00, 'Placed'),
+(11, 2, 36, '2025-12-17 12:00:00', '2025-12-18 12:00:00', '2025-12-18 12:00:00', 'Delivery', 'Front desk drop-off', 27.70, 0.00, 'Completed'),
+(12, 2, NULL, '2025-12-18 12:00:00', '2025-12-18 12:00:00', '2025-12-18 12:00:00', 'Pickup', NULL, 14.50, 0.00, 'Completed'),
+(13, 1, 38, '2025-12-18 12:00:00', '2025-12-19 12:00:00', '2025-12-19 12:00:00', 'Delivery', NULL, 19.95, 0.00, 'Completed'),
+(14, 1, NULL, '2025-12-19 12:00:00', '2025-12-19 12:00:00', NULL, 'Pickup', NULL, 29.99, 0.00, 'Placed');
 
 -- TABLE: OrderItem
 INSERT INTO OrderItem (orderId, productId, batchId, orderItemQuantity, orderItemUnitPriceAtTime, orderItemLineTotal)
@@ -476,45 +448,39 @@ VALUES
 (13, 6, 8, 1, 1.50, 1.50),
 
 (14, 13, 5, 1, 29.99, 29.99);
-GO
-
 
 -- TABLE: Payment
 INSERT INTO Payment (orderId, paymentAmount, paymentMethod, paymentTransactionId, paymentStatus, paymentPaidAt)
 VALUES
-(1, 26.95, 'Credit Card', 'TRX-98314501', 'Paid', DATEADD(day, -11, GETDATE())),
-(2, 12.98, 'Debit', 'TRX-98314502', 'Paid', DATEADD(day, -10, GETDATE())),
-(3, 32.20, 'Credit Card', 'TRX-98314503', 'Paid', DATEADD(day, -8, GETDATE())),
-(4, 9.75, 'Credit Card', 'TRX-98314504', 'Paid', DATEADD(day, -8, GETDATE())),
-(5, 37.90, 'Credit Card', 'TRX-98314505', 'Paid', DATEADD(day, -6, GETDATE())),
-(6, 18.20, 'Debit', 'TRX-98314506', 'Paid', DATEADD(day, -6, GETDATE())),
+(1, 26.95, 'Credit Card', 'TRX-98314501', 'Paid', '2025-12-09 12:00:00'),
+(2, 12.98, 'Debit', 'TRX-98314502', 'Paid', '2025-12-10 12:00:00'),
+(3, 32.20, 'Credit Card', 'TRX-98314503', 'Paid', '2025-12-12 12:00:00'),
+(4, 9.75, 'Credit Card', 'TRX-98314504', 'Paid', '2025-12-12 12:00:00'),
+(5, 37.90, 'Credit Card', 'TRX-98314505', 'Paid', '2025-12-14 12:00:00'),
+(6, 18.20, 'Debit', 'TRX-98314506', 'Paid', '2025-12-14 12:00:00'),
 (7, 22.45, 'Credit Card', 'TRX-98314507', 'Authorized', NULL),
-(8, 7.25, 'Credit Card', 'TRX-98314508', 'Paid', DATEADD(day, -5, GETDATE())),
-(9, 53.48, 'Credit Card', 'TRX-98314509', 'Paid', DATEADD(day, -3, GETDATE())),
+(8, 7.25, 'Credit Card', 'TRX-98314508', 'Paid', '2025-12-15 12:00:00'),
+(9, 53.48, 'Credit Card', 'TRX-98314509', 'Paid', '2025-12-17 12:00:00'),
 (10, 6.49, 'Debit', 'TRX-98314510', 'Pending', NULL),
-(11, 27.70, 'Credit Card', 'TRX-98314511', 'Paid', DATEADD(day, -2, GETDATE())),
-(12, 14.50, 'Credit Card', 'TRX-98314512', 'Paid', DATEADD(day, -2, GETDATE())),
-(13, 19.95, 'Debit', 'TRX-98314513', 'Paid', DATEADD(day, -1, GETDATE())),
+(11, 27.70, 'Credit Card', 'TRX-98314511', 'Paid', '2025-12-18 12:00:00'),
+(12, 14.50, 'Credit Card', 'TRX-98314512', 'Paid', '2025-12-18 12:00:00'),
+(13, 19.95, 'Debit', 'TRX-98314513', 'Paid', '2025-12-19 12:00:00'),
 (14, 29.99, 'Credit Card', 'TRX-98314514', 'Pending', NULL);
-GO
-
 
 -- TABLE: Reward
 INSERT INTO Reward (customerId, orderId, rewardPointsEarned, rewardTransactionDate)
 VALUES
-(1, 1, 26950, DATEADD(day, -11, GETDATE())),
-(2, 2, 12980, DATEADD(day, -10, GETDATE())),
-(3, 3, 32200, DATEADD(day, -8, GETDATE())),
-(4, 4, 9750,  DATEADD(day, -8, GETDATE())),
-(5, 5, 37900, DATEADD(day, -6, GETDATE())),
-(6, 6, 18200, DATEADD(day, -6, GETDATE())),
-(8, 8, 7250,  DATEADD(day, -5, GETDATE())),
-(9, 9, 53480, DATEADD(day, -3, GETDATE())),
-(11, 11, 27700, DATEADD(day, -2, GETDATE())),
-(12, 12, 14500, DATEADD(day, -2, GETDATE())),
-(13, 13, 19950, DATEADD(day, -1, GETDATE()));
-GO
-
+(1, 1, 26950, '2025-12-09 12:00:00'),
+(2, 2, 12980, '2025-12-10 12:00:00'),
+(3, 3, 32200, '2025-12-12 12:00:00'),
+(4, 4, 9750,  '2025-12-12 12:00:00'),
+(5, 5, 37900, '2025-12-14 12:00:00'),
+(6, 6, 18200, '2025-12-14 12:00:00'),
+(8, 8, 7250,  '2025-12-15 12:00:00'),
+(9, 9, 53480, '2025-12-17 12:00:00'),
+(11, 11, 27700, '2025-12-18 12:00:00'),
+(12, 12, 14500, '2025-12-18 12:00:00'),
+(13, 13, 19950, '2025-12-19 12:00:00');
 
 -- TABLE: Review
 INSERT INTO Review (
@@ -523,22 +489,20 @@ INSERT INTO Review (
     reviewStatus, reviewApprovalDate
 )
 VALUES
-(1, 5, 7, 5, 'Fresh and flaky, exactly what I hoped for.', DATEADD(day, -9, GETDATE()), 'Approved', DATEADD(day, -8, GETDATE())),
-(2, 1, 7, 4, 'Good loaf with a nice crust.', DATEADD(day, -8, GETDATE()), 'Approved', DATEADD(day, -7, GETDATE())),
-(3, 13, 7, 5, 'Excellent cake, rich and not overly sweet.', DATEADD(day, -7, GETDATE()), 'Approved', DATEADD(day, -6, GETDATE())),
-(4, 6, NULL, 4, 'Muffin was soft and well-balanced.', DATEADD(day, -7, GETDATE()), 'Pending', NULL),
-(5, 12, 7, 5, 'Great flavour and texture.', DATEADD(day, -6, GETDATE()), 'Approved', DATEADD(day, -5, GETDATE())),
-(6, 16, 7, 3, 'Filling was good, pastry slightly dry.', DATEADD(day, -6, GETDATE()), 'Approved', DATEADD(day, -5, GETDATE())),
-(7, 10, NULL, 4, 'Cupcake was moist and frosting was smooth.', DATEADD(day, -5, GETDATE()), 'Pending', NULL),
-(8, 14, 7, 5, 'Very creamy slice and good crust.', DATEADD(day, -5, GETDATE()), 'Approved', DATEADD(day, -4, GETDATE())),
-(9, 17, 7, 4, 'Bright flavour and a nice finish.', DATEADD(day, -4, GETDATE()), 'Approved', DATEADD(day, -3, GETDATE())),
-(10, 3, NULL, 4, 'Crisp outside and soft inside.', DATEADD(day, -3, GETDATE()), 'Pending', NULL),
-(11, 18, 7, 5, 'Perfect brownie, very fudgy.', DATEADD(day, -2, GETDATE()), 'Approved', DATEADD(day, -2, GETDATE())),
-(12, 8, 7, 4, 'Classic cookie, good texture.', DATEADD(day, -2, GETDATE()), 'Approved', DATEADD(day, -1, GETDATE())),
-(13, 21, NULL, 4, 'Nice seasonal option, would buy again.', DATEADD(day, -1, GETDATE()), 'Pending', NULL),
-(14, 13, NULL, 5, 'Great for an occasion, everyone enjoyed it.', DATEADD(day, -1, GETDATE()), 'Pending', NULL);
-GO
-
+(1, 5, 7, 5, 'Fresh and flaky, exactly what I hoped for.', '2025-12-11 12:00:00', 'Approved', '2025-12-12 12:00:00'),
+(2, 1, 7, 4, 'Good loaf with a nice crust.', '2025-12-12 12:00:00', 'Approved', '2025-12-13 12:00:00'),
+(3, 13, 7, 5, 'Excellent cake, rich and not overly sweet.', '2025-12-13 12:00:00', 'Approved', '2025-12-14 12:00:00'),
+(4, 6, NULL, 4, 'Muffin was soft and well-balanced.', '2025-12-13 12:00:00', 'Pending', NULL),
+(5, 12, 7, 5, 'Great flavour and texture.', '2025-12-14 12:00:00', 'Approved', '2025-12-15 12:00:00'),
+(6, 16, 7, 3, 'Filling was good, pastry slightly dry.', '2025-12-14 12:00:00', 'Approved', '2025-12-15 12:00:00'),
+(7, 10, NULL, 4, 'Cupcake was moist and frosting was smooth.', '2025-12-15 12:00:00', 'Pending', NULL),
+(8, 14, 7, 5, 'Very creamy slice and good crust.', '2025-12-15 12:00:00', 'Approved', '2025-12-16 12:00:00'),
+(9, 17, 7, 4, 'Bright flavour and a nice finish.', '2025-12-16 12:00:00', 'Approved', '2025-12-17 12:00:00'),
+(10, 3, NULL, 4, 'Crisp outside and soft inside.', '2025-12-17 12:00:00', 'Pending', NULL),
+(11, 18, 7, 5, 'Perfect brownie, very fudgy.', '2025-12-18 12:00:00', 'Approved', '2025-12-18 12:00:00'),
+(12, 8, 7, 4, 'Classic cookie, good texture.', '2025-12-18 12:00:00', 'Approved', '2025-12-19 12:00:00'),
+(13, 21, NULL, 4, 'Nice seasonal option, would buy again.', '2025-12-19 12:00:00', 'Pending', NULL),
+(14, 13, NULL, 5, 'Great for an occasion, everyone enjoyed it.', '2025-12-19 12:00:00', 'Pending', NULL);
 
 -- TABLE: CustomerPreferences
 INSERT INTO CustomerPreferences (customerId, tagId, preferenceType, preferenceStrength)
@@ -584,4 +548,5 @@ VALUES
 
 (14, 2, 'Like', 7),
 (14, 10, 'Like', 6);
-GO
+
+SET FOREIGN_KEY_CHECKS = 1;

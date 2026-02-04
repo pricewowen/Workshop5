@@ -1,15 +1,27 @@
 package com.sait.workshop05;
 
+import com.sait.workshop05.database.DBUtil;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.sql.Connection;
 
 public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
+
+        // Test DB connection on startup
+        try (Connection conn = DBUtil.getConnection()) {
+            System.out.println("Connected to MySQL on startup");
+        } catch (Exception e) {
+            System.err.println("Database connection failed on startup");
+            e.printStackTrace();
+            System.exit(1);
+        }
+
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("Peelin' Good");
