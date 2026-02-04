@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="532.0" prefWidth="698.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.ActivityLogController">
+<AnchorPane prefHeight="532.0" prefWidth="698.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/17.0.6" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.ActivityLogController">
    <children>
       <VBox layoutX="14.0" layoutY="13.0" prefHeight="499.0" prefWidth="667.0">
          <children>

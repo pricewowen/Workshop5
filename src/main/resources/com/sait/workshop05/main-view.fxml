@@ -9,161 +9,192 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="593.0" prefWidth="889.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.MainController">
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.sait.workshop05.MainController"
+            style="-fx-background-color: white;">
+
    <padding>
-      <Insets bottom="10.0" right="10.0" top="10.0" />
+      <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
    </padding>
+
    <children>
-      <VBox prefHeight="543.0" prefWidth="191.0" style="-fx-background-color: #C19A6B;">
+
+      <VBox prefWidth="191.0"
+            style="-fx-background-color: #C19A6B;"
+            AnchorPane.topAnchor="0"
+            AnchorPane.bottomAnchor="0"
+            AnchorPane.leftAnchor="0">
+
          <children>
+
             <VBox prefHeight="63.0" prefWidth="191.0">
                <children>
                   <Label text="Peelin' Good">
                      <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="18.0" />
+                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="18.0"/>
                      </font>
                   </Label>
-                  <Label text="Management System" />
+                  <Label text="Management System"/>
                </children>
-               <VBox.margin>
-                  <Insets />
-               </VBox.margin>
                <padding>
-                  <Insets left="20.0" top="15.0" />
+                  <Insets left="20.0" top="15.0"/>
                </padding>
             </VBox>
+
             <VBox prefHeight="143.0" prefWidth="191.0">
                <children>
                   <Label text="Main">
                      <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="14.0" />
+                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="14.0"/>
                      </font>
                      <VBox.margin>
-                        <Insets bottom="10.0" left="15.0" />
+                        <Insets bottom="10.0" left="15.0"/>
                      </VBox.margin>
                   </Label>
-                  <Button fx:id="btnDashboard" mnemonicParsing="false" onAction="#onDashboardClick" prefHeight="25.0" prefWidth="204.0" text="Dashboard">
+
+                  <Button fx:id="btnDashboard" mnemonicParsing="false" onAction="#onDashboardClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Dashboard">
                      <VBox.margin>
-                        <Insets bottom="10.0" />
+                        <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
-                  <Button fx:id="btnOrders" mnemonicParsing="false" onAction="#onOrdersClick" prefHeight="25.0" prefWidth="204.0" text="Orders">
+
+                  <Button fx:id="btnOrders" mnemonicParsing="false" onAction="#onOrdersClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Orders">
                      <VBox.margin>
-                        <Insets bottom="10.0" />
+                        <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
                </children>
-               <VBox.margin>
-                  <Insets />
-               </VBox.margin>
                <padding>
-                  <Insets bottom="15.0" top="15.0" />
+                  <Insets bottom="15.0" top="15.0"/>
                </padding>
             </VBox>
+
             <VBox prefHeight="165.0" prefWidth="191.0">
                <children>
                   <Label text="Management">
                      <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="14.0" />
+                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="14.0"/>
                      </font>
                      <VBox.margin>
-                        <Insets left="15.0" />
+                        <Insets left="15.0"/>
                      </VBox.margin>
                   </Label>
-                  <Button fx:id="btnProducts" mnemonicParsing="false" onAction="#onProductsClick" prefHeight="25.0" prefWidth="204.0" text="Products">
+
+                  <Button fx:id="btnProducts" mnemonicParsing="false" onAction="#onProductsClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Products">
                      <VBox.margin>
-                        <Insets bottom="10.0" top="10.0" />
+                        <Insets bottom="10.0" top="10.0"/>
                      </VBox.margin>
                   </Button>
-                  <Button fx:id="btnCustomers" mnemonicParsing="false" onAction="#onCustomersClick" prefHeight="25.0" prefWidth="204.0" text="Customers">
+
+                  <Button fx:id="btnCustomers" mnemonicParsing="false" onAction="#onCustomersClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Customers">
                      <VBox.margin>
-                        <Insets bottom="10.0" />
+                        <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
-                  <Button fx:id="btnEmployees" mnemonicParsing="false" onAction="#onEmployeesClick" prefHeight="25.0" prefWidth="204.0" text="Employees">
+
+                  <Button fx:id="btnEmployees" mnemonicParsing="false" onAction="#onEmployeesClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Employees">
                      <VBox.margin>
-                        <Insets bottom="10.0" />
+                        <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
-                  <Button fx:id="btnLocations" mnemonicParsing="false" onAction="#onLocationsClick" prefHeight="25.0" prefWidth="204.0" text="Locations">
+
+                  <Button fx:id="btnLocations" mnemonicParsing="false" onAction="#onLocationsClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Locations">
                      <VBox.margin>
-                        <Insets bottom="10.0" />
+                        <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
+
                </children>
-               <VBox.margin>
-                  <Insets />
-               </VBox.margin>
                <padding>
-                  <Insets bottom="15.0" top="15.0" />
+                  <Insets bottom="15.0" top="15.0"/>
                </padding>
             </VBox>
+
             <VBox prefHeight="203.0" prefWidth="191.0">
                <children>
                   <Label text="System">
                      <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="14.0" />
+                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="14.0"/>
                      </font>
                      <VBox.margin>
-                        <Insets left="15.0" />
+                        <Insets left="15.0"/>
                      </VBox.margin>
                   </Label>
-                  <Button fx:id="btnRewards" mnemonicParsing="false" onAction="#onRewardsClick" prefHeight="25.0" prefWidth="204.0" text="Rewards">
+
+                  <Button fx:id="btnRewards" mnemonicParsing="false" onAction="#onRewardsClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Rewards">
                      <VBox.margin>
-                        <Insets bottom="10.0" top="10.0" />
+                        <Insets bottom="10.0" top="10.0"/>
                      </VBox.margin>
                   </Button>
-                  <Button fx:id="btnMessages" mnemonicParsing="false" onAction="#onMessagesClick" prefHeight="25.0" prefWidth="204.0" text="Messages">
+
+                  <Button fx:id="btnMessages" mnemonicParsing="false" onAction="#onMessagesClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Messages">
                      <VBox.margin>
-                        <Insets bottom="10.0" />
+                        <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
-                  <Button fx:id="btnAnalytics" mnemonicParsing="false" onAction="#onAnalyticsClick" prefHeight="25.0" prefWidth="204.0" text="Analytics">
+
+                  <Button fx:id="btnAnalytics" mnemonicParsing="false" onAction="#onAnalyticsClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Analytics">
                      <VBox.margin>
-                        <Insets bottom="10.0" />
+                        <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
-                  <Button fx:id="btnActivityLog" mnemonicParsing="false" onAction="#onActivityLogClick" prefHeight="25.0" prefWidth="204.0" text="Activity Log">
+
+                  <Button fx:id="btnActivityLog" mnemonicParsing="false" onAction="#onActivityLogClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Activity Log">
                      <VBox.margin>
-                        <Insets bottom="10.0" />
+                        <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
+
                </children>
-               <VBox.margin>
-                  <Insets />
-               </VBox.margin>
                <padding>
-                  <Insets bottom="15.0" top="15.0" />
+                  <Insets bottom="15.0" top="15.0"/>
                </padding>
             </VBox>
+
          </children>
       </VBox>
-      <HBox alignment="CENTER" layoutX="191.0" prefHeight="61.0" prefWidth="698.0" style="-fx-background-color: F7F7F7;">
+
+      <HBox alignment="CENTER"
+            prefHeight="61.0"
+            style="-fx-background-color: #F7F7F7;"
+            AnchorPane.topAnchor="0"
+            AnchorPane.leftAnchor="191.0"
+            AnchorPane.rightAnchor="0">
+
          <children>
             <TextField fx:id="srcSearchBar" prefHeight="29.0" prefWidth="431.0">
                <HBox.margin>
-                  <Insets left="5.0" right="100.0" />
+                  <Insets left="5.0" right="100.0"/>
                </HBox.margin>
                <font>
-                  <Font size="14.0" />
+                  <Font size="14.0"/>
                </font>
             </TextField>
+
             <VBox prefHeight="57.0" prefWidth="311.0">
                <HBox.margin>
-                  <Insets bottom="2.0" left="150.0" right="5.0" top="2.0" />
+                  <Insets bottom="2.0" left="150.0" right="5.0" top="2.0"/>
                </HBox.margin>
             </VBox>
          </children>
       </HBox>
 
-      <AnchorPane fx:id="contentArea" layoutX="191.0" layoutY="61.0"
-                  prefHeight="532.0" prefWidth="698.0" style="-fx-background-color: white"
-                  >
-<!--         <padding>-->
-<!--            <Insets top="15.0" right="15.0" left="15.0" bottom="15.0" />-->
-<!--         </padding>-->
-
-      </AnchorPane>
-
+      <AnchorPane fx:id="contentArea"
+                  style="-fx-background-color: white;"
+                  AnchorPane.topAnchor="61.0"
+                  AnchorPane.bottomAnchor="0"
+                  AnchorPane.leftAnchor="191.0"
+                  AnchorPane.rightAnchor="0"/>
    </children>
 </AnchorPane>

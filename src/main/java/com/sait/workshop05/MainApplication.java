@@ -26,6 +26,15 @@ public class MainApplication extends Application {
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("Peelin' Good");
         stage.setScene(scene);
+
+        stage.setWidth(1400);
+        stage.setHeight(850);
+
+        stage.setMinWidth(1200);
+        stage.setMinHeight(750);
+
+        stage.setResizable(true);
+
         stage.show();
     }
 

@@ -5,5 +5,7 @@ module com.sait.workshop05 {
 
 
     opens com.sait.workshop05 to javafx.fxml;
+    opens com.sait.workshop05.models to javafx.base;
+
     exports com.sait.workshop05;
 }

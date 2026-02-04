@@ -1,0 +1,27 @@
+package com.sait.workshop05.database;
+
+public class AddressOption {
+    private final int addressId;
+    private final String line1;
+    private final String city;
+    private final String province;
+    private final String postalCode;
+
+    public AddressOption(int addressId, String line1, String city, String province, String postalCode) {
+        this.addressId = addressId;
+        this.line1 = line1;
+        this.city = city;
+        this.province = province;
+        this.postalCode = postalCode;
+    }
+
+    public int getAddressId() {
+        return addressId;
+    }
+
+    @Override
+    public String toString() {
+        String c = (city == null) ? "" : (city.trim() + ", ");
+        return addressId + " - " + line1 + " (" + c + province + " " + postalCode + ")";
+    }
+}
