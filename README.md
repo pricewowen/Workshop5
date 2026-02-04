@@ -1,7 +1,7 @@
-# Workshop 4 — Java Desktop Application (BakeryEcommerce)
+# Workshop 5 — Java Desktop Application
 
 ## Overview
-This repository contains the **Workshop 4 Java Desktop Application** for the BakeryEcommerce system. The application connects to a local MySQL database and provides a desktop-based interface for managing and interacting with project data.
+This repository contains the **Workshop 5 Java Desktop Application** for a bakery e-commerce system. The application connects to a local MySQL database and provides a desktop-based interface for managing and interacting with project data.
 
 ## Tech Stack
 - Java Development Kit (JDK) 23
