@@ -22,7 +22,7 @@ public class LogData {
                 out.append(line);
                 out.println();
             } catch (IOException e) {
-                logError(new Log(log.getUser(), "error", e.getMessage()));
+                logError(new Log("error", e.getMessage()));
             }
         }
     }
@@ -49,21 +49,21 @@ public class LogData {
 
     /**
      * Log error messages to the log file
-     * @param user User logged in
+//     * @param user User logged in
      * @param action action being attempted
      * @param e error message returned
      */
-    public static void handleException(String user, String action, Exception e) {
-        logError(new Log(user, action, e.getMessage()));
+    public static void handleException(String action, Exception e) {
+        logError(new Log(action, e.getMessage()));
     }
 
     /**
      * Save an action to the log file
-     * @param user the user logged in
+//     * @param user the user logged in
      * @param action the action attempted
      * @param target the table/entity being affected
      */
-    public static void logAction(String user, String action, String target) {
-        saveLog(new Log(user, action, target));
+    public static void logAction(String action, String target) {
+        saveLog(new Log(action, target));
     }
 }

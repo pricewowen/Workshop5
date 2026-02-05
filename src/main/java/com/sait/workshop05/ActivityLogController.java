@@ -50,7 +50,7 @@ public class ActivityLogController {
                 line = in.readLine();
             }
         } catch (IOException e) {
-            LogData.handleException("SYSTEM", "GET_LOGS", e);
+            LogData.handleException("GET_LOGS", e);
         }
 
         return logs;

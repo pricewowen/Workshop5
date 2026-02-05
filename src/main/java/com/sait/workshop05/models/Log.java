@@ -11,9 +11,32 @@ public class Log {
     private String target;
     private String currentDate;
 
+    private static String loggedInUser = null;
     private final static DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
-    public Log(String user, String action, String description) {
+    /**
+     * Sets the username of the logged-in user called when user logs in
+     * @param username username of the logged-in user
+     */
+    public static void setLoggedInUser(String username) {
+        loggedInUser = username;
+    }
+
+    /**
+     * Clears the logged-in user. Called when user logs out
+     */
+    public static void clearLoggedInUser() {
+        loggedInUser = null;
+    }
+
+    public Log(String action, String description) {
+        // get the logged-in username
+        String user = "SYSTEM";
+
+        if (loggedInUser != null && !loggedInUser.trim().isEmpty()) {
+            user = loggedInUser;
+        }
+
         // gets the current time in ISO_8601/RFC 3339
         String currentTimeString = Instant.now().toString();
 
