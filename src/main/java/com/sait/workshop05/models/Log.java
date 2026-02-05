@@ -11,16 +11,9 @@ public class Log {
     private String target;
     private String currentDate;
 
-    // format for timestamp using ISO_8601 formatting
-    //private final static DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     private final static DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
     public Log(String user, String action, String description) {
-//        LocalDateTime currentTime = LocalDateTime.now();
-
-        // formats the date and time to a more human-readable format
-//        String currentTimeString = currentTime.format(FORMATTER);
-
         // gets the current time in ISO_8601/RFC 3339
         String currentTimeString = Instant.now().toString();
 
