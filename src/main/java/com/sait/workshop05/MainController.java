@@ -82,7 +82,7 @@ public class MainController {
 
     @FXML
     void onLocationsClick(ActionEvent event) {
-        // TODO
+        loadPage("bakery-locations-view.fxml");
     }
 
     @FXML
