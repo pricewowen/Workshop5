@@ -151,7 +151,7 @@ public class EmployeeManagementController {
             List<AddressOption> addresses = dao.getAddressOptions();
             cboAddress.setItems(FXCollections.observableArrayList(addresses));
         } catch (SQLException e) {
-            LogData.handleException(LOG_USER, "LOAD_EMPLOYEE_COMBOS", e);
+            LogData.handleException("LOAD_EMPLOYEE_COMBOS", e);
             showError("Database Error", "Could not load User/Address lists.", e.getMessage());
         }
     }
@@ -161,9 +161,9 @@ public class EmployeeManagementController {
             master.clear();
             master.addAll(dao.getAllEmployees());
             lblStatus.setText(master.size() + " employee(s) loaded");
-            LogData.logAction(LOG_USER, "READ", "Employee");
+            LogData.logAction("READ", "Employee");
         } catch (SQLException e) {
-            LogData.handleException(LOG_USER, "READ_EMPLOYEES", e);
+            LogData.handleException("READ_EMPLOYEES", e);
             showError("Database Error", "Could not load employees.", e.getMessage());
         }
     }
@@ -194,7 +194,7 @@ public class EmployeeManagementController {
     private void onCreate() {
         ValidationResult vr = validateForm(false);
         if (!vr.ok) {
-            LogData.logAction(LOG_USER, "VALIDATION_FAILED", "Employee");
+            LogData.logAction("VALIDATION_FAILED", "Employee");
             showWarning("Validation", vr.message);
             return;
         }
@@ -203,7 +203,7 @@ public class EmployeeManagementController {
 
         try {
             int newId = dao.insertEmployee(e);
-            LogData.logAction(LOG_USER, "CREATE", "Employee");
+            LogData.logAction("CREATE", "Employee");
             refreshTable();
 
             if (newId > 0) {
@@ -214,7 +214,7 @@ public class EmployeeManagementController {
             }
 
         } catch (SQLException ex) {
-            LogData.handleException(LOG_USER, "CREATE_EMPLOYEE", ex);
+            LogData.handleException("CREATE_EMPLOYEE", ex);
 
             String friendly = friendlyDbMessage(ex);
             showError("Create Failed", "Could not create employee.", friendly);
@@ -230,7 +230,7 @@ public class EmployeeManagementController {
 
         ValidationResult vr = validateForm(true);
         if (!vr.ok) {
-            LogData.logAction(LOG_USER, "VALIDATION_FAILED", "Employee");
+            LogData.logAction("VALIDATION_FAILED", "Employee");
             showWarning("Validation", vr.message);
             return;
         }
@@ -239,12 +239,12 @@ public class EmployeeManagementController {
 
         try {
             boolean ok = dao.updateEmployee(e);
-            LogData.logAction(LOG_USER, "UPDATE", "Employee");
+            LogData.logAction("UPDATE", "Employee");
             refreshTable();
             selectEmployeeById(e.getEmployeeId());
             lblStatus.setText(ok ? "Updated employee #" + e.getEmployeeId() : "No update applied");
         } catch (SQLException ex) {
-            LogData.handleException(LOG_USER, "UPDATE_EMPLOYEE", ex);
+            LogData.handleException("UPDATE_EMPLOYEE", ex);
 
             String friendly = friendlyDbMessage(ex);
             showError("Update Failed", "Could not update employee.", friendly);
@@ -269,12 +269,12 @@ public class EmployeeManagementController {
 
         try {
             dao.deleteEmployee(selected.getEmployeeId());
-            LogData.logAction(LOG_USER, "DELETE", "Employee");
+            LogData.logAction("DELETE", "Employee");
             refreshTable();
             onClear();
             lblStatus.setText("Deleted employee #" + selected.getEmployeeId());
         } catch (SQLException ex) {
-            LogData.handleException(LOG_USER, "DELETE_EMPLOYEE", ex);
+            LogData.handleException("DELETE_EMPLOYEE", ex);
 
             String friendly = friendlyDbMessage(ex);
             showError("Delete Failed", "Could not delete employee.", friendly);
