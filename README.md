@@ -3,16 +3,6 @@
 ## Overview
 This repository contains the **Workshop 5 Java Desktop Application** for a bakery e-commerce system called **Peelin' Good Bakery**. The application connects to a local MySQL database and provides a desktop-based interface for managing and interacting with project data.
 
-## Latest Update: Phase 1 Complete
-
-**Phase 1: Authentication System** has been implemented with:
-- Dual-role authentication (Employee/Admin and Customer)
-- User registration with validation
-- Secure BCrypt password hashing
-- Modern role selection and login UI
-- Session management
-- Comprehensive documentation
-
 ## Tech Stack
 - Java Development Kit (JDK) 23
 - JavaFX 17.0.6 (UI framework)
