@@ -18,6 +18,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import javafx.collections.FXCollections?>
 
 <AnchorPane prefHeight="800" prefWidth="1200" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.BakeryLocationsController">
 
@@ -47,13 +48,16 @@
            <items>
                <VBox fillWidth="true" spacing="10">
                   <children>
-                     <TableView fx:id="tblBakeryLocations1" fixedCellSize="28" prefWidth="1.0" style="-fx-font-size: 13px;" VBox.vgrow="ALWAYS">
+                     <TableView fx:id="tblBakeryLocations" fixedCellSize="28" prefWidth="1.0" style="-fx-font-size: 13px;" VBox.vgrow="ALWAYS">
                         <columns>
-                           <TableColumn fx:id="colBakeryId1" prefWidth="70" text="ID" />
-                           <TableColumn fx:id="colAddressId1" prefWidth="502.0000305175781" text="Address ID" />
-                           <TableColumn fx:id="colBakeryName1" prefWidth="188.6666259765625" text="Bakery Name" />
-                           <TableColumn fx:id="colBakeryPhone1" prefWidth="196.6666259765625" text="Bakery Phone" />
-                           <TableColumn fx:id="colBakeryEmail1" prefWidth="211.99981689453125" text="Bakery Email" />
+                           <TableColumn fx:id="colBakeryId" prefWidth="70" text="ID" />
+                           <TableColumn fx:id="colBakeryName" prefWidth="124.0" text="Bakery Name" />
+                           <TableColumn fx:id="colBakeryPhone" prefWidth="150.66659545898438" text="Phone Number" />
+                           <TableColumn fx:id="colBakeryEmail" prefWidth="144.66668701171875" text="Email" />
+                           <TableColumn fx:id="colBakeryAddress" prefWidth="336.6666259765625" text="Address" />
+                           <TableColumn fx:id="colBakeryCity" prefWidth="122.66668701171875" text="City" />
+                           <TableColumn fx:id="colBakeryProvince" prefWidth="89.3333740234375" text="Province" />
+                           <TableColumn fx:id="colBakeryPostalCode" prefWidth="132.6666259765625" text="Postal Code" />
                         </columns>
                      </TableView>
                      <Label fx:id="lblStatus1" style="-fx-text-fill: #444; -fx-font-size: 13px;" text="" />
@@ -85,32 +89,32 @@
                               </rowConstraints>
                               <children>
                                  <Label style="-fx-font-size: 13px;" text="Bakery ID:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                 <TextField fx:id="txtBakeryId1" editable="false" promptText="Auto" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                 <TextField fx:id="txtBakeryId" editable="false" promptText="Auto" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                                  <Label prefHeight="19.0" prefWidth="88.0" style="-fx-font-size: 13px;" text="Bakery Name:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                 <TextField fx:id="txtBakeryName1" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                 <TextField fx:id="txtBakeryName" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                                  <Label prefHeight="19.0" prefWidth="102.0" style="-fx-font-size: 13px;" text="Bakery Phone:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                 <TextField fx:id="txtBakeryPhone1" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                 <TextField fx:id="txtBakeryPhone" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Bakery Email:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                                 <TextField fx:id="txtBakeryEmail1" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                 <TextField fx:id="txtBakeryEmail" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Address Line 1:" GridPane.rowIndex="4" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Address Line 2:" GridPane.rowIndex="5" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="City:" GridPane.rowIndex="6" />
                                  <Label maxWidth="133.0" prefHeight="26.0" prefWidth="133.0" style="-fx-font-size: 13px;" text="Province:" GridPane.rowIndex="7" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Postal Code:" GridPane.rowIndex="8" />
-                                 <TextField fx:id="txtBakeryEmail11" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-                                 <TextField fx:id="txtBakeryEmail13" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
-                                 <TextField fx:id="txtBakeryEmail14" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                                 <TextField fx:id="txtBakeryEmail15" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="8" />
-                                 <ComboBox prefHeight="25.0" prefWidth="963.0" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+                                 <TextField fx:id="txtAddressLine2" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                                 <TextField fx:id="txtAddressCity" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+                                 <TextField fx:id="txtAddressLine1" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                 <TextField fx:id="txtAddressPostalCode" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+                                 <ComboBox fx:id="cboAddressProvince" prefHeight="25.0" prefWidth="963.0" GridPane.columnIndex="1" GridPane.rowIndex="7" />
                               </children>
                            </GridPane>
                            <Separator prefHeight="26.0" prefWidth="1135.0" />
                            <HBox spacing="12">
                               <children>
-                                 <Button fx:id="btnCreate1" maxWidth="1.7976931348623157E308" onAction="#onCreate" prefHeight="38" style="-fx-font-size: 13px;" text="Create" HBox.hgrow="ALWAYS" />
-                                 <Button fx:id="btnUpdate1" maxWidth="1.7976931348623157E308" onAction="#onUpdate" prefHeight="38" style="-fx-font-size: 13px;" text="Update" HBox.hgrow="ALWAYS" />
-                                 <Button fx:id="btnDelete1" maxWidth="1.7976931348623157E308" onAction="#onDelete" prefHeight="38.0" style="-fx-font-size: 13px;" text="Delete" HBox.hgrow="ALWAYS" />
-                                 <Button fx:id="btnClear1" maxWidth="1.7976931348623157E308" onAction="#onClear" prefHeight="38" style="-fx-font-size: 13px;" text="Clear" HBox.hgrow="ALWAYS" />
+                                 <Button fx:id="btnCreate" maxWidth="1.7976931348623157E308" onAction="#onCreate" prefHeight="38" style="-fx-font-size: 13px;" text="Create" HBox.hgrow="ALWAYS" />
+                                 <Button fx:id="btnUpdate" maxWidth="1.7976931348623157E308" onAction="#onUpdate" prefHeight="38" style="-fx-font-size: 13px;" text="Update" HBox.hgrow="ALWAYS" />
+                                 <Button fx:id="btnDelete" maxWidth="1.7976931348623157E308" onAction="#onDelete" prefHeight="38.0" style="-fx-font-size: 13px;" text="Delete" HBox.hgrow="ALWAYS" />
+                                 <Button fx:id="btnClear" maxWidth="1.7976931348623157E308" onAction="#onClear" prefHeight="38" style="-fx-font-size: 13px;" text="Clear" HBox.hgrow="ALWAYS" />
                               </children>
                            </HBox>
                         </children>
