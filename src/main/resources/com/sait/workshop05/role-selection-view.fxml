@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.sait.workshop05.RoleSelectionController"
+            prefHeight="600.0" prefWidth="800.0"
+            style="-fx-background-color: #f5f5f5;">
+
+    <center>
+        <VBox alignment="CENTER" spacing="40">
+            <padding>
+                <Insets top="50" right="50" bottom="50" left="50"/>
+            </padding>
+
+            <!-- Title -->
+            <VBox alignment="CENTER" spacing="10">
+                <Label text="🥐 Peelin' Good Bakery" style="-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #C19A6B;"/>
+                <Label text="Welcome! Please select your role to continue" style="-fx-font-size: 16px; -fx-text-fill: #666666;"/>
+            </VBox>
+
+            <!-- Role Selection Container -->
+            <HBox alignment="CENTER" spacing="30">
+                <!-- Employee/Admin Card -->
+                <VBox alignment="CENTER" spacing="20" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);" prefWidth="280" prefHeight="300">
+                    <padding>
+                        <Insets top="30" right="30" bottom="30" left="30"/>
+                    </padding>
+
+                    <Label text="👔" style="-fx-font-size: 72px;"/>
+                    <Label text="Employee / Admin" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #333333;"/>
+                    <Label text="Access management tools, view reports, and manage operations"
+                           style="-fx-font-size: 13px; -fx-text-fill: #666666; -fx-wrap-text: true; -fx-text-alignment: center;"
+                           wrapText="true" prefWidth="220"/>
+
+                    <Button fx:id="employeeButton" text="Continue as Employee"
+                            onAction="#handleEmployeeSelection"
+                            style="-fx-background-color: #C19A6B; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;"
+                            prefWidth="200" prefHeight="40">
+                        <VBox.margin>
+                            <Insets top="20"/>
+                        </VBox.margin>
+                    </Button>
+                </VBox>
+
+                <!-- Customer Card -->
+                <VBox alignment="CENTER" spacing="20" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);" prefWidth="280" prefHeight="300">
+                    <padding>
+                        <Insets top="30" right="30" bottom="30" left="30"/>
+                    </padding>
+
+                    <Label text="🛒" style="-fx-font-size: 72px;"/>
+                    <Label text="Customer" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #333333;"/>
+                    <Label text="Browse products, place orders, and manage your account"
+                           style="-fx-font-size: 13px; -fx-text-fill: #666666; -fx-wrap-text: true; -fx-text-alignment: center;"
+                           wrapText="true" prefWidth="220"/>
+
+                    <Button fx:id="customerButton" text="Continue as Customer"
+                            onAction="#handleCustomerSelection"
+                            style="-fx-background-color: #8B7355; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;"
+                            prefWidth="200" prefHeight="40">
+                        <VBox.margin>
+                            <Insets top="20"/>
+                        </VBox.margin>
+                    </Button>
+                </VBox>
+            </HBox>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER" style="-fx-padding: 20;">
+            <Label text="© 2026 Peelin' Good Bakery - Workshop 5" style="-fx-font-size: 12px; -fx-text-fill: #999999;"/>
+        </HBox>
+    </bottom>
+</BorderPane>
+

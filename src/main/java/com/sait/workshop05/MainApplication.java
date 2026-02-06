@@ -22,16 +22,17 @@ public class MainApplication extends Application {
             System.exit(1);
         }
 
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
+        // Load role selection view first (Phase 1: Authentication)
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("role-selection-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-        stage.setTitle("Peelin' Good");
+        stage.setTitle("Peelin' Good - Select Role");
         stage.setScene(scene);
 
-        stage.setWidth(1400);
-        stage.setHeight(850);
+        stage.setWidth(800);
+        stage.setHeight(600);
 
-        stage.setMinWidth(1200);
-        stage.setMinHeight(750);
+        stage.setMinWidth(800);
+        stage.setMinHeight(600);
 
         stage.setResizable(true);
 
