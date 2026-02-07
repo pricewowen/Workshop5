@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane prefHeight="800" prefWidth="1200" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.BakeryLocationsController">
+
+    <children>
+
+        <VBox fillWidth="true" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+
+            <padding>
+                <Insets bottom="2.0" left="14.0" right="14.0" top="14.0" />
+            </padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <Label text="Bakery Locations">
+                    <font>
+                        <Font size="24" />
+                    </font>
+                </Label>
+
+                <Region HBox.hgrow="ALWAYS" />
+
+                <Label style="-fx-font-size: 13px;" text="Search:" />
+                <TextField fx:id="txtSearch" prefWidth="420" promptText="Search name, role, phone, email, user, address" style="-fx-font-size: 13px;" />
+
+                <Button fx:id="btnRefresh" onAction="#onRefresh" prefWidth="100" style="-fx-font-size: 13px;" text="Refresh" />
+            </HBox>
+         <SplitPane dividerPositions="0.42604651162790697" orientation="VERTICAL" prefHeight="719.0" prefWidth="1172.0">
+           <items>
+               <VBox fillWidth="true" prefHeight="306.0" prefWidth="1169.0" spacing="10">
+                  <children>
+                     <TableView fx:id="tblBakeryLocations" fixedCellSize="28" prefWidth="1.0" style="-fx-font-size: 13px;" VBox.vgrow="ALWAYS">
+                        <columns>
+                           <TableColumn fx:id="colBakeryId" prefWidth="70" text="ID" />
+                           <TableColumn fx:id="colBakeryName" prefWidth="124.0" text="Bakery Name" />
+                           <TableColumn fx:id="colBakeryPhone" prefWidth="150.66659545898438" text="Phone Number" />
+                           <TableColumn fx:id="colBakeryEmail" prefWidth="144.66668701171875" text="Email" />
+                           <TableColumn fx:id="colBakeryAddress" prefWidth="336.6666259765625" text="Address" />
+                           <TableColumn fx:id="colBakeryCity" prefWidth="122.66668701171875" text="City" />
+                           <TableColumn fx:id="colBakeryProvince" prefWidth="89.3333740234375" text="Province" />
+                           <TableColumn fx:id="colBakeryPostalCode" prefWidth="132.6666259765625" text="Postal Code" />
+                        </columns>
+                     </TableView>
+                     <Label fx:id="lblStatus1" style="-fx-text-fill: #444; -fx-font-size: 13px;" text="" />
+                  </children>
+               </VBox>
+               <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" prefHeight="409.0" prefWidth="1169.0" vbarPolicy="AS_NEEDED">
+                  <content>
+                     <VBox fillWidth="true" prefHeight="424.0" prefWidth="1169.0" spacing="14" style="-fx-background-color: #fafafa; -fx-border-color: #e6e6e6;">
+                        <padding>
+                           <Insets bottom="16.0" left="16.0" right="16.0" />
+                        </padding>
+                        <children>
+                           <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Bakery Details" />
+                           <GridPane hgap="12" prefHeight="247.0" prefWidth="1135.0" vgap="12">
+                              <columnConstraints>
+                                 <ColumnConstraints maxWidth="160.0" minWidth="150.0" prefWidth="160.0" />
+                                 <ColumnConstraints hgrow="ALWAYS" maxWidth="886.6666768391929" minWidth="125.0" prefWidth="125.0" />
+                                 <ColumnConstraints hgrow="ALWAYS" maxWidth="160.0" minWidth="150.0" prefWidth="160.0" />
+                                 <ColumnConstraints hgrow="ALWAYS" minWidth="125.0" prefWidth="125.0" />
+                              </columnConstraints>
+                              <rowConstraints>
+                                 <RowConstraints />
+                                 <RowConstraints />
+                                 <RowConstraints />
+                                 <RowConstraints />
+                                 <RowConstraints />
+                                 <RowConstraints />
+                                 <RowConstraints />
+                                 <RowConstraints />
+                                 <RowConstraints />
+                              </rowConstraints>
+                              <children>
+                                 <Label style="-fx-font-size: 13px;" text="Bakery ID:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                 <TextField fx:id="txtBakeryId" editable="false" promptText="Auto" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                 <Label prefHeight="19.0" prefWidth="88.0" style="-fx-font-size: 13px;" text="Bakery Name:" GridPane.columnIndex="2" />
+                                 <TextField fx:id="txtBakeryName" style="-fx-font-size: 13px;" GridPane.columnIndex="3" />
+                                 <Label prefHeight="19.0" prefWidth="102.0" style="-fx-font-size: 13px;" text="Bakery Phone:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                 <TextField fx:id="txtBakeryPhone" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Bakery Email:" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                                 <TextField fx:id="txtBakeryEmail" style="-fx-font-size: 13px;" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Address Line 1:" GridPane.rowIndex="4" />
+                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Address Line 2:" GridPane.columnIndex="2" GridPane.rowIndex="4" />
+                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="City:" GridPane.rowIndex="6" />
+                                 <Label maxWidth="133.0" prefHeight="26.0" prefWidth="133.0" style="-fx-font-size: 13px;" text="Province:" GridPane.columnIndex="2" GridPane.rowIndex="6" />
+                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Postal Code:" GridPane.rowIndex="8" />
+                                 <TextField fx:id="txtAddressLine2" style="-fx-font-size: 13px;" GridPane.columnIndex="3" GridPane.rowIndex="4" />
+                                 <TextField fx:id="txtAddressCity" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+                                 <TextField fx:id="txtAddressLine1" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                 <TextField fx:id="txtAddressPostalCode" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+                                 <ComboBox fx:id="cboAddressProvince" prefHeight="25.0" prefWidth="963.0" GridPane.columnIndex="3" GridPane.rowIndex="6" />
+                                 <Text fill="#7b7878" strokeType="OUTSIDE" strokeWidth="0.0" text="*required" GridPane.columnIndex="2" GridPane.rowIndex="8" />
+                              </children>
+                           </GridPane>
+                           <Separator prefHeight="26.0" prefWidth="1135.0" />
+                           <HBox spacing="12">
+                              <children>
+                                 <Button fx:id="btnCreate" maxWidth="1.7976931348623157E308" onAction="#onCreate" prefHeight="38" style="-fx-font-size: 13px;" text="Create" HBox.hgrow="ALWAYS" />
+                                 <Button fx:id="btnUpdate" maxWidth="1.7976931348623157E308" onAction="#onUpdate" prefHeight="38" style="-fx-font-size: 13px;" text="Update" HBox.hgrow="ALWAYS" />
+                                 <Button fx:id="btnDelete" maxWidth="1.7976931348623157E308" onAction="#onDelete" prefHeight="38.0" style="-fx-font-size: 13px;" text="Delete" HBox.hgrow="ALWAYS" />
+                                 <Button fx:id="btnClear" maxWidth="1.7976931348623157E308" onAction="#onClear" prefHeight="38" style="-fx-font-size: 13px;" text="Clear" HBox.hgrow="ALWAYS" />
+                              </children>
+                           </HBox>
+                        </children>
+                     </VBox>
+                  </content>
+               </ScrollPane>
+           </items>
+         </SplitPane>
+        </VBox>
+    </children>
+</AnchorPane>
