@@ -10,10 +10,132 @@ import java.util.List;
  * Data Access Object for Message entity.
  * Handles all database operations related to messages.
  *
- * Note: This is a preliminary implementation. The Message table
- * may need to be created in the database schema.
+ * Requires the Message table (see sql/create_message_table.sql).
  */
 public class MessageDAO {
+
+    /**
+     * Get all staff users for recipient selection (New Message).
+     * Returns UserOption list of all users in the system.
+     */
+    public List<UserOption> getAllStaffUsers() throws SQLException {
+        String sql = "SELECT userId, userUsername FROM `User` ORDER BY userUsername ASC";
+        List<UserOption> users = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                users.add(new UserOption(
+                        rs.getInt("userId"),
+                        rs.getString("userUsername")
+                ));
+            }
+        }
+        return users;
+    }
+
+    /**
+     * Get the list of users this user has had conversations with,
+     * along with the latest message timestamp and unread count.
+     */
+    public List<ConversationSummary> getConversationPartners(int userId) throws SQLException {
+        // For each distinct partner, find the latest message and unread count
+        String sql =
+                "SELECT partnerId, partnerUsername, MAX(sentDT) AS lastMessageTime, " +
+                "       SUM(CASE WHEN receiverId = ? AND messageIsRead = 0 THEN 1 ELSE 0 END) AS unreadCount " +
+                "FROM ( " +
+                "    SELECT CASE WHEN m.senderId = ? THEN m.receiverId ELSE m.senderId END AS partnerId, " +
+                "           CASE WHEN m.senderId = ? THEN r.userUsername ELSE s.userUsername END AS partnerUsername, " +
+                "           m.receiverId, m.messageIsRead, " +
+                "           m.messageSentDateTime AS sentDT " +
+                "    FROM Message m " +
+                "    JOIN `User` s ON m.senderId = s.userId " +
+                "    JOIN `User` r ON m.receiverId = r.userId " +
+                "    WHERE m.senderId = ? OR m.receiverId = ? " +
+                ") AS sub " +
+                "GROUP BY partnerId, partnerUsername " +
+                "ORDER BY lastMessageTime DESC";
+
+        List<ConversationSummary> partners = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            ps.setInt(2, userId);
+            ps.setInt(3, userId);
+            ps.setInt(4, userId);
+            ps.setInt(5, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ConversationSummary cs = new ConversationSummary(
+                            rs.getInt("partnerId"),
+                            rs.getString("partnerUsername"),
+                            rs.getTimestamp("lastMessageTime").toLocalDateTime(),
+                            rs.getInt("unreadCount")
+                    );
+                    partners.add(cs);
+                }
+            }
+        }
+        return partners;
+    }
+
+    /**
+     * Get the full conversation between the current user and a partner,
+     * ordered chronologically (oldest first).
+     */
+    public List<Message> getConversation(int userId, int partnerId) throws SQLException {
+        String sql =
+                "SELECT m.messageId, m.senderId, m.receiverId, m.messageSubject, " +
+                "       m.messageContent, m.messageSentDateTime, m.messageIsRead, " +
+                "       sender.userUsername AS senderDisplay, " +
+                "       receiver.userUsername AS receiverDisplay " +
+                "FROM Message m " +
+                "JOIN `User` sender ON m.senderId = sender.userId " +
+                "JOIN `User` receiver ON m.receiverId = receiver.userId " +
+                "WHERE (m.senderId = ? AND m.receiverId = ?) " +
+                "   OR (m.senderId = ? AND m.receiverId = ?) " +
+                "ORDER BY m.messageSentDateTime ASC";
+
+        List<Message> messages = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            ps.setInt(2, partnerId);
+            ps.setInt(3, partnerId);
+            ps.setInt(4, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    messages.add(mapResultSetToMessage(rs));
+                }
+            }
+        }
+        return messages;
+    }
+
+    /**
+     * Mark all unread messages from a partner as read.
+     */
+    public int markConversationAsRead(int currentUserId, int partnerId) throws SQLException {
+        String sql = "UPDATE Message SET messageIsRead = 1 " +
+                     "WHERE senderId = ? AND receiverId = ? AND messageIsRead = 0";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, partnerId);
+            ps.setInt(2, currentUserId);
+
+            return ps.executeUpdate();
+        }
+    }
 
     /**
      * Get all messages for a specific user (as sender or receiver)

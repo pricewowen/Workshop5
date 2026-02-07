@@ -1,50 +1,284 @@
 package com.sait.workshop05.controllers;
 
+import com.sait.workshop05.database.DashboardDAO;
+import com.sait.workshop05.database.OrderDAO;
+import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.models.Order;
+import com.sait.workshop05.models.OrderItem;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Controller for the Dashboard view (Phase 11).
+ * Wires summary cards and recent orders table to live DB data.
+ */
 public class DashboardController {
 
-    @FXML
-    private Button btnNewOrder;
+    @FXML private Button btnNewOrder;
+
+    @FXML private TableColumn<Order, Integer> colOrderId;
+    @FXML private TableColumn<Order, String> colCustomer;
+    @FXML private TableColumn<Order, String> colProducts;
+    @FXML private TableColumn<Order, Double> colTotal;
+    @FXML private TableColumn<Order, String> colStatus;
+    @FXML private TableColumn<Order, LocalDateTime> colDate;
+    @FXML private TableColumn<Order, Void> colActions;
+
+    @FXML private Label lblActiveProducts;
+    @FXML private Label lblTotalCustomers;
+    @FXML private Label lblTotalOrders;
+    @FXML private Label lblTotalRevenu;
+
+    @FXML private TableView<Order> tbvRecentOrders;
+
+    private final DashboardDAO dashboardDAO = new DashboardDAO();
+    private final OrderDAO orderDAO = new OrderDAO();
+
+    private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     @FXML
-    private TableColumn<?, ?> colActions;
+    void initialize() {
+        setupColumns();
+        loadSummaryCards();
+        loadRecentOrders();
 
-    @FXML
-    private TableColumn<?, ?> colCustomer;
+        // Wire New Order button to navigate to Order Management
+        btnNewOrder.setOnAction(e -> onNewOrder());
+    }
 
-    @FXML
-    private TableColumn<?, ?> colDate;
+    // ───────────────────────────────────────────────
+    // Column setup
+    // ───────────────────────────────────────────────
 
-    @FXML
-    private TableColumn<?, ?> colOrderId;
+    private void setupColumns() {
+        colOrderId.setCellValueFactory(new PropertyValueFactory<>("orderId"));
+        colCustomer.setCellValueFactory(new PropertyValueFactory<>("customerDisplay"));
+        colTotal.setCellValueFactory(new PropertyValueFactory<>("orderTotal"));
+        colStatus.setCellValueFactory(new PropertyValueFactory<>("orderStatus"));
 
-    @FXML
-    private TableColumn<?, ?> colProducts;
+        // Format total as currency
+        colTotal.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText("");
+                } else {
+                    setText(String.format("$%.2f", item));
+                }
+            }
+        });
 
-    @FXML
-    private TableColumn<?, ?> colStatus;
+        // Date column with formatter
+        colDate.setCellValueFactory(new PropertyValueFactory<>("orderPlacedDateTime"));
+        colDate.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText("");
+                } else {
+                    setText(item.format(DT_FMT));
+                }
+            }
+        });
 
-    @FXML
-    private TableColumn<?, ?> colTotal;
+        // Status column with colour coding
+        colStatus.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText("");
+                    setStyle("");
+                } else {
+                    setText(item);
+                    switch (item.toLowerCase()) {
+                        case "pending" -> setStyle("-fx-text-fill: #c09800; -fx-font-weight: bold;");
+                        case "processing" -> setStyle("-fx-text-fill: #0275d8; -fx-font-weight: bold;");
+                        case "completed", "delivered" -> setStyle("-fx-text-fill: #5cb85c; -fx-font-weight: bold;");
+                        case "cancelled" -> setStyle("-fx-text-fill: #d9534f; -fx-font-weight: bold;");
+                        default -> setStyle("");
+                    }
+                }
+            }
+        });
 
-    @FXML
-    private Label lblActiveProducts;
+        // Products column — load order items and concatenate names
+        colProducts.setCellValueFactory(new PropertyValueFactory<>("orderComment")); // placeholder binding
+        colProducts.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setText("");
+                    return;
+                }
+                Order order = getTableView().getItems().get(getIndex());
+                try {
+                    List<OrderItem> items = orderDAO.getOrderItems(order.getOrderId());
+                    String products = items.stream()
+                            .map(OrderItem::getProductDisplay)
+                            .filter(name -> name != null && !name.isEmpty())
+                            .collect(Collectors.joining(", "));
+                    setText(products.isEmpty() ? "-" : products);
+                } catch (SQLException e) {
+                    setText("-");
+                }
+            }
+        });
 
-    @FXML
-    private Label lblTotalCustomers;
+        // Actions column — View button that shows order details in an alert
+        colActions.setCellFactory(col -> new TableCell<>() {
+            private final Button btnView = new Button("View");
 
-    @FXML
-    private Label lblTotalOrders;
+            {
+                btnView.setStyle("-fx-font-size: 11px;");
+                btnView.setOnAction(e -> {
+                    Order order = getTableView().getItems().get(getIndex());
+                    showOrderDetails(order);
+                });
+            }
 
-    @FXML
-    private Label lblTotalRevenu;
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(btnView);
+                }
+            }
+        });
+    }
 
-    @FXML
-    private TableView<?> tbvRecentOrders;
+    // ───────────────────────────────────────────────
+    // Load data
+    // ───────────────────────────────────────────────
 
+    private void loadSummaryCards() {
+        try {
+            double revenue = dashboardDAO.getTotalRevenue();
+            lblTotalRevenu.setText(String.format("$%,.2f", revenue));
+
+            int orders = dashboardDAO.getTotalOrders();
+            lblTotalOrders.setText(String.valueOf(orders));
+
+            int customers = dashboardDAO.getTotalCustomers();
+            lblTotalCustomers.setText(String.valueOf(customers));
+
+            int products = dashboardDAO.getTotalProducts();
+            lblActiveProducts.setText(String.valueOf(products));
+
+        } catch (SQLException e) {
+            lblTotalRevenu.setText("$0.00");
+            lblTotalOrders.setText("0");
+            lblTotalCustomers.setText("0");
+            lblActiveProducts.setText("0");
+            LogData.handleException("LOAD_DASHBOARD_STATS", e);
+        }
+    }
+
+    private void loadRecentOrders() {
+        try {
+            List<Order> recent = dashboardDAO.getRecentOrders(15);
+            ObservableList<Order> data = FXCollections.observableArrayList(recent);
+            tbvRecentOrders.setItems(data);
+        } catch (SQLException e) {
+            tbvRecentOrders.setItems(FXCollections.observableArrayList());
+            LogData.handleException("LOAD_RECENT_ORDERS", e);
+        }
+    }
+
+    // ───────────────────────────────────────────────
+    // Actions
+    // ───────────────────────────────────────────────
+
+    private void onNewOrder() {
+        // Navigate to order management view
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/com/sait/workshop05/order-management-view.fxml"));
+            javafx.scene.Node page = loader.load();
+
+            javafx.scene.layout.AnchorPane contentArea =
+                    (javafx.scene.layout.AnchorPane) btnNewOrder.getScene().lookup("#contentArea");
+
+            if (contentArea != null) {
+                contentArea.getChildren().clear();
+                contentArea.getChildren().add(page);
+                javafx.scene.layout.AnchorPane.setTopAnchor(page, 0.0);
+                javafx.scene.layout.AnchorPane.setBottomAnchor(page, 0.0);
+                javafx.scene.layout.AnchorPane.setLeftAnchor(page, 0.0);
+                javafx.scene.layout.AnchorPane.setRightAnchor(page, 0.0);
+            }
+        } catch (Exception e) {
+            LogData.handleException("NAV_NEW_ORDER", e);
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Navigation Error");
+            alert.setHeaderText("Could not open Order Management");
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
+        }
+    }
+
+    private void showOrderDetails(Order order) {
+        try {
+            List<OrderItem> items = orderDAO.getOrderItems(order.getOrderId());
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Order #").append(order.getOrderId()).append("\n");
+            sb.append("Customer: ").append(order.getCustomerDisplay()).append("\n");
+            sb.append("Bakery: ").append(order.getBakeryDisplay()).append("\n");
+            sb.append("Method: ").append(order.getOrderMethod()).append("\n");
+            sb.append("Status: ").append(order.getOrderStatus()).append("\n");
+            sb.append("Placed: ").append(
+                    order.getOrderPlacedDateTime() != null
+                            ? order.getOrderPlacedDateTime().format(DT_FMT) : "-"
+            ).append("\n");
+            sb.append("Scheduled: ").append(
+                    order.getOrderScheduledDateTime() != null
+                            ? order.getOrderScheduledDateTime().format(DT_FMT) : "-"
+            ).append("\n\n");
+
+            sb.append("Items:\n");
+            for (OrderItem item : items) {
+                sb.append("  - ").append(item.getProductDisplay())
+                        .append("  x").append(item.getOrderItemQuantity())
+                        .append("  $").append(String.format("%.2f", item.getOrderItemLineTotal()))
+                        .append("\n");
+            }
+
+            sb.append("\nSubtotal: $").append(String.format("%.2f", order.getOrderTotal()));
+            sb.append("\nDiscount: $").append(String.format("%.2f", order.getOrderDiscount()));
+            sb.append("\nTotal: $").append(String.format("%.2f", order.getFinalAmount()));
+
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Order Details");
+            alert.setHeaderText("Order #" + order.getOrderId());
+
+            TextArea textArea = new TextArea(sb.toString());
+            textArea.setEditable(false);
+            textArea.setWrapText(true);
+            textArea.setPrefRowCount(18);
+            textArea.setPrefColumnCount(40);
+            textArea.setStyle("-fx-font-family: monospace; -fx-font-size: 12px;");
+
+            alert.getDialogPane().setContent(textArea);
+            alert.setResizable(true);
+            alert.showAndWait();
+
+        } catch (SQLException e) {
+            LogData.handleException("VIEW_ORDER_DETAILS", e);
+        }
+    }
 }

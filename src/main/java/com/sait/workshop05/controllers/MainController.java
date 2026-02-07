@@ -122,7 +122,7 @@ public class MainController {
 
     @FXML
     void onMessagesClick(ActionEvent event) {
-        // TODO: Phase 10
+        loadPage("messaging-view.fxml");
     }
 
     @FXML
