@@ -1,7 +1,6 @@
 package com.sait.workshop05.database;
 
-import com.sait.workshop05.models.Order;
-import com.sait.workshop05.models.OrderItem;
+import com.sait.workshop05.models.*;
 
 import java.sql.*;
 import java.util.ArrayList;
