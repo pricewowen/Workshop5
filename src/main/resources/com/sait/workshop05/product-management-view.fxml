@@ -7,7 +7,7 @@
 
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.sait.workshop05.controllers.EmployeeManagementController"
+            fx:controller="com.sait.workshop05.controllers.ProductManagementController"
             prefWidth="1200" prefHeight="800"
             style="-fx-background-color: white;">
 
@@ -25,7 +25,7 @@
             </padding>
 
             <HBox spacing="12" alignment="CENTER_LEFT">
-                <Label text="Employee Management">
+                <Label text="Product Management">
                     <font>
                         <Font size="24"/>
                     </font>
@@ -35,7 +35,7 @@
 
                 <Label text="Search:" style="-fx-font-size: 13px;"/>
                 <TextField fx:id="txtSearch"
-                           promptText="Search name, role, phone, email, user, address"
+                           promptText="Search name, description, price, tags"
                            prefWidth="420"
                            style="-fx-font-size: 13px;"/>
 
@@ -52,23 +52,18 @@
 
                     <VBox spacing="10" SplitPane.resizableWithParent="true" fillWidth="true">
 
-                        <TableView fx:id="tblEmployees"
+                        <TableView fx:id="tblProducts"
                                    VBox.vgrow="ALWAYS"
                                    prefWidth="1.0"
                                    style="-fx-font-size: 13px;">
                             <fixedCellSize>28</fixedCellSize>
 
                             <columns>
-                                <TableColumn fx:id="colEmployeeId" text="ID" prefWidth="70"/>
-                                <TableColumn fx:id="colFirstName" text="First" prefWidth="140"/>
-                                <TableColumn fx:id="colMiddleInitial" text="MI" prefWidth="60"/>
-                                <TableColumn fx:id="colLastName" text="Last" prefWidth="140"/>
-                                <TableColumn fx:id="colRole" text="Role" prefWidth="140"/>
-                                <TableColumn fx:id="colPhone" text="Phone" prefWidth="150"/>
-                                <TableColumn fx:id="colBusinessPhone" text="Business Phone" prefWidth="170"/>
-                                <TableColumn fx:id="colEmail" text="Email" prefWidth="230"/>
-                                <TableColumn fx:id="colUser" text="User" prefWidth="150"/>
-                                <TableColumn fx:id="colAddress" text="Address" prefWidth="260"/>
+                                <TableColumn fx:id="colProductId" text="ID" prefWidth="70"/>
+                                <TableColumn fx:id="colProductName" text="Name" prefWidth="180"/>
+                                <TableColumn fx:id="colDescription" text="Description" prefWidth="280"/>
+                                <TableColumn fx:id="colBasePrice" text="Price" prefWidth="100"/>
+                                <TableColumn fx:id="colTags" text="Tags" prefWidth="220"/>
                             </columns>
                         </TableView>
 
@@ -94,75 +89,59 @@
                                     <Insets top="16" right="16" bottom="16" left="16"/>
                                 </padding>
 
-                                <Label text="Employee Details"
+                                <Label text="Product Details"
                                        style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
 
                                 <GridPane hgap="12" vgap="12" prefWidth="1.0">
                                     <columnConstraints>
-                                        <ColumnConstraints minWidth="150"/>
+                                        <ColumnConstraints minWidth="130"/>
                                         <ColumnConstraints hgrow="ALWAYS"/>
                                     </columnConstraints>
 
-                                    <Label text="Employee ID:" style="-fx-font-size: 13px;"
+                                    <Label text="Product ID:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtEmployeeId" editable="false" promptText="Auto"
+                                    <TextField fx:id="txtProductId" editable="false" promptText="Auto"
                                                style="-fx-font-size: 13px;"
                                                GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
-                                    <Label text="First Name*:" style="-fx-font-size: 13px;"
+                                    <Label text="Name*:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtFirstName"
+                                    <TextField fx:id="txtProductName" promptText="Product name"
                                                style="-fx-font-size: 13px;"
                                                GridPane.rowIndex="1" GridPane.columnIndex="1"/>
 
-                                    <Label text="Middle Initial:" style="-fx-font-size: 13px;"
+                                    <Label text="Description*:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtMiddleInitial"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                                    <TextArea fx:id="txtDescription" promptText="Product description"
+                                              prefRowCount="3" wrapText="true"
+                                              style="-fx-font-size: 13px;"
+                                              GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
-                                    <Label text="Last Name*:" style="-fx-font-size: 13px;"
+                                    <Label text="Base Price*:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtLastName"
+                                    <TextField fx:id="txtBasePrice" promptText="0.00"
                                                style="-fx-font-size: 13px;"
                                                GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
-                                    <Label text="Role*:" style="-fx-font-size: 13px;"
+                                    <Label text="Tag:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboRole"
+                                    <ComboBox fx:id="cboTag" promptText="Select a tag"
                                               style="-fx-font-size: 13px;"
                                               GridPane.rowIndex="4" GridPane.columnIndex="1"/>
-
-                                    <Label text="Phone*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="5" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtPhone"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="5" GridPane.columnIndex="1"/>
-
-                                    <Label text="Business Phone:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="6" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtBusinessPhone"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="6" GridPane.columnIndex="1"/>
-
-                                    <Label text="Email*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="7" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtEmail"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="7" GridPane.columnIndex="1"/>
-
-                                    <Label text="User*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="8" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboUser"
-                                              style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="8" GridPane.columnIndex="1"/>
-
-                                    <Label text="Address*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="9" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboAddress"
-                                              style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="9" GridPane.columnIndex="1"/>
                                 </GridPane>
+
+                                <!-- Multi-tag selection area -->
+                                <Label text="Assigned Tags:" style="-fx-font-size: 13px; -fx-font-weight: bold;"/>
+
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Button text="Add Tag" fx:id="btnAddTag" onAction="#onAddTag"
+                                            style="-fx-font-size: 12px;" prefHeight="30"/>
+                                    <Button text="Remove Selected Tag" fx:id="btnRemoveTag" onAction="#onRemoveTag"
+                                            style="-fx-font-size: 12px;" prefHeight="30"/>
+                                </HBox>
+
+                                <ListView fx:id="lstAssignedTags" prefHeight="100"
+                                          style="-fx-font-size: 13px;"/>
 
                                 <Separator/>
 

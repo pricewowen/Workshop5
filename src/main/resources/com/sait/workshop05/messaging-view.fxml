@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.sait.workshop05.controllers.MessagingController"
+            prefWidth="1200" prefHeight="800"
+            style="-fx-background-color: white;">
+
+    <children>
+
+        <VBox spacing="8"
+              AnchorPane.topAnchor="0"
+              AnchorPane.bottomAnchor="0"
+              AnchorPane.leftAnchor="0"
+              AnchorPane.rightAnchor="0"
+              fillWidth="true">
+
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Label text="Staff Messaging">
+                <font>
+                    <Font size="24"/>
+                </font>
+            </Label>
+
+            <!-- Main split: conversation list (left 30%) | message thread (right 70%) -->
+            <SplitPane dividerPositions="0.30" VBox.vgrow="ALWAYS">
+                <items>
+
+                    <!-- ═══ LEFT PANEL: Conversations ═══ -->
+                    <VBox spacing="8" fillWidth="true"
+                          style="-fx-background-color: #fafafa; -fx-border-color: #e0e0e0;">
+                        <padding>
+                            <Insets top="10" right="10" bottom="10" left="10"/>
+                        </padding>
+
+                        <HBox spacing="8" alignment="CENTER_LEFT">
+                            <Label text="Conversations" style="-fx-font-size: 15px; -fx-font-weight: bold;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="New Message" fx:id="btnNewMessage"
+                                    onAction="#onNewMessage"
+                                    style="-fx-font-size: 12px;"/>
+                        </HBox>
+
+                        <TextField fx:id="txtConversationSearch"
+                                   promptText="Search conversations..."
+                                   style="-fx-font-size: 12px;"/>
+
+                        <ListView fx:id="lstConversations" VBox.vgrow="ALWAYS"
+                                  style="-fx-font-size: 13px;"/>
+
+                        <HBox spacing="8" alignment="CENTER_LEFT">
+                            <Button text="Refresh" fx:id="btnRefreshConversations"
+                                    onAction="#onRefreshConversations"
+                                    style="-fx-font-size: 12px;"/>
+                            <Label fx:id="lblUnreadCount" text=""
+                                   style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- ═══ RIGHT PANEL: Message Thread ═══ -->
+                    <VBox spacing="8" fillWidth="true">
+                        <padding>
+                            <Insets top="10" right="10" bottom="10" left="10"/>
+                        </padding>
+
+                        <!-- Thread header -->
+                        <HBox spacing="12" alignment="CENTER_LEFT"
+                              style="-fx-background-color: #f5f0e8; -fx-border-color: #d4c9b0; -fx-padding: 8;">
+                            <Label fx:id="lblThreadTitle"
+                                   text="Select a conversation or start a new message"
+                                   style="-fx-font-size: 15px; -fx-font-weight: bold;"/>
+                        </HBox>
+
+                        <!-- Message thread display -->
+                        <ScrollPane fx:id="scrollMessages" fitToWidth="true"
+                                    VBox.vgrow="ALWAYS"
+                                    hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                                    style="-fx-background-color: white;">
+                            <content>
+                                <VBox fx:id="vboxMessages" spacing="8" fillWidth="true">
+                                    <padding>
+                                        <Insets top="8" right="8" bottom="8" left="8"/>
+                                    </padding>
+                                </VBox>
+                            </content>
+                        </ScrollPane>
+
+                        <Separator/>
+
+                        <!-- Compose area -->
+                        <VBox spacing="6" fillWidth="true">
+                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                <Label text="Subject:" style="-fx-font-size: 13px;"/>
+                                <TextField fx:id="txtSubject" promptText="Message subject"
+                                           HBox.hgrow="ALWAYS"
+                                           style="-fx-font-size: 13px;"/>
+                            </HBox>
+
+                            <TextArea fx:id="txtMessageContent"
+                                      promptText="Type your message here..."
+                                      prefRowCount="3"
+                                      wrapText="true"
+                                      style="-fx-font-size: 13px;"/>
+
+                            <HBox spacing="8" alignment="CENTER_RIGHT">
+                                <Label fx:id="lblComposeStatus" text=""
+                                       style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Button text="Send" fx:id="btnSend"
+                                        onAction="#onSendMessage"
+                                        prefWidth="100" prefHeight="36"
+                                        style="-fx-font-size: 13px; -fx-font-weight: bold;"/>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+
+                </items>
+            </SplitPane>
+        </VBox>
+    </children>
+</AnchorPane>
