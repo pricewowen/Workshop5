@@ -127,7 +127,7 @@ public class MainController {
 
     @FXML
     void onOrdersClick(ActionEvent event) {
-        // TODO: Phase 6
+        loadPage("order-management-view.fxml");
     }
 
     @FXML

@@ -278,6 +278,161 @@ public class OrderDAO {
     }
 
     /**
+     * Create an order with all its items in a single transaction.
+     */
+    public int createOrderWithItems(Order order, List<OrderItem> items) throws SQLException {
+        Connection conn = null;
+
+        try {
+            conn = DBUtil.getConnection();
+            conn.setAutoCommit(false);
+
+            // Insert the Order
+            String orderSql =
+                    "INSERT INTO `Order` " +
+                    "(customerId, bakeryId, addressId, orderPlacedDateTime, orderScheduledDateTime, " +
+                    "orderMethod, orderComment, orderTotal, orderDiscount, orderStatus) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            int orderId;
+            try (PreparedStatement ps = conn.prepareStatement(orderSql, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setInt(1, order.getCustomerId());
+                ps.setInt(2, order.getBakeryId());
+                ps.setObject(3, order.getAddressId() > 0 ? order.getAddressId() : null);
+                ps.setTimestamp(4, Timestamp.valueOf(order.getOrderPlacedDateTime()));
+
+                if (order.getOrderScheduledDateTime() != null) {
+                    ps.setTimestamp(5, Timestamp.valueOf(order.getOrderScheduledDateTime()));
+                } else {
+                    ps.setNull(5, Types.TIMESTAMP);
+                }
+
+                ps.setString(6, order.getOrderMethod());
+                ps.setString(7, order.getOrderComment());
+                ps.setDouble(8, order.getOrderTotal());
+                ps.setDouble(9, order.getOrderDiscount());
+                ps.setString(10, order.getOrderStatus());
+
+                ps.executeUpdate();
+
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        orderId = keys.getInt(1);
+                    } else {
+                        throw new SQLException("Failed to get generated order ID");
+                    }
+                }
+            }
+
+            // Insert all OrderItems
+            String itemSql =
+                    "INSERT INTO OrderItem " +
+                    "(orderId, productId, batchId, orderItemQuantity, orderItemUnitPriceAtTime, orderItemLineTotal) " +
+                    "VALUES (?, ?, ?, ?, ?, ?)";
+
+            try (PreparedStatement ps = conn.prepareStatement(itemSql)) {
+                for (OrderItem item : items) {
+                    ps.setInt(1, orderId);
+                    ps.setInt(2, item.getProductId());
+                    ps.setObject(3, item.getBatchId() > 0 ? item.getBatchId() : null);
+                    ps.setInt(4, item.getOrderItemQuantity());
+                    ps.setDouble(5, item.getOrderItemUnitPriceAtTime());
+                    ps.setDouble(6, item.getOrderItemLineTotal());
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+
+            conn.commit();
+            return orderId;
+
+        } catch (SQLException e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+            }
+            throw e;
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); } catch (SQLException ignored) {}
+                try { conn.close(); } catch (SQLException ignored) {}
+            }
+        }
+    }
+
+    /**
+     * Get all bakery locations for ComboBox population.
+     */
+    public List<BakeryOption> getBakeryOptions() throws SQLException {
+        String sql = "SELECT bakeryId, bakeryName FROM Bakery ORDER BY bakeryName ASC";
+        List<BakeryOption> options = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                options.add(new BakeryOption(
+                        rs.getInt("bakeryId"),
+                        rs.getString("bakeryName")
+                ));
+            }
+        }
+        return options;
+    }
+
+    /**
+     * Get all customers for ComboBox population in New Order tab.
+     */
+    public List<CustomerOption> getCustomerOptions() throws SQLException {
+        String sql =
+                "SELECT customerId, customerFirstName, customerLastName, customerRewardBalance " +
+                "FROM Customer ORDER BY customerLastName, customerFirstName ASC";
+
+        List<CustomerOption> options = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                options.add(new CustomerOption(
+                        rs.getInt("customerId"),
+                        rs.getString("customerFirstName") + " " + rs.getString("customerLastName"),
+                        rs.getInt("customerRewardBalance")
+                ));
+            }
+        }
+        return options;
+    }
+
+    /**
+     * Get address options for ComboBox population.
+     */
+    public List<AddressOption> getAddressOptions() throws SQLException {
+        String sql =
+                "SELECT addressId, addressLine1, addressCity, addressProvince, addressPostalCode " +
+                "FROM Address ORDER BY addressId DESC";
+
+        List<AddressOption> options = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                options.add(new AddressOption(
+                        rs.getInt("addressId"),
+                        rs.getString("addressLine1"),
+                        rs.getString("addressCity"),
+                        rs.getString("addressProvince"),
+                        rs.getString("addressPostalCode")
+                ));
+            }
+        }
+        return options;
+    }
+
+    /**
      * Helper method to map ResultSet to Order object
      */
     private Order mapResultSetToOrder(ResultSet rs) throws SQLException {

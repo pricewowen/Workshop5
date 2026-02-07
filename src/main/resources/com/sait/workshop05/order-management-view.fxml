@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.sait.workshop05.controllers.OrderManagementController"
+            prefWidth="1200" prefHeight="800"
+            style="-fx-background-color: white;">
+
+    <children>
+
+        <VBox spacing="8"
+              AnchorPane.topAnchor="0"
+              AnchorPane.bottomAnchor="0"
+              AnchorPane.leftAnchor="0"
+              AnchorPane.rightAnchor="0"
+              fillWidth="true">
+
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Label text="Order Management">
+                <font>
+                    <Font size="24"/>
+                </font>
+            </Label>
+
+            <TabPane fx:id="tabPane" VBox.vgrow="ALWAYS"
+                     tabClosingPolicy="UNAVAILABLE"
+                     style="-fx-font-size: 13px;">
+
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- TAB 1: All Orders                              -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <Tab text="All Orders">
+                    <content>
+                        <VBox spacing="10" fillWidth="true">
+                            <padding>
+                                <Insets top="10" right="4" bottom="4" left="4"/>
+                            </padding>
+
+                            <!-- Search + status filter bar -->
+                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                <Label text="Search:" style="-fx-font-size: 13px;"/>
+                                <TextField fx:id="txtOrderSearch"
+                                           promptText="Search order ID, customer, bakery, method, status"
+                                           prefWidth="360"
+                                           style="-fx-font-size: 13px;"/>
+
+                                <Label text="Status:" style="-fx-font-size: 13px;"/>
+                                <ComboBox fx:id="cboStatusFilter" prefWidth="140"
+                                          style="-fx-font-size: 13px;"/>
+
+                                <Region HBox.hgrow="ALWAYS"/>
+
+                                <Button text="Refresh" fx:id="btnRefreshOrders"
+                                        onAction="#onRefreshOrders"
+                                        prefWidth="100" style="-fx-font-size: 13px;"/>
+                            </HBox>
+
+                            <!-- Orders table + details split -->
+                            <SplitPane dividerPositions="0.55" VBox.vgrow="ALWAYS"
+                                       orientation="VERTICAL">
+                                <items>
+
+                                    <!-- Top: Orders table -->
+                                    <VBox spacing="4" fillWidth="true">
+                                        <TableView fx:id="tblOrders"
+                                                   VBox.vgrow="ALWAYS"
+                                                   style="-fx-font-size: 12px;">
+                                            <fixedCellSize>28</fixedCellSize>
+
+                                            <columns>
+                                                <TableColumn fx:id="colOrderId" text="ID" prefWidth="55"/>
+                                                <TableColumn fx:id="colOrderCustomer" text="Customer" prefWidth="140"/>
+                                                <TableColumn fx:id="colOrderBakery" text="Bakery" prefWidth="120"/>
+                                                <TableColumn fx:id="colOrderPlaced" text="Placed" prefWidth="130"/>
+                                                <TableColumn fx:id="colOrderScheduled" text="Scheduled" prefWidth="130"/>
+                                                <TableColumn fx:id="colOrderMethod" text="Method" prefWidth="80"/>
+                                                <TableColumn fx:id="colOrderTotal" text="Total" prefWidth="80"/>
+                                                <TableColumn fx:id="colOrderDiscount" text="Discount" prefWidth="75"/>
+                                                <TableColumn fx:id="colOrderStatus" text="Status" prefWidth="100"/>
+                                            </columns>
+                                        </TableView>
+
+                                        <Label fx:id="lblOrderStatus" text=""
+                                               style="-fx-text-fill: #444; -fx-font-size: 13px;"/>
+                                    </VBox>
+
+                                    <!-- Bottom: Order details + items + status update -->
+                                    <VBox spacing="8" fillWidth="true">
+                                        <padding>
+                                            <Insets top="6" right="4" bottom="4" left="4"/>
+                                        </padding>
+
+                                        <HBox spacing="16" alignment="CENTER_LEFT">
+                                            <Label fx:id="lblOrderDetailTitle"
+                                                   text="Select an order above to view details"
+                                                   style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+
+                                            <Region HBox.hgrow="ALWAYS"/>
+
+                                            <Label text="Update Status:" style="-fx-font-size: 13px;"/>
+                                            <ComboBox fx:id="cboNewStatus" prefWidth="160"
+                                                      style="-fx-font-size: 13px;"/>
+                                            <Button text="Update Status" fx:id="btnUpdateStatus"
+                                                    onAction="#onUpdateStatus"
+                                                    style="-fx-font-size: 13px;"/>
+                                        </HBox>
+
+                                        <TableView fx:id="tblOrderItems"
+                                                   VBox.vgrow="ALWAYS"
+                                                   style="-fx-font-size: 12px;">
+                                            <fixedCellSize>26</fixedCellSize>
+
+                                            <columns>
+                                                <TableColumn fx:id="colItemProduct" text="Product" prefWidth="220"/>
+                                                <TableColumn fx:id="colItemQty" text="Qty" prefWidth="60"/>
+                                                <TableColumn fx:id="colItemUnitPrice" text="Unit Price" prefWidth="100"/>
+                                                <TableColumn fx:id="colItemLineTotal" text="Line Total" prefWidth="100"/>
+                                            </columns>
+                                        </TableView>
+                                    </VBox>
+
+                                </items>
+                            </SplitPane>
+                        </VBox>
+                    </content>
+                </Tab>
+
+                <!-- ═══════════════════════════════════════════════ -->
+                <!-- TAB 2: New Order (POS-Style)                   -->
+                <!-- ═══════════════════════════════════════════════ -->
+                <Tab text="New Order">
+                    <content>
+                        <VBox spacing="10" fillWidth="true">
+                            <padding>
+                                <Insets top="10" right="4" bottom="4" left="4"/>
+                            </padding>
+
+                            <!-- Order header: customer, bakery, method, scheduled, address -->
+                            <GridPane hgap="12" vgap="8">
+                                <columnConstraints>
+                                    <ColumnConstraints minWidth="110"/>
+                                    <ColumnConstraints hgrow="ALWAYS" prefWidth="240"/>
+                                    <ColumnConstraints minWidth="110"/>
+                                    <ColumnConstraints hgrow="ALWAYS" prefWidth="240"/>
+                                </columnConstraints>
+
+                                <Label text="Customer*:" style="-fx-font-size: 13px;"
+                                       GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                <ComboBox fx:id="cboNewCustomer" promptText="Select customer"
+                                          style="-fx-font-size: 13px;" maxWidth="1.7976931348623157E308"
+                                          GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                                <Label text="Bakery*:" style="-fx-font-size: 13px;"
+                                       GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                                <ComboBox fx:id="cboNewBakery" promptText="Select bakery"
+                                          style="-fx-font-size: 13px;" maxWidth="1.7976931348623157E308"
+                                          GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+                                <Label text="Method*:" style="-fx-font-size: 13px;"
+                                       GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                <ComboBox fx:id="cboNewMethod" promptText="Select method"
+                                          style="-fx-font-size: 13px;" maxWidth="1.7976931348623157E308"
+                                          GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                                <Label text="Scheduled:" style="-fx-font-size: 13px;"
+                                       GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                                <HBox spacing="6" alignment="CENTER_LEFT"
+                                      GridPane.rowIndex="1" GridPane.columnIndex="3">
+                                    <DatePicker fx:id="dpScheduledDate"
+                                                promptText="Date"
+                                                style="-fx-font-size: 13px;"
+                                                HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                                    <TextField fx:id="txtScheduledTime" promptText="HH:mm"
+                                               prefWidth="70" style="-fx-font-size: 13px;"/>
+                                </HBox>
+
+                                <Label text="Address:" style="-fx-font-size: 13px;"
+                                       GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                <ComboBox fx:id="cboNewAddress" promptText="(For delivery)"
+                                          style="-fx-font-size: 13px;" maxWidth="1.7976931348623157E308"
+                                          GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                                <Label text="Comment:" style="-fx-font-size: 13px;"
+                                       GridPane.rowIndex="2" GridPane.columnIndex="2"/>
+                                <TextField fx:id="txtNewComment" promptText="Order notes"
+                                           style="-fx-font-size: 13px;"
+                                           GridPane.rowIndex="2" GridPane.columnIndex="3"/>
+                            </GridPane>
+
+                            <Separator/>
+
+                            <!-- Product catalog + cart split -->
+                            <SplitPane dividerPositions="0.55" VBox.vgrow="ALWAYS">
+                                <items>
+
+                                    <!-- Left: Product catalog -->
+                                    <VBox spacing="6" fillWidth="true">
+                                        <HBox spacing="8" alignment="CENTER_LEFT">
+                                            <Label text="Products" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+                                            <Region HBox.hgrow="ALWAYS"/>
+                                            <TextField fx:id="txtProductSearch"
+                                                       promptText="Search products"
+                                                       prefWidth="240"
+                                                       style="-fx-font-size: 13px;"/>
+                                        </HBox>
+
+                                        <TableView fx:id="tblCatalog"
+                                                   VBox.vgrow="ALWAYS"
+                                                   style="-fx-font-size: 12px;">
+                                            <fixedCellSize>28</fixedCellSize>
+                                            <columns>
+                                                <TableColumn fx:id="colCatName" text="Product" prefWidth="180"/>
+                                                <TableColumn fx:id="colCatDesc" text="Description" prefWidth="200"/>
+                                                <TableColumn fx:id="colCatPrice" text="Price" prefWidth="80"/>
+                                            </columns>
+                                        </TableView>
+
+                                        <HBox spacing="8" alignment="CENTER_LEFT">
+                                            <Label text="Qty:" style="-fx-font-size: 13px;"/>
+                                            <Spinner fx:id="spnQuantity" prefWidth="80"
+                                                     style="-fx-font-size: 13px;"/>
+                                            <Button text="Add to Order" fx:id="btnAddToOrder"
+                                                    onAction="#onAddToOrder"
+                                                    style="-fx-font-size: 13px;"/>
+                                        </HBox>
+                                    </VBox>
+
+                                    <!-- Right: Cart + summary -->
+                                    <VBox spacing="6" fillWidth="true">
+                                        <Label text="Current Order Items"
+                                               style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+
+                                        <TableView fx:id="tblCart"
+                                                   VBox.vgrow="ALWAYS"
+                                                   style="-fx-font-size: 12px;">
+                                            <fixedCellSize>28</fixedCellSize>
+                                            <columns>
+                                                <TableColumn fx:id="colCartProduct" text="Product" prefWidth="160"/>
+                                                <TableColumn fx:id="colCartQty" text="Qty" prefWidth="50"/>
+                                                <TableColumn fx:id="colCartUnitPrice" text="Price" prefWidth="75"/>
+                                                <TableColumn fx:id="colCartLineTotal" text="Total" prefWidth="80"/>
+                                            </columns>
+                                        </TableView>
+
+                                        <Button text="Remove Selected" fx:id="btnRemoveFromOrder"
+                                                onAction="#onRemoveFromOrder"
+                                                style="-fx-font-size: 13px;"/>
+
+                                        <Separator/>
+
+                                        <!-- Order summary -->
+                                        <GridPane hgap="12" vgap="6">
+                                            <columnConstraints>
+                                                <ColumnConstraints minWidth="110"/>
+                                                <ColumnConstraints hgrow="ALWAYS"/>
+                                            </columnConstraints>
+
+                                            <Label text="Subtotal:" style="-fx-font-size: 13px; -fx-font-weight: bold;"
+                                                   GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                            <Label fx:id="lblSubtotal" text="\$0.00"
+                                                   style="-fx-font-size: 13px;"
+                                                   GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                                            <Label text="Discount:" style="-fx-font-size: 13px;"
+                                                   GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                            <TextField fx:id="txtDiscount" text="0.00"
+                                                       prefWidth="100" style="-fx-font-size: 13px;"
+                                                       GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                                            <Label text="Reward Pts:" style="-fx-font-size: 13px;"
+                                                   GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                            <Label fx:id="lblRewardInfo" text="Select a customer"
+                                                   style="-fx-font-size: 12px; -fx-text-fill: #666;"
+                                                   GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                                            <Label text="Total:" style="-fx-font-size: 15px; -fx-font-weight: bold;"
+                                                   GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                            <Label fx:id="lblTotal" text="\$0.00"
+                                                   style="-fx-font-size: 15px; -fx-font-weight: bold;"
+                                                   GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                                        </GridPane>
+
+                                        <Button text="Place Order" fx:id="btnPlaceOrder"
+                                                onAction="#onPlaceOrder"
+                                                prefHeight="42"
+                                                style="-fx-font-size: 14px; -fx-font-weight: bold;"
+                                                maxWidth="1.7976931348623157E308"/>
+
+                                        <Label fx:id="lblNewOrderStatus" text=""
+                                               style="-fx-text-fill: #444; -fx-font-size: 12px;"/>
+                                    </VBox>
+
+                                </items>
+                            </SplitPane>
+                        </VBox>
+                    </content>
+                </Tab>
+
+            </TabPane>
+        </VBox>
+    </children>
+</AnchorPane>
