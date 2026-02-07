@@ -2,10 +2,8 @@ package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.database.*;
 import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.models.*;
 import com.sait.workshop05.util.ErrorHandler;
-import com.sait.workshop05.models.Order;
-import com.sait.workshop05.models.OrderItem;
-import com.sait.workshop05.models.Product;
 import com.sait.workshop05.util.OrderStatus;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
