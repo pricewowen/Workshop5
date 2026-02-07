@@ -102,7 +102,7 @@ public class MainController {
 
     @FXML
     void onCustomersClick(ActionEvent event) {
-        // TODO: Phase 5
+        loadPage("customer-management-view.fxml");
     }
 
     @FXML
@@ -132,7 +132,7 @@ public class MainController {
 
     @FXML
     void onProductsClick(ActionEvent event) {
-        // TODO: Phase 4
+        loadPage("product-management-view.fxml");
     }
 
     @FXML

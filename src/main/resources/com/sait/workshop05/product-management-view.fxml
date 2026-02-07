@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.sait.workshop05.controllers.ProductManagementController"
+            prefWidth="1200" prefHeight="800"
+            style="-fx-background-color: white;">
+
+    <children>
+
+        <VBox spacing="12"
+              AnchorPane.topAnchor="0"
+              AnchorPane.bottomAnchor="0"
+              AnchorPane.leftAnchor="0"
+              AnchorPane.rightAnchor="0"
+              fillWidth="true">
+
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+
+            <HBox spacing="12" alignment="CENTER_LEFT">
+                <Label text="Product Management">
+                    <font>
+                        <Font size="24"/>
+                    </font>
+                </Label>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Label text="Search:" style="-fx-font-size: 13px;"/>
+                <TextField fx:id="txtSearch"
+                           promptText="Search name, description, price, tags"
+                           prefWidth="420"
+                           style="-fx-font-size: 13px;"/>
+
+                <Button text="Refresh"
+                        fx:id="btnRefresh"
+                        onAction="#onRefresh"
+                        prefWidth="100"
+                        style="-fx-font-size: 13px;"/>
+            </HBox>
+
+            <SplitPane dividerPositions="0.70" VBox.vgrow="ALWAYS" prefWidth="1.0" prefHeight="1.0">
+
+                <items>
+
+                    <VBox spacing="10" SplitPane.resizableWithParent="true" fillWidth="true">
+
+                        <TableView fx:id="tblProducts"
+                                   VBox.vgrow="ALWAYS"
+                                   prefWidth="1.0"
+                                   style="-fx-font-size: 13px;">
+                            <fixedCellSize>28</fixedCellSize>
+
+                            <columns>
+                                <TableColumn fx:id="colProductId" text="ID" prefWidth="70"/>
+                                <TableColumn fx:id="colProductName" text="Name" prefWidth="180"/>
+                                <TableColumn fx:id="colDescription" text="Description" prefWidth="280"/>
+                                <TableColumn fx:id="colBasePrice" text="Price" prefWidth="100"/>
+                                <TableColumn fx:id="colTags" text="Tags" prefWidth="220"/>
+                            </columns>
+                        </TableView>
+
+                        <Label fx:id="lblStatus"
+                               text=""
+                               style="-fx-text-fill: #444; -fx-font-size: 13px;"/>
+                    </VBox>
+
+                    <ScrollPane fitToWidth="true"
+                                fitToHeight="true"
+                                hbarPolicy="NEVER"
+                                vbarPolicy="AS_NEEDED"
+                                prefWidth="420"
+                                SplitPane.resizableWithParent="true">
+
+                        <content>
+                            <VBox spacing="14"
+                                  fillWidth="true"
+                                  prefWidth="1.0"
+                                  style="-fx-background-color: #fafafa; -fx-border-color: #e6e6e6;">
+
+                                <padding>
+                                    <Insets top="16" right="16" bottom="16" left="16"/>
+                                </padding>
+
+                                <Label text="Product Details"
+                                       style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+
+                                <GridPane hgap="12" vgap="12" prefWidth="1.0">
+                                    <columnConstraints>
+                                        <ColumnConstraints minWidth="130"/>
+                                        <ColumnConstraints hgrow="ALWAYS"/>
+                                    </columnConstraints>
+
+                                    <Label text="Product ID:" style="-fx-font-size: 13px;"
+                                           GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                    <TextField fx:id="txtProductId" editable="false" promptText="Auto"
+                                               style="-fx-font-size: 13px;"
+                                               GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                                    <Label text="Name*:" style="-fx-font-size: 13px;"
+                                           GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                    <TextField fx:id="txtProductName" promptText="Product name"
+                                               style="-fx-font-size: 13px;"
+                                               GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                                    <Label text="Description*:" style="-fx-font-size: 13px;"
+                                           GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                    <TextArea fx:id="txtDescription" promptText="Product description"
+                                              prefRowCount="3" wrapText="true"
+                                              style="-fx-font-size: 13px;"
+                                              GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                                    <Label text="Base Price*:" style="-fx-font-size: 13px;"
+                                           GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                    <TextField fx:id="txtBasePrice" promptText="0.00"
+                                               style="-fx-font-size: 13px;"
+                                               GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                                    <Label text="Tag:" style="-fx-font-size: 13px;"
+                                           GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                                    <ComboBox fx:id="cboTag" promptText="Select a tag"
+                                              style="-fx-font-size: 13px;"
+                                              GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                                </GridPane>
+
+                                <!-- Multi-tag selection area -->
+                                <Label text="Assigned Tags:" style="-fx-font-size: 13px; -fx-font-weight: bold;"/>
+
+                                <HBox spacing="8" alignment="CENTER_LEFT">
+                                    <Button text="Add Tag" fx:id="btnAddTag" onAction="#onAddTag"
+                                            style="-fx-font-size: 12px;" prefHeight="30"/>
+                                    <Button text="Remove Selected Tag" fx:id="btnRemoveTag" onAction="#onRemoveTag"
+                                            style="-fx-font-size: 12px;" prefHeight="30"/>
+                                </HBox>
+
+                                <ListView fx:id="lstAssignedTags" prefHeight="100"
+                                          style="-fx-font-size: 13px;"/>
+
+                                <Separator/>
+
+                                <HBox spacing="12">
+                                    <Button text="Create" fx:id="btnCreate" onAction="#onCreate"
+                                            prefHeight="38" style="-fx-font-size: 13px;"
+                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                                    <Button text="Update" fx:id="btnUpdate" onAction="#onUpdate"
+                                            prefHeight="38" style="-fx-font-size: 13px;"
+                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                                </HBox>
+
+                                <HBox spacing="12">
+                                    <Button text="Delete" fx:id="btnDelete" onAction="#onDelete"
+                                            prefHeight="38" style="-fx-font-size: 13px;"
+                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                                    <Button text="Clear" fx:id="btnClear" onAction="#onClear"
+                                            prefHeight="38" style="-fx-font-size: 13px;"
+                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                                </HBox>
+
+                                <Label text="* required" style="-fx-text-fill: #666; -fx-font-size: 12px;"/>
+                            </VBox>
+                        </content>
+                    </ScrollPane>
+
+                </items>
+            </SplitPane>
+        </VBox>
+    </children>
+</AnchorPane>

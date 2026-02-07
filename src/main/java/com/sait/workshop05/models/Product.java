@@ -11,6 +11,7 @@ public class Product {
     private final StringProperty productName;
     private final StringProperty productDescription;
     private final DoubleProperty productBasePrice;
+    private final StringProperty tagsDisplay;
 
     /**
      * Default constructor - initializes all properties
@@ -20,6 +21,7 @@ public class Product {
         this.productName = new SimpleStringProperty();
         this.productDescription = new SimpleStringProperty();
         this.productBasePrice = new SimpleDoubleProperty();
+        this.tagsDisplay = new SimpleStringProperty();
     }
 
     /**
@@ -82,6 +84,19 @@ public class Product {
         this.productBasePrice.set(productBasePrice);
     }
 
+    // Tags display property (computed, not stored in Product table)
+    public String getTagsDisplay() {
+        return tagsDisplay.get();
+    }
+
+    public StringProperty tagsDisplayProperty() {
+        return tagsDisplay;
+    }
+
+    public void setTagsDisplay(String tagsDisplay) {
+        this.tagsDisplay.set(tagsDisplay);
+    }
+
     // Convenience methods for UI (aliases for consistency)
     public String getDescription() {
         return getProductDescription();
@@ -97,26 +112,6 @@ public class Product {
 
     public void setPrice(double price) {
         setProductBasePrice(price);
-    }
-
-    // Placeholder methods for future implementation
-    private String category = "General";
-    private int stockQuantity = 100; // Default stock
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public int getStockQuantity() {
-        return stockQuantity;
-    }
-
-    public void setStockQuantity(int stockQuantity) {
-        this.stockQuantity = stockQuantity;
     }
 
     @Override

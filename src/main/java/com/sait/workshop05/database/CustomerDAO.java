@@ -340,6 +340,88 @@ public class CustomerDAO {
     }
 
     /**
+     * Get all reward tier options for ComboBox population.
+     */
+    public List<RewardTierOption> getRewardTierOptions() throws SQLException {
+        String sql = "SELECT rewardTierId, rewardTierName FROM RewardTier ORDER BY rewardTierId ASC";
+        List<RewardTierOption> options = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                options.add(new RewardTierOption(
+                        rs.getInt("rewardTierId"),
+                        rs.getString("rewardTierName")
+                ));
+            }
+        }
+        return options;
+    }
+
+    /**
+     * Get all user options for ComboBox population.
+     */
+    public List<UserOption> getUserOptions() throws SQLException {
+        String sql = "SELECT userId, userUsername FROM `User` ORDER BY userId DESC";
+        List<UserOption> options = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                options.add(new UserOption(rs.getInt("userId"), rs.getString("userUsername")));
+            }
+        }
+        return options;
+    }
+
+    /**
+     * Get all address options for ComboBox population.
+     */
+    public List<AddressOption> getAddressOptions() throws SQLException {
+        String sql =
+                "SELECT addressId, addressLine1, addressCity, addressProvince, addressPostalCode " +
+                "FROM Address ORDER BY addressId DESC";
+
+        List<AddressOption> options = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                options.add(new AddressOption(
+                        rs.getInt("addressId"),
+                        rs.getString("addressLine1"),
+                        rs.getString("addressCity"),
+                        rs.getString("addressProvince"),
+                        rs.getString("addressPostalCode")
+                ));
+            }
+        }
+        return options;
+    }
+
+    /**
+     * Update only the reward balance for a customer.
+     */
+    public boolean updateRewardBalance(int customerId, int newBalance) throws SQLException {
+        String sql = "UPDATE Customer SET customerRewardBalance = ? WHERE customerId = ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, newBalance);
+            ps.setInt(2, customerId);
+
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    /**
      * Helper method to convert empty strings to null
      */
     private static String emptyToNull(String s) {

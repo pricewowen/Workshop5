@@ -13,13 +13,17 @@ import java.util.List;
 public class ProductDAO {
 
     /**
-     * Retrieve all products from the database
+     * Retrieve all products from the database with tags displayed as comma-separated string.
      */
     public List<Product> getAllProducts() throws SQLException {
         String sql =
-                "SELECT productId, productName, productDescription, productBasePrice " +
-                "FROM Product " +
-                "ORDER BY productName ASC";
+                "SELECT p.productId, p.productName, p.productDescription, p.productBasePrice, " +
+                "       GROUP_CONCAT(t.tagName ORDER BY t.tagName SEPARATOR ', ') AS tagsDisplay " +
+                "FROM Product p " +
+                "LEFT JOIN ProductTag pt ON p.productId = pt.productId " +
+                "LEFT JOIN Tag t ON pt.tagId = t.tagId " +
+                "GROUP BY p.productId, p.productName, p.productDescription, p.productBasePrice " +
+                "ORDER BY p.productName ASC";
 
         List<Product> products = new ArrayList<>();
 
@@ -33,6 +37,7 @@ public class ProductDAO {
                 p.setProductName(rs.getString("productName"));
                 p.setProductDescription(rs.getString("productDescription"));
                 p.setProductBasePrice(rs.getDouble("productBasePrice"));
+                p.setTagsDisplay(rs.getString("tagsDisplay") != null ? rs.getString("tagsDisplay") : "");
                 products.add(p);
             }
         }
@@ -215,23 +220,106 @@ public class ProductDAO {
     }
 
     /**
-     * Get all available categories (tags)
+     * Get all available tag names from the Tag table (for ComboBox / CheckComboBox).
      */
-    public List<String> getAllCategories() throws SQLException {
-        String sql = "SELECT DISTINCT tagName FROM Tag ORDER BY tagName ASC";
+    public List<String> getTagOptions() throws SQLException {
+        String sql = "SELECT tagName FROM Tag ORDER BY tagName ASC";
 
-        List<String> categories = new ArrayList<>();
+        List<String> tags = new ArrayList<>();
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                categories.add(rs.getString("tagName"));
+                tags.add(rs.getString("tagName"));
             }
         }
 
-        return categories;
+        return tags;
+    }
+
+    /**
+     * Get tags currently assigned to a specific product.
+     */
+    public List<String> getTagsForProduct(int productId) throws SQLException {
+        String sql =
+                "SELECT t.tagName " +
+                "FROM ProductTag pt " +
+                "JOIN Tag t ON pt.tagId = t.tagId " +
+                "WHERE pt.productId = ? " +
+                "ORDER BY t.tagName ASC";
+
+        List<String> tags = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    tags.add(rs.getString("tagName"));
+                }
+            }
+        }
+
+        return tags;
+    }
+
+    /**
+     * Set the tags for a product (delete old, insert new — transactional).
+     * @param productId the product ID
+     * @param tagNames list of tag names to assign
+     */
+    public void setTagsForProduct(int productId, List<String> tagNames) throws SQLException {
+        Connection conn = null;
+
+        try {
+            conn = DBUtil.getConnection();
+            conn.setAutoCommit(false);
+
+            // Delete existing tags for this product
+            String deleteSql = "DELETE FROM ProductTag WHERE productId = ?";
+            try (PreparedStatement ps = conn.prepareStatement(deleteSql)) {
+                ps.setInt(1, productId);
+                ps.executeUpdate();
+            }
+
+            // Insert new tags
+            if (tagNames != null && !tagNames.isEmpty()) {
+                String insertSql =
+                        "INSERT INTO ProductTag (productId, tagId) " +
+                        "SELECT ?, tagId FROM Tag WHERE tagName = ?";
+
+                try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+                    for (String tagName : tagNames) {
+                        ps.setInt(1, productId);
+                        ps.setString(2, tagName);
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                }
+            }
+
+            conn.commit();
+        } catch (SQLException e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+            }
+            throw e;
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); } catch (SQLException ignored) {}
+                try { conn.close(); } catch (SQLException ignored) {}
+            }
+        }
+    }
+
+    /**
+     * Get all available categories (tags) — alias for getTagOptions()
+     */
+    public List<String> getAllCategories() throws SQLException {
+        return getTagOptions();
     }
 }
-
