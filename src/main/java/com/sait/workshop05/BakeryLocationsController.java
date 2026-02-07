@@ -107,14 +107,14 @@ public class BakeryLocationsController {
     @FXML
     void onCreate(ActionEvent event) {
         // validation variables
-        String nameError = Validator.isValidName(txtBakeryName.getText());
+        String nameError = Validator.isValidName(txtBakeryName.getText(), "Name");
         String emailError = Validator.isValidEmail(txtBakeryEmail.getText());
         String phoneError = Validator.isValidPhoneNumber(txtBakeryPhone.getText());
         String address1Error = Validator.isValidAddress(txtAddressLine1.getText(), 1);
         String address2Error = Validator.isValidAddress(txtAddressLine2.getText(), 2);
-        String cityError;
-        String provinceError;
-        String postalCodeError;
+        String cityError = Validator.isValidName(txtAddressCity.getText(), "City");
+        String provinceError = Validator.isValidProvince(cboAddressProvince.getValue().getCode());
+        String postalCodeError = Validator.isValidPostalCode(txtAddressPostalCode.getText());
 
         // display error message for name validation
         if (nameError != null) {
@@ -140,8 +140,27 @@ public class BakeryLocationsController {
             return;
         }
 
+        // display error messages for second address line
         if (address2Error != null) {
             showWarning("Validation Error", address2Error);
+            return;
+        }
+
+        // display error message for city error
+        if (cityError != null) {
+            showWarning("Validation Error", cityError);
+            return;
+        }
+
+        // display error message for province error
+        if (provinceError != null) {
+            showWarning("Validation Error", provinceError);
+            return;
+        }
+
+        // display error message for postal code
+        if (postalCodeError != null) {
+            showWarning("Validation Error", postalCodeError);
             return;
         }
     }
@@ -165,6 +184,7 @@ public class BakeryLocationsController {
     void initialize() {
         setComboBox();
         phoneNumberFormatter();
+        postalCodeFormatter();
     }
 
     private void setComboBox() {
@@ -219,6 +239,9 @@ public class BakeryLocationsController {
         alert.showAndWait();
     }
 
+    /**
+     * Formats the phone number into (XXX) XXX-XXXX format dynamically
+     */
     private void phoneNumberFormatter() {
         txtBakeryPhone.textProperty().addListener((obs, oldText, newText) -> {
             // replace all non-digit characters with nothing
@@ -242,22 +265,44 @@ public class BakeryLocationsController {
 
             if (digit >= 4) {
                 phoneFormatter.append(") ");
-            }
-
-            if (digit >= 4) {
                 phoneFormatter.append(digits.substring(3, Math.min(6, digit)));
             }
 
             if (digit >= 7) {
                 phoneFormatter.append("-");
-            }
-
-            if (digit >= 7) {
                 phoneFormatter.append(digits.substring(6));
             }
 
             if (!phoneFormatter.toString().equals(newText)) {
                 txtBakeryPhone.setText(phoneFormatter.toString());
+            }
+        });
+    }
+
+    /**
+     * Formats the postal code into "A1A 1A1" format dynamically
+     */
+    private void postalCodeFormatter() {
+        txtAddressPostalCode.textProperty().addListener((obs, oldText, newText) -> {
+            if (newText.equals(null)) {
+                return;
+            }
+
+            String text = newText.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
+
+            StringBuilder newPostal = new StringBuilder();
+
+            for (int i = 0; i < text.length() && i < 6; i++) {
+                // add a space after three characters
+                if (i == 3) {
+                    newPostal.append(" ");
+                }
+                // add normal characters
+                newPostal.append(text.charAt(i));
+            }
+
+            if (!newPostal.equals(newText)) {
+                txtAddressPostalCode.setText(newPostal.toString());
             }
         });
     }

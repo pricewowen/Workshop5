@@ -40,17 +40,18 @@ public class Validator {
     /**
      * Validates name with minimal special characters and spaces
      * @param name String value to validate
+     * @param input String value of the input field name
      * @return error message if invalid. Null if valid
      */
-    public static String isValidName(String name) {
+    public static String isValidName(String name, String input) {
         String nameRegex = "^[a-zA-Z0-9' -]+$";
 
         if (name.isEmpty()) {
-            return "Name is required";
+            return input + " is required";
         }
 
         if (!name.matches(nameRegex)) {
-            return "Name format is invalid. No special Characters allowed";
+            return input + " format is invalid. No special Characters allowed";
         }
         return null;
     }
@@ -74,6 +75,42 @@ public class Validator {
 
         if (!address.matches(addressRegex)) {
             return "Address" + num + " format is invalid";
+        }
+        return null;
+    }
+
+    /**
+     * Validates the province code
+     * @param province String value of the province code
+     * @return error message if invalid. Null if valid
+     */
+    public static String isValidProvince(String province) {
+        String provinceRegex = "^[A-Z]{2}$";
+
+        if (province.isEmpty()) {
+            return "Province is required";
+        }
+
+        if (!province.matches(provinceRegex)) {
+            return "Province format is invalid. Please use the drop down provided";
+        }
+        return null;
+    }
+
+    /**
+     * Validates the postal code
+     * @param postal String value of the postal code
+     * @return error message if invalid. Null if valid
+     */
+    public static String isValidPostalCode(String postal) {
+        String postalRegex = "^[A-Z]\\d[A-Z] \\d[A-Z]\\d$";
+
+        if (postal.isEmpty()) {
+            return "Postal code is required";
+        }
+
+        if (!postal.matches(postalRegex)) {
+            return "Postal code format is invalid. Please make sure it is A1A 1A1";
         }
         return null;
     }
