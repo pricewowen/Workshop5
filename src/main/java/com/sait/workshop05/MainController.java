@@ -102,7 +102,7 @@ public class MainController {
 
     @FXML
     void onRewardsClick(ActionEvent event) {
-        // TODO
+        loadPage("reward-view.fxml");
     }
 
     /**

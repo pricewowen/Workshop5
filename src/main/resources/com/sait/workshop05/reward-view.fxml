@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.sait.workshop05.RewardController"
+            prefHeight="700" prefWidth="1200">
+
+    <top>
+        <VBox spacing="10" style="-fx-background-color: #f0f0f0; -fx-padding: 15;">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Reward Management" style="-fx-font-weight: bold; -fx-font-size: 24;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Search:"/>
+                <TextField fx:id="txtSearch" prefWidth="250" promptText="Search rewards..."/>
+            </HBox>
+            <Label fx:id="lblStatus" text="0 reward(s) loaded"/>
+        </VBox>
+    </top>
+
+    <center>
+        <TableView fx:id="tblRewards" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colRewardId" text="ID" prefWidth="60"/>
+                <TableColumn fx:id="colCustomer" text="Customer" prefWidth="200"/>
+                <TableColumn fx:id="colOrder" text="Order" prefWidth="200"/>
+                <TableColumn fx:id="colPoints" text="Points" prefWidth="80"/>
+                <TableColumn fx:id="colTransactionDate" text="Transaction Date" prefWidth="180"/>
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
+        </TableView>
+    </center>
+
+    <bottom>
+        <VBox spacing="15" style="-fx-padding: 15;">
+            <GridPane hgap="10" vgap="10">
+                <columnConstraints>
+                    <ColumnConstraints halignment="RIGHT" hgrow="NEVER" minWidth="120"/>
+                    <ColumnConstraints hgrow="ALWAYS" minWidth="200"/>
+                    <ColumnConstraints halignment="RIGHT" hgrow="NEVER" minWidth="120"/>
+                    <ColumnConstraints hgrow="ALWAYS" minWidth="200"/>
+                </columnConstraints>
+
+                <!-- Row 1 -->
+                <Label text="Reward ID:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <TextField fx:id="txtRewardId" editable="false" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                <Label text="Customer:" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+                <ComboBox fx:id="cboCustomer" GridPane.rowIndex="0" GridPane.columnIndex="3"/>
+
+                <!-- Row 2 -->
+                <Label text="Order:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <ComboBox fx:id="cboOrder" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                <Label text="Points Earned:" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+                <TextField fx:id="txtPoints" GridPane.rowIndex="1" GridPane.columnIndex="3"/>
+
+                <!-- Row 3 -->
+                <Label text="Transaction Date:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                <HBox spacing="5" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                    <DatePicker fx:id="dtpTransactionDate" prefWidth="150"/>
+                    <TextField fx:id="txtTransactionTime" promptText="HH:MM" prefWidth="60"/>
+                </HBox>
+            </GridPane>
+
+            <HBox spacing="10" alignment="CENTER">
+                <Button text="Refresh" fx:id="btnRefresh" onAction="#onRefresh"/>
+                <Button text="Clear" onAction="#onClear" style="-fx-background-color: #ffcc00;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="Create" onAction="#onCreate" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                <Button text="Update" onAction="#onUpdate" style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+                <Button text="Delete" onAction="#onDelete" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+            </HBox>
+        </VBox>
+    </bottom>
+
+    <padding>
+        <Insets top="5" right="10" bottom="10" left="10"/>
+    </padding>
+</BorderPane>
