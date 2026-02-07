@@ -1,4 +1,4 @@
-package com.sait.workshop05;
+package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.database.AddressOption;
 import com.sait.workshop05.database.EmployeeDAO;

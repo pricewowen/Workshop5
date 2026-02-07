@@ -82,6 +82,43 @@ public class Product {
         this.productBasePrice.set(productBasePrice);
     }
 
+    // Convenience methods for UI (aliases for consistency)
+    public String getDescription() {
+        return getProductDescription();
+    }
+
+    public void setDescription(String description) {
+        setProductDescription(description);
+    }
+
+    public double getPrice() {
+        return getProductBasePrice();
+    }
+
+    public void setPrice(double price) {
+        setProductBasePrice(price);
+    }
+
+    // Placeholder methods for future implementation
+    private String category = "General";
+    private int stockQuantity = 100; // Default stock
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public int getStockQuantity() {
+        return stockQuantity;
+    }
+
+    public void setStockQuantity(int stockQuantity) {
+        this.stockQuantity = stockQuantity;
+    }
+
     @Override
     public String toString() {
         return "Product{" +

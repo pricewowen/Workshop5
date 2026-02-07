@@ -5,7 +5,8 @@ import com.sait.workshop05.models.User;
 import java.time.LocalDateTime;
 
 /**
- * Singleton class to manage user session throughout the application
+ * Singleton class to manage user session throughout the application.
+ * Supports Admin and Employee roles only.
  */
 public class UserSession {
     private static UserSession instance;
@@ -80,18 +81,16 @@ public class UserSession {
     }
 
     /**
-     * Check if the current user is an employee or admin
+     * Check if the current user is an admin
      */
-    public boolean isEmployeeOrAdmin() {
-        return isAuthenticated && (userRole != null &&
-               (userRole.equalsIgnoreCase("EMPLOYEE") || userRole.equalsIgnoreCase("ADMIN")));
+    public boolean isAdmin() {
+        return isAuthenticated && userRole != null && userRole.equalsIgnoreCase("ADMIN");
     }
 
     /**
-     * Check if the current user is a customer
+     * Check if the current user is an employee
      */
-    public boolean isCustomer() {
-        return isAuthenticated && (userRole != null && userRole.equalsIgnoreCase("CUSTOMER"));
+    public boolean isEmployee() {
+        return isAuthenticated && userRole != null && userRole.equalsIgnoreCase("EMPLOYEE");
     }
 }
-

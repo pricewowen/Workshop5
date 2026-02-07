@@ -15,7 +15,7 @@ public class AuthDAO {
      * Authenticate a user with username and password
      * @param username The username
      * @param password The plain text password
-     * @param role The role to authenticate as (EMPLOYEE, ADMIN, or CUSTOMER)
+     * @param role The role to authenticate as (EMPLOYEE or ADMIN)
      * @return User object if authentication successful, null otherwise
      */
     public static User authenticate(String username, String password, String role) {
@@ -127,7 +127,7 @@ public class AuthDAO {
      * @param username The username
      * @param email The email address
      * @param password The plain text password
-     * @param role The role (EMPLOYEE, ADMIN, or CUSTOMER)
+     * @param role The role (EMPLOYEE or ADMIN)
      * @return User object if registration successful, null otherwise
      */
     public static User registerUser(String username, String email, String password, String role) {

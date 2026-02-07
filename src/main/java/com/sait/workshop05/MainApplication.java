@@ -22,10 +22,10 @@ public class MainApplication extends Application {
             System.exit(1);
         }
 
-        // Load role selection view first (Phase 1: Authentication)
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("role-selection-view.fxml"));
+        // Load login view (staff-only: Admin / Employee)
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-        stage.setTitle("Peelin' Good - Select Role");
+        stage.setTitle("Peelin' Good - Login");
         stage.setScene(scene);
 
         stage.setWidth(800);

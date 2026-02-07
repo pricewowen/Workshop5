@@ -1,4 +1,4 @@
-package com.sait.workshop05;
+package com.sait.workshop05.controllers;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;

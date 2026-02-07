@@ -1,13 +1,17 @@
-package com.sait.workshop05;
+package com.sait.workshop05.controllers;
 
+import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.session.UserSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
@@ -48,11 +52,42 @@ public class MainController {
     private Button btnRewards;
 
     @FXML
+    private Button btnLogout;
+
+    @FXML
     private TextField srcSearchBar;
 
     @FXML
     void initialize() {
+        applyRoleBasedVisibility();
         showDashboard();
+    }
+
+    /**
+     * Hide sidebar buttons based on the current user's role.
+     * Admin: sees everything
+     * Employee: no Employees, Locations, or Analytics
+     */
+    private void applyRoleBasedVisibility() {
+        UserSession session = UserSession.getInstance();
+
+        if (session.isEmployee()) {
+            // Hide admin-only buttons
+            hideButton(btnEmployees);
+            hideButton(btnLocations);
+            hideButton(btnAnalytics);
+        }
+        // Admin sees everything — no hiding needed
+    }
+
+    /**
+     * Hide a sidebar button and remove it from layout
+     */
+    private void hideButton(Button button) {
+        if (button != null) {
+            button.setVisible(false);
+            button.setManaged(false);
+        }
     }
 
     @FXML
@@ -62,12 +97,12 @@ public class MainController {
 
     @FXML
     void onAnalyticsClick(ActionEvent event) {
-        // TODO
+        // TODO: Phase 9
     }
 
     @FXML
     void onCustomersClick(ActionEvent event) {
-        // TODO
+        // TODO: Phase 5
     }
 
     @FXML
@@ -82,27 +117,56 @@ public class MainController {
 
     @FXML
     void onLocationsClick(ActionEvent event) {
-        // TODO
+        // TODO: Phase 7
     }
 
     @FXML
     void onMessagesClick(ActionEvent event) {
-        // TODO
+        // TODO: Phase 10
     }
 
     @FXML
     void onOrdersClick(ActionEvent event) {
-        // TODO
+        // TODO: Phase 6
     }
 
     @FXML
     void onProductsClick(ActionEvent event) {
-        // TODO
+        // TODO: Phase 4
     }
 
     @FXML
     void onRewardsClick(ActionEvent event) {
-        // TODO
+        // TODO: Phase 8
+    }
+
+    /**
+     * Handle logout — clear session and return to login view
+     */
+    @FXML
+    void onLogoutClick(ActionEvent event) {
+        UserSession session = UserSession.getInstance();
+        String username = session.getCurrentUser() != null ? session.getCurrentUser().getUsername() : "unknown";
+
+        LogData.logAction("LOGOUT", "User logged out: " + username);
+        session.clearSession();
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/sait/workshop05/login-view.fxml"));
+            Scene scene = new Scene(loader.load());
+
+            Stage stage = (Stage) btnLogout.getScene().getWindow();
+            stage.setScene(scene);
+            stage.setTitle("Peelin' Good - Login");
+            stage.setWidth(800);
+            stage.setHeight(600);
+            stage.setMinWidth(800);
+            stage.setMinHeight(600);
+            stage.centerOnScreen();
+        } catch (IOException e) {
+            showError("Logout Error", "Could not return to login screen", e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -149,12 +213,11 @@ public class MainController {
         URL url = getClass().getResource("/com/sait/workshop05/" + view);
         if (url != null) return url;
 
-        // Your current project screenshot shows:
-        // src/main/resources/com.sait.workshop05/*.fxml  (dot folder)
+        // Fallback: dot folder structure
         url = getClass().getResource("/com.sait.workshop05/" + view);
         if (url != null) return url;
 
-        // Fallback: relative to this class package (rarely correct unless you structure resources exactly that way)
+        // Fallback: relative to this class package
         return getClass().getResource(view);
     }
 

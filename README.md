@@ -1,52 +1,49 @@
-# Workshop 5 — Java Desktop Application
+# Workshop 5 — Bakery Management System
 
 ## Overview
-This repository contains the **Workshop 5 Java Desktop Application** for a bakery e-commerce system called **Peelin' Good Bakery**. The application connects to a local MySQL database and provides a desktop-based interface for managing and interacting with project data.
+**Peelin' Good Bakery** is a staff-facing bakery business management desktop application built with Java, JavaFX, and MySQL. It allows admins and employees to manage products, customers, orders, employees, locations, rewards, messaging, and view analytics — all from a single dashboard.
+
+**This is a staff-only application.** There is no customer login. Customers are data records managed by staff through the app.
 
 ## Tech Stack
 - Java Development Kit (JDK) 23
 - JavaFX 17.0.6 (UI framework)
 - MySQL (database)
 - XAMPP (local server environment)
-- IntelliJ IDEA (development environment)
+- BCrypt (password hashing)
+- Maven (build tool)
 
 ## Prerequisites
-Before running the application, ensure you have the following installed:
-
 - JDK 23
 - JavaFX 17.0.6
-- XAMPP
-- IntelliJ IDEA (recommended)
-- Git (for cloning the repository)
+- XAMPP (or any MySQL server)
+- IntelliJ IDEA (recommended) or any Java IDE
+- Git
 
 ## Project Setup
-1. Clone the repository.
-2. Open the project in IntelliJ IDEA.
-3. Configure your database (see **XAMPP Instructions** below).
-4. Create your local environment file (`.env.local`) and set your database credentials.
-5. Build and run the application.
 
-## XAMPP Instructions
-If you already have MySQL running on your machine, press **Windows + R** and type `services.msc`.  
-Find **MySQL80** and stop the service.
+### 1. Clone and Open
+1. Clone the repository
+2. Open the project in your IDE
 
-1. Open XAMPP and start **Apache** and **MySQL**.
-2. Once both are running, click **Admin** for MySQL to open phpMyAdmin in your browser.
-3. Go to the **Import** tab.
-4. Select the `BakeryEcommerceFull` file from the main branch of the GitHub repository.
-5. Import the database.
+### 2. Database Setup
+1. Open XAMPP and start **Apache** and **MySQL**
+   - If MySQL 80 is already running: press **Win + R**, type `services.msc`, stop **MySQL80** first
+2. Click **Admin** for MySQL to open phpMyAdmin
+3. Go to the **Import** tab
+4. Select `BakeryEcommerceFull.sql` from the project root
+5. Import the database
 
-### Database User Setup
-Create a MySQL user with the following (recommended for consistency):
-
+### 3. Database User Setup
+Create a MySQL user in phpMyAdmin:
 - **Username:** `baker`
 - **Host:** `Local`
 - **Password:** `Password1`
 
-You may use different credentials if preferred, but be sure to update `.env.local` accordingly.
+Grant all privileges on the `BakeryEcommerce` database.
 
-## Environment Configuration (.env.local)
-Create a file named `.env.local` in the project root directory and add:
+### 4. Environment Configuration
+Create a file named `.env.local` in the project root:
 
 ```properties
 DB_URL=jdbc:mysql://localhost:3306/bakeryecommerce?useSSL=false&serverTimezone=UTC
@@ -54,82 +51,96 @@ DB_USER=baker
 DB_PASSWORD=Password1
 ```
 
-## Quick Start
+### 5. Generate Test Staff Accounts
+The database needs staff user accounts with BCrypt-hashed passwords to log in.
 
-There are two ways to get started with the application:
+1. Open `src/main/java/com/sait/workshop05/database/GenerateTestUserSQL.java`
+2. Run it (right-click -> Run 'GenerateTestUserSQL.main()')
+3. Copy the SQL output from the console
+4. Paste and execute it in phpMyAdmin (select the `BakeryEcommerce` database first)
 
-### Method 1: Self-Registration (Recommended)
+### 6. Run the Application
+- In IntelliJ: right-click `MainApplication.java` -> Run
+- Or via Maven: `mvn clean javafx:run`
 
-This method requires no SQL scripts or pre-generated users.
+---
 
-1. **Set up the database**
-   - Follow the XAMPP Instructions above to create the BakeryEcommerce database
-   - Create the `.env.local` file with your database credentials
+## Test Credentials
 
-2. **Run the application**
-   - In IntelliJ IDEA, right-click on `MainApplication.java`
-   - Select "Run 'MainApplication.main()'"
-   - Alternatively, use Maven: `mvn clean javafx:run`
+| Role | Username | Password |
+|------|----------|----------|
+| **Admin** | `admin` | `admin123` |
+| **Employee** | `employee1` | `emp123` |
+| **Employee** | `manager` | `manager123` |
 
-3. **Create your account**
-   - Click "Continue as Employee" or "Continue as Customer"
-   - Click "Create New Account"
-   - Fill in the registration form with your details
-   - Click "Create Account"
-   - You will be automatically logged in
+> **Note:** You must run `GenerateTestUserSQL.java` and execute the output SQL before these credentials will work. Each run generates different BCrypt hashes (this is normal).
 
-### Method 2: Pre-Generated Test Users
+---
 
-This method creates test accounts with predefined credentials.
+## User Roles
 
-1. **Generate test user SQL**
-   - Open `src/main/java/com/sait/workshop05/database/GenerateTestUserSQL.java`
-   - Right-click in the editor and select "Run 'GenerateTestUserSQL.main()'"
-   - Copy the SQL output from the console
+### Admin
+- Full access to all features
+- CRUD employees, products, customers, locations, rewards
+- View analytics and charts
+- Manage orders
+- Internal messaging
 
-2. **Run the SQL in your database**
-   - Open phpMyAdmin or your MySQL client
-   - Select the BakeryEcommerce database
-   - Paste and execute the SQL commands
+### Employee
+- CRUD products and customers
+- Manage customer loyalty points
+- View customer order history
+- Manage orders (POS-style new orders, update status)
+- Internal messaging
+- **Cannot access:** Employee management, Locations, Analytics
 
-3. **Run the application and login**
-   - Run `MainApplication.java`
-   - Use the test credentials:
-     - Admin: username `admin`, password `admin123`
-     - Employee: username `employee1`, password `emp123`
-     - Customer: username `customer1`, password `cust123`
+---
 
-### Verification
+## Application Flow
 
-After logging in, you should see:
-- Employee/Admin users: Management dashboard with navigation sidebar
-- Customer users: Placeholder message (customer interface coming in Phase 3)
+```
+Login Screen (Role dropdown: Admin / Employee)
+    |
+    v
+Main Dashboard (sidebar navigation)
+    |-- Dashboard        (overview + recent orders)
+    |-- Orders           (POS-style order management)
+    |-- Products         (CRUD)
+    |-- Customers        (CRUD + order history + loyalty points)
+    |-- Employees        (CRUD - Admin only)
+    |-- Locations        (CRUD bakery branches - Admin only)
+    |-- Rewards          (CRUD loyalty tiers)
+    |-- Messages         (internal staff chat)
+    |-- Analytics        (sales charts - Admin only)
+    |-- Activity Log     (all DB changes + exceptions)
+    |-- Logout
+```
 
-All authentication attempts are logged to `Log.txt` in the project root directory.
+---
 
 ## Troubleshooting
 
 ### Database Connection Failed
 - Verify MySQL is running (check XAMPP control panel)
-- Ensure `.env.local` file exists in project root with correct credentials
-- Check that the BakeryEcommerce database has been created
-- Verify the database URL, username, and password are correct
+- Ensure `.env.local` exists in the project root with correct credentials
+- Check that the `BakeryEcommerce` database has been imported
+- Verify the database URL, username, and password
 
 ### Invalid Username or Password
-- If using Method 1: Ensure you completed registration successfully
-- If using Method 2: Verify you ran the generated SQL to insert test users
-- Check you selected the correct role (Employee vs Customer) before logging in
+- Verify you ran `GenerateTestUserSQL.java` and executed the output SQL
+- Make sure you selected the correct role in the dropdown (Admin vs Employee)
 - Query the database to verify users exist: `SELECT * FROM User;`
 
 ### BCrypt Dependency Not Found
-- Run `mvn clean install` to download all dependencies
-- Reload the Maven project in IntelliJ IDEA
-- Check that `jbcrypt` is listed in `pom.xml` dependencies
+- Run `mvn clean install` to download dependencies
+- Reload the Maven project in your IDE
+- Check that `jbcrypt` is in `pom.xml`
 
 ### Module Errors
 - Ensure `module-info.java` includes `requires jbcrypt;`
-- Reload the project structure in IntelliJ IDEA
 - Try "Invalidate Caches / Restart" in IntelliJ
 
+---
 
-
+## Activity Logging
+All database changes and caught exceptions are logged to `Log.txt` in the project root. Each entry is a single line with a timestamp, as required by the project proposal.

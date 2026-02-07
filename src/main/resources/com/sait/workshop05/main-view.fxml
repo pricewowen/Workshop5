@@ -6,12 +6,13 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.sait.workshop05.MainController"
+            fx:controller="com.sait.workshop05.controllers.MainController"
             style="-fx-background-color: white;">
 
    <padding>
@@ -159,6 +160,25 @@
                </children>
                <padding>
                   <Insets bottom="15.0" top="15.0"/>
+               </padding>
+            </VBox>
+
+            <!-- Spacer to push logout to bottom -->
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <!-- Logout Section -->
+            <VBox prefWidth="191.0">
+               <children>
+                  <Button fx:id="btnLogout" mnemonicParsing="false" onAction="#onLogoutClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Logout"
+                          style="-fx-text-fill: #8B0000;">
+                     <VBox.margin>
+                        <Insets bottom="10.0"/>
+                     </VBox.margin>
+                  </Button>
+               </children>
+               <padding>
+                  <Insets bottom="15.0" top="5.0"/>
                </padding>
             </VBox>
 

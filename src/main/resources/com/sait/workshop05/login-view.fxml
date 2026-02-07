@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.collections.FXCollections?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
+<?import java.lang.String?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.sait.workshop05.LoginController"
+            fx:controller="com.sait.workshop05.controllers.LoginController"
             prefHeight="600.0" prefWidth="800.0"
             style="-fx-background-color: #f5f5f5;">
 
@@ -27,14 +29,30 @@
 
                 <!-- Header -->
                 <VBox alignment="CENTER" spacing="10">
-                    <Label text="🥐 Peelin' Good Bakery" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #C19A6B;"/>
-                    <Label fx:id="roleLabel" text="Login" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #333333;"/>
+                    <Label text="Peelin' Good Bakery" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #C19A6B;"/>
+                    <Label text="Management System" style="-fx-font-size: 16px; -fx-text-fill: #666666;"/>
                 </VBox>
 
                 <Separator prefWidth="320"/>
 
                 <!-- Login Form -->
                 <VBox spacing="15" prefWidth="320">
+                    <!-- Role Selection -->
+                    <VBox spacing="5">
+                        <Label text="Role" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #333333;"/>
+                        <ComboBox fx:id="roleComboBox"
+                                  promptText="Select your role"
+                                  style="-fx-font-size: 14px; -fx-background-radius: 5;"
+                                  prefWidth="320" prefHeight="40">
+                            <items>
+                                <FXCollections fx:factory="observableArrayList">
+                                    <String fx:value="ADMIN"/>
+                                    <String fx:value="EMPLOYEE"/>
+                                </FXCollections>
+                            </items>
+                        </ComboBox>
+                    </VBox>
+
                     <!-- Username Field -->
                     <VBox spacing="5">
                         <Label text="Username" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #333333;"/>
@@ -69,32 +87,6 @@
                             <Insets top="10"/>
                         </VBox.margin>
                     </Button>
-
-                    <!-- Divider -->
-                    <HBox alignment="CENTER" spacing="10">
-                        <VBox.margin>
-                            <Insets top="10" bottom="10"/>
-                        </VBox.margin>
-                        <Separator prefWidth="140" HBox.hgrow="ALWAYS"/>
-                        <Label text="OR" style="-fx-font-size: 12px; -fx-text-fill: #999999;"/>
-                        <Separator prefWidth="140" HBox.hgrow="ALWAYS"/>
-                    </HBox>
-
-                    <!-- Register Button -->
-                    <Button fx:id="registerButton" text="Create New Account"
-                            onAction="#handleRegister"
-                            style="-fx-background-color: #8B7355; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;"
-                            prefWidth="320" prefHeight="40"/>
-
-                    <!-- Back Button -->
-                    <Button fx:id="backButton" text="← Back to Role Selection"
-                            onAction="#handleBack"
-                            style="-fx-background-color: transparent; -fx-text-fill: #666666; -fx-font-size: 13px; -fx-cursor: hand; -fx-underline: true;"
-                            prefWidth="320" prefHeight="30">
-                        <VBox.margin>
-                            <Insets top="5"/>
-                        </VBox.margin>
-                    </Button>
                 </VBox>
 
                 <!-- Help Text -->
@@ -102,8 +94,7 @@
                     <VBox.margin>
                         <Insets top="10"/>
                     </VBox.margin>
-                    <Label text="Need help logging in?" style="-fx-font-size: 12px; -fx-text-fill: #999999;"/>
-                    <Label text="Contact support at support@peelingood.com" style="-fx-font-size: 11px; -fx-text-fill: #999999;"/>
+                    <Label text="Contact your administrator for login credentials" style="-fx-font-size: 12px; -fx-text-fill: #999999;"/>
                 </VBox>
             </VBox>
         </VBox>
@@ -111,8 +102,7 @@
 
     <bottom>
         <HBox alignment="CENTER" style="-fx-padding: 20;">
-            <Label text="© 2026 Peelin' Good Bakery - Workshop 5" style="-fx-font-size: 12px; -fx-text-fill: #999999;"/>
+            <Label text="2026 Peelin' Good Bakery - Workshop 5" style="-fx-font-size: 12px; -fx-text-fill: #999999;"/>
         </HBox>
     </bottom>
 </BorderPane>
-
