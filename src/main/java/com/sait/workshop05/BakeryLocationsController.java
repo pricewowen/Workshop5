@@ -182,11 +182,22 @@ public class BakeryLocationsController {
 
     @FXML
     void initialize() {
+        displayBakeries();
         setComboBox();
         phoneNumberFormatter();
         postalCodeFormatter();
     }
 
+    /**
+     * Displays all bakeries
+     */
+    private void displayBakeries() {
+
+    }
+
+    /**
+     * Sets the values of the combo box
+     */
     private void setComboBox() {
         // adds all provinces to combo box
         ObservableList<Province> provinces = FXCollections.observableArrayList(
