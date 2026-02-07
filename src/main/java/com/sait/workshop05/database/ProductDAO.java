@@ -66,12 +66,7 @@ public class ProductDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Product p = new Product();
-                    p.setProductId(rs.getInt("productId"));
-                    p.setProductName(rs.getString("productName"));
-                    p.setProductDescription(rs.getString("productDescription"));
-                    p.setProductBasePrice(rs.getDouble("productBasePrice"));
-                    products.add(p);
+                    products.add(mapResultSetToProduct(rs));
                 }
             }
         }
@@ -95,12 +90,7 @@ public class ProductDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    Product p = new Product();
-                    p.setProductId(rs.getInt("productId"));
-                    p.setProductName(rs.getString("productName"));
-                    p.setProductDescription(rs.getString("productDescription"));
-                    p.setProductBasePrice(rs.getDouble("productBasePrice"));
-                    return p;
+                    return mapResultSetToProduct(rs);
                 }
             }
         }
@@ -129,12 +119,7 @@ public class ProductDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Product p = new Product();
-                    p.setProductId(rs.getInt("productId"));
-                    p.setProductName(rs.getString("productName"));
-                    p.setProductDescription(rs.getString("productDescription"));
-                    p.setProductBasePrice(rs.getDouble("productBasePrice"));
-                    products.add(p);
+                    products.add(mapResultSetToProduct(rs));
                 }
             }
         }
@@ -321,5 +306,19 @@ public class ProductDAO {
      */
     public List<String> getAllCategories() throws SQLException {
         return getTagOptions();
+    }
+
+    /**
+     * Helper method to map ResultSet to Product object.
+     * Maps the core product fields (productId, productName, productDescription, productBasePrice).
+     * Note: Does not set tagsDisplay — getAllProducts() handles that separately.
+     */
+    private Product mapResultSetToProduct(ResultSet rs) throws SQLException {
+        Product p = new Product();
+        p.setProductId(rs.getInt("productId"));
+        p.setProductName(rs.getString("productName"));
+        p.setProductDescription(rs.getString("productDescription"));
+        p.setProductBasePrice(rs.getDouble("productBasePrice"));
+        return p;
     }
 }

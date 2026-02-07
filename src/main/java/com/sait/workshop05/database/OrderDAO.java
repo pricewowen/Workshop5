@@ -409,27 +409,7 @@ public class OrderDAO {
      * Get address options for ComboBox population.
      */
     public List<AddressOption> getAddressOptions() throws SQLException {
-        String sql =
-                "SELECT addressId, addressLine1, addressCity, addressProvince, addressPostalCode " +
-                "FROM Address ORDER BY addressId DESC";
-
-        List<AddressOption> options = new ArrayList<>();
-
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                options.add(new AddressOption(
-                        rs.getInt("addressId"),
-                        rs.getString("addressLine1"),
-                        rs.getString("addressCity"),
-                        rs.getString("addressProvince"),
-                        rs.getString("addressPostalCode")
-                ));
-            }
-        }
-        return options;
+        return SharedDAO.getAddressOptions();
     }
 
     /**

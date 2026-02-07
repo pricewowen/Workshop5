@@ -85,7 +85,7 @@ public class LoginController {
                 openMainView();
             } catch (IOException e) {
                 showError("Error loading application: " + e.getMessage());
-                e.printStackTrace();
+                LogData.handleException("LOGIN_OPEN_MAIN", e);
             }
         } else {
             showError("Invalid username or password");

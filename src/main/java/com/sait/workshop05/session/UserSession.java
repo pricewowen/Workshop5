@@ -1,5 +1,6 @@
 package com.sait.workshop05.session;
 
+import com.sait.workshop05.models.Log;
 import com.sait.workshop05.models.User;
 
 import java.time.LocalDateTime;
@@ -35,10 +36,10 @@ public class UserSession {
      */
     public void createSession(User user) {
         this.currentUser = user;
+        Log.setLoggedInUser(user.getUsername());
         this.userRole = user.getRole();
         this.isAuthenticated = true;
         this.loginTime = LocalDateTime.now();
-        System.out.println("Session created for user: " + user.getUsername() + " with role: " + userRole);
     }
 
     /**
@@ -46,10 +47,10 @@ public class UserSession {
      */
     public void clearSession() {
         this.currentUser = null;
+        Log.clearLoggedInUser();
         this.userRole = null;
         this.isAuthenticated = false;
         this.loginTime = null;
-        System.out.println("Session cleared");
     }
 
     /**
