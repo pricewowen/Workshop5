@@ -14,7 +14,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 public class DashboardController {
 
     @FXML private Button btnNewOrder;
+    @FXML private Button btnRefresh;
 
     @FXML private TableColumn<Order, Integer> colOrderId;
     @FXML private TableColumn<Order, String> colCustomer;
@@ -37,11 +40,15 @@ public class DashboardController {
     @FXML private Label lblTotalCustomers;
     @FXML private Label lblTotalOrders;
     @FXML private Label lblTotalRevenu;
+    @FXML private Label lblStatus;
 
     @FXML private TableView<Order> tbvRecentOrders;
 
     private final DashboardDAO dashboardDAO = new DashboardDAO();
     private final OrderDAO orderDAO = new OrderDAO();
+
+    /** Pre-loaded product display strings keyed by orderId. */
+    private final Map<Integer, String> orderProductsMap = new HashMap<>();
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -51,7 +58,6 @@ public class DashboardController {
         loadSummaryCards();
         loadRecentOrders();
 
-        // Wire New Order button to navigate to Order Management
         btnNewOrder.setOnAction(e -> onNewOrder());
     }
 
@@ -70,11 +76,7 @@ public class DashboardController {
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText("");
-                } else {
-                    setText(String.format("$%.2f", item));
-                }
+                setText(empty || item == null ? "" : String.format("$%.2f", item));
             }
         });
 
@@ -84,11 +86,7 @@ public class DashboardController {
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText("");
-                } else {
-                    setText(item.format(DT_FMT));
-                }
+                setText(empty || item == null ? "" : item.format(DT_FMT));
             }
         });
 
@@ -113,7 +111,7 @@ public class DashboardController {
             }
         });
 
-        // Products column — load order items and concatenate names
+        // Products column — uses pre-loaded map (no per-row DB calls)
         colProducts.setCellValueFactory(new PropertyValueFactory<>("orderComment")); // placeholder binding
         colProducts.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -124,20 +122,12 @@ public class DashboardController {
                     return;
                 }
                 Order order = getTableView().getItems().get(getIndex());
-                try {
-                    List<OrderItem> items = orderDAO.getOrderItems(order.getOrderId());
-                    String products = items.stream()
-                            .map(OrderItem::getProductDisplay)
-                            .filter(name -> name != null && !name.isEmpty())
-                            .collect(Collectors.joining(", "));
-                    setText(products.isEmpty() ? "-" : products);
-                } catch (SQLException e) {
-                    setText("-");
-                }
+                String products = orderProductsMap.getOrDefault(order.getOrderId(), "-");
+                setText(products);
             }
         });
 
-        // Actions column — View button that shows order details in an alert
+        // Actions column — View button
         colActions.setCellFactory(col -> new TableCell<>() {
             private final Button btnView = new Button("View");
 
@@ -152,13 +142,11 @@ public class DashboardController {
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(btnView);
-                }
+                setGraphic(empty ? null : btnView);
             }
         });
+
+        tbvRecentOrders.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
     // ───────────────────────────────────────────────
@@ -191,10 +179,29 @@ public class DashboardController {
     private void loadRecentOrders() {
         try {
             List<Order> recent = dashboardDAO.getRecentOrders(15);
+
+            // Pre-load products for all orders in one pass
+            orderProductsMap.clear();
+            for (Order order : recent) {
+                try {
+                    List<OrderItem> items = orderDAO.getOrderItems(order.getOrderId());
+                    String products = items.stream()
+                            .map(OrderItem::getProductDisplay)
+                            .filter(name -> name != null && !name.isEmpty())
+                            .collect(Collectors.joining(", "));
+                    orderProductsMap.put(order.getOrderId(), products.isEmpty() ? "-" : products);
+                } catch (SQLException ex) {
+                    orderProductsMap.put(order.getOrderId(), "-");
+                }
+            }
+
             ObservableList<Order> data = FXCollections.observableArrayList(recent);
             tbvRecentOrders.setItems(data);
+            lblStatus.setText(recent.size() + " recent order(s)");
+
         } catch (SQLException e) {
             tbvRecentOrders.setItems(FXCollections.observableArrayList());
+            lblStatus.setText("Could not load orders");
             LogData.handleException("LOAD_RECENT_ORDERS", e);
         }
     }
@@ -203,8 +210,13 @@ public class DashboardController {
     // Actions
     // ───────────────────────────────────────────────
 
+    @FXML
+    private void onRefresh() {
+        loadSummaryCards();
+        loadRecentOrders();
+    }
+
     private void onNewOrder() {
-        // Navigate to order management view
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
                     getClass().getResource("/com/sait/workshop05/order-management-view.fxml"));

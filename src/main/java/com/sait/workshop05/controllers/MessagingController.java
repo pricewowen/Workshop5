@@ -54,6 +54,9 @@ public class MessagingController {
     private int selectedPartnerId = -1;
     private String selectedPartnerName = "";
 
+    /** Guard flag to prevent infinite recursion between selection listener and loadConversationThread(). */
+    private boolean isLoadingThread = false;
+
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     // ───────────────────────────────────────────────
@@ -142,7 +145,7 @@ public class MessagingController {
     private void setupSelectionBinding() {
         lstConversations.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldVal, newVal) -> {
-                    if (newVal != null) {
+                    if (newVal != null && !isLoadingThread) {
                         selectedPartnerId = newVal.getPartnerId();
                         selectedPartnerName = newVal.getPartnerUsername();
                         loadConversationThread();
@@ -173,6 +176,7 @@ public class MessagingController {
     private void loadConversationThread() {
         if (selectedPartnerId < 0) return;
 
+        isLoadingThread = true;
         try {
             // Mark messages from this partner as read
             messageDAO.markConversationAsRead(currentUserId, selectedPartnerId);
@@ -201,7 +205,7 @@ public class MessagingController {
             // Refresh the conversation list to update unread counts
             refreshConversations();
 
-            // Re-select the current partner
+            // Re-select the current partner (guard flag prevents recursion)
             for (ConversationSummary cs : conversationList) {
                 if (cs.getPartnerId() == selectedPartnerId) {
                     lstConversations.getSelectionModel().select(cs);
@@ -223,6 +227,8 @@ public class MessagingController {
         } catch (SQLException e) {
             showError("Load Error", "Could not load message thread", e.getMessage());
             LogData.handleException("LOAD_THREAD", e);
+        } finally {
+            isLoadingThread = false;
         }
     }
 
@@ -338,12 +344,17 @@ public class MessagingController {
                     LogData.handleException("LOAD_CONVERSATION", e);
                 }
 
-                // Select existing conversation if it exists
-                for (ConversationSummary cs : conversationList) {
-                    if (cs.getPartnerId() == selectedPartnerId) {
-                        lstConversations.getSelectionModel().select(cs);
-                        break;
+                // Select existing conversation if it exists (guarded to prevent recursion)
+                isLoadingThread = true;
+                try {
+                    for (ConversationSummary cs : conversationList) {
+                        if (cs.getPartnerId() == selectedPartnerId) {
+                            lstConversations.getSelectionModel().select(cs);
+                            break;
+                        }
                     }
+                } finally {
+                    isLoadingThread = false;
                 }
             });
 
@@ -420,13 +431,18 @@ public class MessagingController {
         int previousPartnerId = selectedPartnerId;
         refreshConversations();
 
-        // Re-select previous conversation
+        // Re-select previous conversation (guarded to prevent recursion)
         if (previousPartnerId > 0) {
-            for (ConversationSummary cs : conversationList) {
-                if (cs.getPartnerId() == previousPartnerId) {
-                    lstConversations.getSelectionModel().select(cs);
-                    break;
+            isLoadingThread = true;
+            try {
+                for (ConversationSummary cs : conversationList) {
+                    if (cs.getPartnerId() == previousPartnerId) {
+                        lstConversations.getSelectionModel().select(cs);
+                        break;
+                    }
                 }
+            } finally {
+                isLoadingThread = false;
             }
         }
     }
