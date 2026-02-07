@@ -1,19 +1,20 @@
 package com.sait.workshop05;
 
 import com.sait.workshop05.models.Province;
+import com.sait.workshop05.util.Validator;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.util.StringConverter;
 
+import java.util.regex.Pattern;
+
 public class BakeryLocationsController {
+
+    private static final Pattern EMAIL_RX = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    private static final Pattern PHONE_RX = Pattern.compile("^[0-9+()\\-\\s]{7,20}$");
 
     @FXML
     private Button btnClear;
@@ -92,12 +93,57 @@ public class BakeryLocationsController {
 
     @FXML
     void onClear(ActionEvent event) {
-
+        txtAddressCity.clear();
+        txtAddressLine1.clear();
+        txtAddressLine2.clear();
+        txtBakeryId.clear();
+        txtAddressPostalCode.clear();
+        txtBakeryEmail.clear();
+        txtBakeryName.clear();
+        txtBakeryPhone.clear();
+        setComboBox();
     }
 
     @FXML
     void onCreate(ActionEvent event) {
+        // validation variables
+        String nameError = Validator.isValidName(txtBakeryName.getText());
+        String emailError = Validator.isValidEmail(txtBakeryEmail.getText());
+        String phoneError = Validator.isValidPhoneNumber(txtBakeryPhone.getText());
+        String address1Error = Validator.isValidAddress(txtAddressLine1.getText(), 1);
+        String address2Error = Validator.isValidAddress(txtAddressLine2.getText(), 2);
+        String cityError;
+        String provinceError;
+        String postalCodeError;
 
+        // display error message for name validation
+        if (nameError != null) {
+            showWarning("Validation Error", nameError);
+            return;
+        }
+
+        // display error message for email error
+        if (emailError != null) {
+            showWarning("Validation Error", emailError);
+            return;
+        }
+
+        // display error message for phone number
+        if (phoneError != null) {
+            showWarning("Validation Error", phoneError);
+            return;
+        }
+
+        // display error messages for address lines
+        if (address1Error != null) {
+            showWarning("Validation Error", address1Error);
+            return;
+        }
+
+        if (address2Error != null) {
+            showWarning("Validation Error", address2Error);
+            return;
+        }
     }
 
     @FXML
@@ -117,6 +163,12 @@ public class BakeryLocationsController {
 
     @FXML
     void initialize() {
+        setComboBox();
+        phoneNumberFormatter();
+    }
+
+    private void setComboBox() {
+        // adds all provinces to combo box
         ObservableList<Province> provinces = FXCollections.observableArrayList(
                 new Province("AB", "Alberta"),
                 new Province("BC", "British Columbia"),
@@ -154,4 +206,59 @@ public class BakeryLocationsController {
         });
     }
 
+    /**
+     * Shows an alert with an error message
+     * @param title The title of the alert
+     * @param message the message displayed
+     */
+    private void showWarning(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void phoneNumberFormatter() {
+        txtBakeryPhone.textProperty().addListener((obs, oldText, newText) -> {
+            // replace all non-digit characters with nothing
+            String digits = newText.replaceAll("\\D", "");
+
+            // trim to 10 digits
+            if (digits.length() > 10) {
+                digits = digits.substring(0, 10);
+            }
+
+            StringBuilder phoneFormatter = new StringBuilder();
+
+            int digit = digits.length();
+            if (digit > 0) {
+                phoneFormatter.append("(");
+            }
+
+            if (digit >= 1) {
+                phoneFormatter.append(digits.substring(0, Math.min(3, digit)));
+            }
+
+            if (digit >= 4) {
+                phoneFormatter.append(") ");
+            }
+
+            if (digit >= 4) {
+                phoneFormatter.append(digits.substring(3, Math.min(6, digit)));
+            }
+
+            if (digit >= 7) {
+                phoneFormatter.append("-");
+            }
+
+            if (digit >= 7) {
+                phoneFormatter.append(digits.substring(6));
+            }
+
+            if (!phoneFormatter.toString().equals(newText)) {
+                txtBakeryPhone.setText(phoneFormatter.toString());
+            }
+        });
+    }
 }
