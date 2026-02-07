@@ -3,8 +3,10 @@ package com.sait.workshop05.controllers;
 import com.sait.workshop05.database.DashboardDAO;
 import com.sait.workshop05.database.OrderDAO;
 import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.models.Order;
 import com.sait.workshop05.models.OrderItem;
+import com.sait.workshop05.util.OrderStatus;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -100,11 +102,13 @@ public class DashboardController {
                     setStyle("");
                 } else {
                     setText(item);
-                    switch (item.toLowerCase()) {
-                        case "pending" -> setStyle("-fx-text-fill: #c09800; -fx-font-weight: bold;");
-                        case "processing" -> setStyle("-fx-text-fill: #0275d8; -fx-font-weight: bold;");
-                        case "completed", "delivered" -> setStyle("-fx-text-fill: #5cb85c; -fx-font-weight: bold;");
-                        case "cancelled" -> setStyle("-fx-text-fill: #d9534f; -fx-font-weight: bold;");
+                    switch (item) {
+                        case OrderStatus.PENDING -> setStyle("-fx-text-fill: #c09800; -fx-font-weight: bold;");
+                        case OrderStatus.PROCESSING -> setStyle("-fx-text-fill: #0275d8; -fx-font-weight: bold;");
+                        case OrderStatus.READY -> setStyle("-fx-text-fill: #5bc0de; -fx-font-weight: bold;");
+                        case OrderStatus.OUT_FOR_DELIVERY -> setStyle("-fx-text-fill: #f0ad4e; -fx-font-weight: bold;");
+                        case OrderStatus.COMPLETED, OrderStatus.DELIVERED -> setStyle("-fx-text-fill: #5cb85c; -fx-font-weight: bold;");
+                        case OrderStatus.CANCELLED -> setStyle("-fx-text-fill: #d9534f; -fx-font-weight: bold;");
                         default -> setStyle("");
                     }
                 }
@@ -235,11 +239,7 @@ public class DashboardController {
             }
         } catch (Exception e) {
             LogData.handleException("NAV_NEW_ORDER", e);
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Navigation Error");
-            alert.setHeaderText("Could not open Order Management");
-            alert.setContentText(e.getMessage());
-            alert.showAndWait();
+            ErrorHandler.showErrorDialog("Navigation Error", "Could not open Order Management", e.getMessage());
         }
     }
 

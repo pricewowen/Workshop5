@@ -1,10 +1,13 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.database.AddressOption;
+import com.sait.workshop05.models.AddressOption;
 import com.sait.workshop05.database.EmployeeDAO;
-import com.sait.workshop05.database.UserOption;
+import com.sait.workshop05.models.UserOption;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Employee;
+import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.StringUtil;
+import com.sait.workshop05.util.ValidationResult;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -16,11 +19,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 public class EmployeeManagementController {
-
-    private static final String LOG_USER = "EMPLOYEE_VIEW";
 
     @FXML private TableView<Employee> tblEmployees;
     @FXML private TableColumn<Employee, Integer> colEmployeeId;
@@ -53,9 +53,6 @@ public class EmployeeManagementController {
     private final EmployeeDAO dao = new EmployeeDAO();
     private final ObservableList<Employee> master = FXCollections.observableArrayList();
     private FilteredList<Employee> filtered;
-
-    private static final Pattern EMAIL_RX = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
-    private static final Pattern PHONE_RX = Pattern.compile("^[0-9+()\\-\\s]{7,20}$");
 
     @FXML
     void initialize() {
@@ -99,13 +96,13 @@ public class EmployeeManagementController {
             if (selected == null) return;
 
             txtEmployeeId.setText(String.valueOf(selected.getEmployeeId()));
-            txtFirstName.setText(nz(selected.getEmployeeFirstName()));
-            txtMiddleInitial.setText(nz(selected.getEmployeeMiddleInitial()));
-            txtLastName.setText(nz(selected.getEmployeeLastName()));
+            txtFirstName.setText(StringUtil.nz(selected.getEmployeeFirstName()));
+            txtMiddleInitial.setText(StringUtil.nz(selected.getEmployeeMiddleInitial()));
+            txtLastName.setText(StringUtil.nz(selected.getEmployeeLastName()));
             cboRole.setValue(selected.getEmployeeRole());
-            txtPhone.setText(nz(selected.getEmployeePhone()));
-            txtBusinessPhone.setText(nz(selected.getEmployeeBusinessPhone()));
-            txtEmail.setText(nz(selected.getEmployeeEmail()));
+            txtPhone.setText(StringUtil.nz(selected.getEmployeePhone()));
+            txtBusinessPhone.setText(StringUtil.nz(selected.getEmployeeBusinessPhone()));
+            txtEmail.setText(StringUtil.nz(selected.getEmployeeEmail()));
 
             selectUserById(selected.getUserId());
             selectAddressById(selected.getAddressId());
@@ -121,15 +118,15 @@ public class EmployeeManagementController {
             filtered.setPredicate(emp -> {
                 if (q.isEmpty()) return true;
 
-                return contains(emp.getEmployeeFirstName(), q)
-                        || contains(emp.getEmployeeMiddleInitial(), q)
-                        || contains(emp.getEmployeeLastName(), q)
-                        || contains(emp.getEmployeeRole(), q)
-                        || contains(emp.getEmployeePhone(), q)
-                        || contains(emp.getEmployeeBusinessPhone(), q)
-                        || contains(emp.getEmployeeEmail(), q)
-                        || contains(emp.getUserDisplay(), q)
-                        || contains(emp.getAddressDisplay(), q)
+                return StringUtil.containsIgnoreCase(emp.getEmployeeFirstName(), q)
+                        || StringUtil.containsIgnoreCase(emp.getEmployeeMiddleInitial(), q)
+                        || StringUtil.containsIgnoreCase(emp.getEmployeeLastName(), q)
+                        || StringUtil.containsIgnoreCase(emp.getEmployeeRole(), q)
+                        || StringUtil.containsIgnoreCase(emp.getEmployeePhone(), q)
+                        || StringUtil.containsIgnoreCase(emp.getEmployeeBusinessPhone(), q)
+                        || StringUtil.containsIgnoreCase(emp.getEmployeeEmail(), q)
+                        || StringUtil.containsIgnoreCase(emp.getUserDisplay(), q)
+                        || StringUtil.containsIgnoreCase(emp.getAddressDisplay(), q)
                         || String.valueOf(emp.getEmployeeId()).contains(q)
                         || String.valueOf(emp.getUserId()).contains(q)
                         || String.valueOf(emp.getAddressId()).contains(q);
@@ -152,7 +149,7 @@ public class EmployeeManagementController {
             cboAddress.setItems(FXCollections.observableArrayList(addresses));
         } catch (SQLException e) {
             LogData.handleException("LOAD_EMPLOYEE_COMBOS", e);
-            showError("Database Error", "Could not load User/Address lists.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load User/Address lists.", e.getMessage());
         }
     }
 
@@ -164,7 +161,7 @@ public class EmployeeManagementController {
             LogData.logAction("READ", "Employee");
         } catch (SQLException e) {
             LogData.handleException("READ_EMPLOYEES", e);
-            showError("Database Error", "Could not load employees.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load employees.", e.getMessage());
         }
     }
 
@@ -193,9 +190,9 @@ public class EmployeeManagementController {
     @FXML
     private void onCreate() {
         ValidationResult vr = validateForm(false);
-        if (!vr.ok) {
+        if (!vr.isOk()) {
             LogData.logAction("VALIDATION_FAILED", "Employee");
-            showWarning("Validation", vr.message);
+            ErrorHandler.showWarning("Validation", vr.getMessage());
             return;
         }
 
@@ -216,22 +213,22 @@ public class EmployeeManagementController {
         } catch (SQLException ex) {
             LogData.handleException("CREATE_EMPLOYEE", ex);
 
-            String friendly = friendlyDbMessage(ex);
-            showError("Create Failed", "Could not create employee.", friendly);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Create Failed", "Could not create employee.", friendly);
         }
     }
 
     @FXML
     private void onUpdate() {
         if (txtEmployeeId.getText() == null || txtEmployeeId.getText().trim().isEmpty()) {
-            showWarning("Update", "Select an employee row to update.");
+            ErrorHandler.showWarning("Update", "Select an employee row to update.");
             return;
         }
 
         ValidationResult vr = validateForm(true);
-        if (!vr.ok) {
+        if (!vr.isOk()) {
             LogData.logAction("VALIDATION_FAILED", "Employee");
-            showWarning("Validation", vr.message);
+            ErrorHandler.showWarning("Validation", vr.getMessage());
             return;
         }
 
@@ -246,8 +243,8 @@ public class EmployeeManagementController {
         } catch (SQLException ex) {
             LogData.handleException("UPDATE_EMPLOYEE", ex);
 
-            String friendly = friendlyDbMessage(ex);
-            showError("Update Failed", "Could not update employee.", friendly);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Update Failed", "Could not update employee.", friendly);
         }
     }
 
@@ -255,7 +252,7 @@ public class EmployeeManagementController {
     private void onDelete() {
         Employee selected = tblEmployees.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showWarning("Delete", "Select an employee row to delete.");
+            ErrorHandler.showWarning("Delete", "Select an employee row to delete.");
             return;
         }
 
@@ -276,8 +273,8 @@ public class EmployeeManagementController {
         } catch (SQLException ex) {
             LogData.handleException("DELETE_EMPLOYEE", ex);
 
-            String friendly = friendlyDbMessage(ex);
-            showError("Delete Failed", "Could not delete employee.", friendly);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete employee.", friendly);
         }
     }
 
@@ -289,11 +286,11 @@ public class EmployeeManagementController {
         }
 
         e.setEmployeeFirstName(txtFirstName.getText().trim());
-        e.setEmployeeMiddleInitial(trimToNull(txtMiddleInitial.getText()));
+        e.setEmployeeMiddleInitial(StringUtil.trimToNull(txtMiddleInitial.getText()));
         e.setEmployeeLastName(txtLastName.getText().trim());
         e.setEmployeeRole(cboRole.getValue());
         e.setEmployeePhone(txtPhone.getText().trim());
-        e.setEmployeeBusinessPhone(trimToNull(txtBusinessPhone.getText()));
+        e.setEmployeeBusinessPhone(StringUtil.trimToNull(txtBusinessPhone.getText()));
         e.setEmployeeEmail(txtEmail.getText().trim());
 
         UserOption u = cboUser.getValue();
@@ -306,17 +303,17 @@ public class EmployeeManagementController {
     }
 
     private ValidationResult validateForm(boolean isUpdate) {
-        String first = safe(txtFirstName.getText());
-        String last = safe(txtLastName.getText());
+        String first = StringUtil.safe(txtFirstName.getText());
+        String last = StringUtil.safe(txtLastName.getText());
         String role = cboRole.getValue();
-        String phone = safe(txtPhone.getText());
-        String email = safe(txtEmail.getText());
-        String mi = safe(txtMiddleInitial.getText());
+        String phone = StringUtil.safe(txtPhone.getText());
+        String email = StringUtil.safe(txtEmail.getText());
+        String mi = StringUtil.safe(txtMiddleInitial.getText());
         UserOption user = cboUser.getValue();
         AddressOption addr = cboAddress.getValue();
 
         if (isUpdate) {
-            String id = safe(txtEmployeeId.getText());
+            String id = StringUtil.safe(txtEmployeeId.getText());
             if (id.isBlank()) return ValidationResult.fail("Employee ID is missing (select a row first).");
             try {
                 Integer.parseInt(id);
@@ -329,12 +326,12 @@ public class EmployeeManagementController {
         if (last.isBlank()) return ValidationResult.fail("Last name is required.");
         if (role == null || role.isBlank()) return ValidationResult.fail("Role is required.");
         if (phone.isBlank()) return ValidationResult.fail("Phone is required.");
-        if (!PHONE_RX.matcher(phone).matches()) return ValidationResult.fail("Phone format looks invalid.");
+        if (!StringUtil.PHONE_RX.matcher(phone).matches()) return ValidationResult.fail("Phone format looks invalid.");
 
         if (email.isBlank()) return ValidationResult.fail("Email is required.");
-        if (!EMAIL_RX.matcher(email).matches()) return ValidationResult.fail("Email format looks invalid.");
+        if (!StringUtil.EMAIL_RX.matcher(email).matches()) return ValidationResult.fail("Email format looks invalid.");
 
-        if (!mi.isBlank() && mi.trim().length() > 2) return ValidationResult.fail("Middle initial must be 1–2 characters.");
+        if (!mi.isBlank() && mi.trim().length() > 2) return ValidationResult.fail("Middle initial must be 1\u20132 characters.");
 
         if (user == null) return ValidationResult.fail("User is required (select a User).");
         if (addr == null) return ValidationResult.fail("Address is required (select an Address).");
@@ -344,29 +341,11 @@ public class EmployeeManagementController {
         if (last.length() > 50) return ValidationResult.fail("Last name must be 50 characters or less.");
         if (role.length() > 40) return ValidationResult.fail("Role must be 40 characters or less.");
         if (phone.length() > 20) return ValidationResult.fail("Phone must be 20 characters or less.");
-        String biz = safe(txtBusinessPhone.getText());
+        String biz = StringUtil.safe(txtBusinessPhone.getText());
         if (!biz.isBlank() && biz.length() > 20) return ValidationResult.fail("Business phone must be 20 characters or less.");
         if (email.length() > 254) return ValidationResult.fail("Email must be 254 characters or less.");
 
         return ValidationResult.ok();
-    }
-
-    private String friendlyDbMessage(SQLException ex) {
-        String sqlState = ex.getSQLState();
-        String msg = (ex.getMessage() == null) ? "" : ex.getMessage();
-
-        if (sqlState != null && sqlState.startsWith("23")) {
-            if (msg.toLowerCase().contains("uq_employee_user") || msg.toLowerCase().contains("duplicate")) {
-                return "That User is already linked to another employee. Pick a different User.";
-            }
-            if (msg.toLowerCase().contains("fk_batch_employee") || msg.toLowerCase().contains("fk_review_employee")
-                    || msg.toLowerCase().contains("foreign key constraint")) {
-                return "This employee is referenced by other records (e.g., batches/reviews). Remove those references first.";
-            }
-            return "This operation violates a database constraint (duplicate or referenced record).";
-        }
-
-        return msg.isBlank() ? "Unknown database error." : msg;
     }
 
     private void selectEmployeeById(int id) {
@@ -399,58 +378,5 @@ public class EmployeeManagementController {
             }
         }
         cboAddress.getSelectionModel().clearSelection();
-    }
-
-    private void showWarning(String title, String content) {
-        Alert a = new Alert(Alert.AlertType.WARNING);
-        a.setTitle(title);
-        a.setHeaderText(null);
-        a.setContentText(content);
-        a.showAndWait();
-    }
-
-    private void showError(String title, String header, String content) {
-        Alert a = new Alert(Alert.AlertType.ERROR);
-        a.setTitle(title);
-        a.setHeaderText(header);
-        a.setContentText(content);
-        a.showAndWait();
-    }
-
-    private static boolean contains(String field, String q) {
-        if (field == null) return false;
-        return field.toLowerCase().contains(q);
-    }
-
-    private static String nz(String s) {
-        return s == null ? "" : s;
-    }
-
-    private static String safe(String s) {
-        return s == null ? "" : s.trim();
-    }
-
-    private static String trimToNull(String s) {
-        if (s == null) return null;
-        String t = s.trim();
-        return t.isEmpty() ? null : t;
-    }
-
-    private static class ValidationResult {
-        final boolean ok;
-        final String message;
-
-        private ValidationResult(boolean ok, String message) {
-            this.ok = ok;
-            this.message = message;
-        }
-
-        static ValidationResult ok() {
-            return new ValidationResult(true, "");
-        }
-
-        static ValidationResult fail(String msg) {
-            return new ValidationResult(false, msg);
-        }
     }
 }

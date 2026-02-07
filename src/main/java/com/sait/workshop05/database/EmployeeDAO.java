@@ -59,11 +59,11 @@ public class EmployeeDAO {
             ps.setInt(1, e.getUserId());
             ps.setInt(2, e.getAddressId());
             ps.setString(3, e.getEmployeeFirstName());
-            ps.setString(4, emptyToNull(e.getEmployeeMiddleInitial()));
+            ps.setString(4, SharedDAO.emptyToNull(e.getEmployeeMiddleInitial()));
             ps.setString(5, e.getEmployeeLastName());
             ps.setString(6, e.getEmployeeRole());
             ps.setString(7, e.getEmployeePhone());
-            ps.setString(8, emptyToNull(e.getEmployeeBusinessPhone()));
+            ps.setString(8, SharedDAO.emptyToNull(e.getEmployeeBusinessPhone()));
             ps.setString(9, e.getEmployeeEmail());
 
             ps.executeUpdate();
@@ -91,11 +91,11 @@ public class EmployeeDAO {
             ps.setInt(1, e.getUserId());
             ps.setInt(2, e.getAddressId());
             ps.setString(3, e.getEmployeeFirstName());
-            ps.setString(4, emptyToNull(e.getEmployeeMiddleInitial()));
+            ps.setString(4, SharedDAO.emptyToNull(e.getEmployeeMiddleInitial()));
             ps.setString(5, e.getEmployeeLastName());
             ps.setString(6, e.getEmployeeRole());
             ps.setString(7, e.getEmployeePhone());
-            ps.setString(8, emptyToNull(e.getEmployeeBusinessPhone()));
+            ps.setString(8, SharedDAO.emptyToNull(e.getEmployeeBusinessPhone()));
             ps.setString(9, e.getEmployeeEmail());
             ps.setInt(10, e.getEmployeeId());
 
@@ -115,47 +115,11 @@ public class EmployeeDAO {
     }
 
     public List<UserOption> getUserOptions() throws SQLException {
-        String sql = "SELECT userId, userUsername FROM `User` ORDER BY userId DESC";
-        List<UserOption> options = new ArrayList<>();
-
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                options.add(new UserOption(rs.getInt("userId"), rs.getString("userUsername")));
-            }
-        }
-        return options;
+        return SharedDAO.getUserOptions();
     }
 
     public List<AddressOption> getAddressOptions() throws SQLException {
-        String sql =
-                "SELECT addressId, addressLine1, addressCity, addressProvince, addressPostalCode " +
-                        "FROM Address ORDER BY addressId DESC";
-
-        List<AddressOption> options = new ArrayList<>();
-
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                options.add(new AddressOption(
-                        rs.getInt("addressId"),
-                        rs.getString("addressLine1"),
-                        rs.getString("addressCity"),
-                        rs.getString("addressProvince"),
-                        rs.getString("addressPostalCode")
-                ));
-            }
-        }
-        return options;
+        return SharedDAO.getAddressOptions();
     }
 
-    private static String emptyToNull(String s) {
-        if (s == null) return null;
-        String t = s.trim();
-        return t.isEmpty() ? null : t;
-    }
 }

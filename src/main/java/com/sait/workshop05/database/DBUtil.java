@@ -40,12 +40,8 @@ public class DBUtil {
                 }
             }
 
-            System.out.println("Loaded DB config from .env.local");
-
         } catch (Exception e) {
 
-            System.err.println("Cannot load .env.local file");
-            System.err.println("Expected at: " + ENV_PATH);
             e.printStackTrace();
 
             System.exit(1);

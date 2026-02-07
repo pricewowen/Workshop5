@@ -15,9 +15,8 @@ public class MainApplication extends Application {
 
         // Test DB connection on startup
         try (Connection conn = DBUtil.getConnection()) {
-            System.out.println("Connected to MySQL on startup");
+            // Connection successful
         } catch (Exception e) {
-            System.err.println("Database connection failed on startup");
             e.printStackTrace();
             System.exit(1);
         }

@@ -37,31 +37,7 @@ public class CustomerDAO {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                Customer c = new Customer();
-                c.setCustomerId(rs.getInt("customerId"));
-                c.setUserId(rs.getInt("userId"));
-                c.setAddressId(rs.getInt("addressId"));
-                c.setRewardTierId(rs.getInt("rewardTierId"));
-                c.setFirstName(rs.getString("customerFirstName"));
-                c.setMiddleInitial(rs.getString("customerMiddleInitial"));
-                c.setLastName(rs.getString("customerLastName"));
-                c.setRole(rs.getString("customerRole"));
-                c.setPhone(rs.getString("customerPhone"));
-                c.setBusinessPhone(rs.getString("customerBusinessPhone"));
-                c.setEmail(rs.getString("customerEmail"));
-                c.setRewardBalance(rs.getInt("customerRewardBalance"));
-
-                Timestamp tierDate = rs.getTimestamp("customerTierAssignedDate");
-                if (tierDate != null) {
-                    c.setTierAssignedDate(tierDate.toLocalDateTime());
-                }
-
-                String userDisplay = rs.getString("userDisplay");
-                c.setUserDisplay(userDisplay != null ? rs.getInt("userId") + " - " + userDisplay : "No User");
-                c.setAddressDisplay(rs.getString("addressDisplay"));
-                c.setRewardTierDisplay(rs.getString("rewardTierDisplay"));
-
-                customers.add(c);
+                customers.add(mapResultSetToCustomer(rs));
             }
         }
 
@@ -93,31 +69,7 @@ public class CustomerDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    Customer c = new Customer();
-                    c.setCustomerId(rs.getInt("customerId"));
-                    c.setUserId(rs.getInt("userId"));
-                    c.setAddressId(rs.getInt("addressId"));
-                    c.setRewardTierId(rs.getInt("rewardTierId"));
-                    c.setFirstName(rs.getString("customerFirstName"));
-                    c.setMiddleInitial(rs.getString("customerMiddleInitial"));
-                    c.setLastName(rs.getString("customerLastName"));
-                    c.setRole(rs.getString("customerRole"));
-                    c.setPhone(rs.getString("customerPhone"));
-                    c.setBusinessPhone(rs.getString("customerBusinessPhone"));
-                    c.setEmail(rs.getString("customerEmail"));
-                    c.setRewardBalance(rs.getInt("customerRewardBalance"));
-
-                    Timestamp tierDate = rs.getTimestamp("customerTierAssignedDate");
-                    if (tierDate != null) {
-                        c.setTierAssignedDate(tierDate.toLocalDateTime());
-                    }
-
-                    String userDisplay = rs.getString("userDisplay");
-                    c.setUserDisplay(userDisplay != null ? rs.getInt("userId") + " - " + userDisplay : "No User");
-                    c.setAddressDisplay(rs.getString("addressDisplay"));
-                    c.setRewardTierDisplay(rs.getString("rewardTierDisplay"));
-
-                    return c;
+                    return mapResultSetToCustomer(rs);
                 }
             }
         }
@@ -150,31 +102,7 @@ public class CustomerDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    Customer c = new Customer();
-                    c.setCustomerId(rs.getInt("customerId"));
-                    c.setUserId(rs.getInt("userId"));
-                    c.setAddressId(rs.getInt("addressId"));
-                    c.setRewardTierId(rs.getInt("rewardTierId"));
-                    c.setFirstName(rs.getString("customerFirstName"));
-                    c.setMiddleInitial(rs.getString("customerMiddleInitial"));
-                    c.setLastName(rs.getString("customerLastName"));
-                    c.setRole(rs.getString("customerRole"));
-                    c.setPhone(rs.getString("customerPhone"));
-                    c.setBusinessPhone(rs.getString("customerBusinessPhone"));
-                    c.setEmail(rs.getString("customerEmail"));
-                    c.setRewardBalance(rs.getInt("customerRewardBalance"));
-
-                    Timestamp tierDate = rs.getTimestamp("customerTierAssignedDate");
-                    if (tierDate != null) {
-                        c.setTierAssignedDate(tierDate.toLocalDateTime());
-                    }
-
-                    String userDisplay = rs.getString("userDisplay");
-                    c.setUserDisplay(userDisplay != null ? rs.getInt("userId") + " - " + userDisplay : "No User");
-                    c.setAddressDisplay(rs.getString("addressDisplay"));
-                    c.setRewardTierDisplay(rs.getString("rewardTierDisplay"));
-
-                    return c;
+                    return mapResultSetToCustomer(rs);
                 }
             }
         }
@@ -199,11 +127,11 @@ public class CustomerDAO {
             ps.setInt(2, c.getAddressId());
             ps.setInt(3, c.getRewardTierId());
             ps.setString(4, c.getFirstName());
-            ps.setString(5, emptyToNull(c.getMiddleInitial()));
+            ps.setString(5, SharedDAO.emptyToNull(c.getMiddleInitial()));
             ps.setString(6, c.getLastName());
             ps.setString(7, c.getRole());
             ps.setString(8, c.getPhone());
-            ps.setString(9, emptyToNull(c.getBusinessPhone()));
+            ps.setString(9, SharedDAO.emptyToNull(c.getBusinessPhone()));
             ps.setString(10, c.getEmail());
             ps.setInt(11, c.getRewardBalance());
 
@@ -242,11 +170,11 @@ public class CustomerDAO {
             ps.setInt(2, c.getAddressId());
             ps.setInt(3, c.getRewardTierId());
             ps.setString(4, c.getFirstName());
-            ps.setString(5, emptyToNull(c.getMiddleInitial()));
+            ps.setString(5, SharedDAO.emptyToNull(c.getMiddleInitial()));
             ps.setString(6, c.getLastName());
             ps.setString(7, c.getRole());
             ps.setString(8, c.getPhone());
-            ps.setString(9, emptyToNull(c.getBusinessPhone()));
+            ps.setString(9, SharedDAO.emptyToNull(c.getBusinessPhone()));
             ps.setString(10, c.getEmail());
             ps.setInt(11, c.getRewardBalance());
 
@@ -307,31 +235,7 @@ public class CustomerDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Customer c = new Customer();
-                    c.setCustomerId(rs.getInt("customerId"));
-                    c.setUserId(rs.getInt("userId"));
-                    c.setAddressId(rs.getInt("addressId"));
-                    c.setRewardTierId(rs.getInt("rewardTierId"));
-                    c.setFirstName(rs.getString("customerFirstName"));
-                    c.setMiddleInitial(rs.getString("customerMiddleInitial"));
-                    c.setLastName(rs.getString("customerLastName"));
-                    c.setRole(rs.getString("customerRole"));
-                    c.setPhone(rs.getString("customerPhone"));
-                    c.setBusinessPhone(rs.getString("customerBusinessPhone"));
-                    c.setEmail(rs.getString("customerEmail"));
-                    c.setRewardBalance(rs.getInt("customerRewardBalance"));
-
-                    Timestamp tierDate = rs.getTimestamp("customerTierAssignedDate");
-                    if (tierDate != null) {
-                        c.setTierAssignedDate(tierDate.toLocalDateTime());
-                    }
-
-                    String userDisplay = rs.getString("userDisplay");
-                    c.setUserDisplay(userDisplay != null ? rs.getInt("userId") + " - " + userDisplay : "No User");
-                    c.setAddressDisplay(rs.getString("addressDisplay"));
-                    c.setRewardTierDisplay(rs.getString("rewardTierDisplay"));
-
-                    customers.add(c);
+                    customers.add(mapResultSetToCustomer(rs));
                 }
             }
         }
@@ -364,45 +268,14 @@ public class CustomerDAO {
      * Get all user options for ComboBox population.
      */
     public List<UserOption> getUserOptions() throws SQLException {
-        String sql = "SELECT userId, userUsername FROM `User` ORDER BY userId DESC";
-        List<UserOption> options = new ArrayList<>();
-
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                options.add(new UserOption(rs.getInt("userId"), rs.getString("userUsername")));
-            }
-        }
-        return options;
+        return SharedDAO.getUserOptions();
     }
 
     /**
      * Get all address options for ComboBox population.
      */
     public List<AddressOption> getAddressOptions() throws SQLException {
-        String sql =
-                "SELECT addressId, addressLine1, addressCity, addressProvince, addressPostalCode " +
-                "FROM Address ORDER BY addressId DESC";
-
-        List<AddressOption> options = new ArrayList<>();
-
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                options.add(new AddressOption(
-                        rs.getInt("addressId"),
-                        rs.getString("addressLine1"),
-                        rs.getString("addressCity"),
-                        rs.getString("addressProvince"),
-                        rs.getString("addressPostalCode")
-                ));
-            }
-        }
-        return options;
+        return SharedDAO.getAddressOptions();
     }
 
     /**
@@ -422,12 +295,34 @@ public class CustomerDAO {
     }
 
     /**
-     * Helper method to convert empty strings to null
+     * Helper method to map ResultSet to Customer object.
      */
-    private static String emptyToNull(String s) {
-        if (s == null) return null;
-        String t = s.trim();
-        return t.isEmpty() ? null : t;
+    private Customer mapResultSetToCustomer(ResultSet rs) throws SQLException {
+        Customer c = new Customer();
+        c.setCustomerId(rs.getInt("customerId"));
+        c.setUserId(rs.getInt("userId"));
+        c.setAddressId(rs.getInt("addressId"));
+        c.setRewardTierId(rs.getInt("rewardTierId"));
+        c.setFirstName(rs.getString("customerFirstName"));
+        c.setMiddleInitial(rs.getString("customerMiddleInitial"));
+        c.setLastName(rs.getString("customerLastName"));
+        c.setRole(rs.getString("customerRole"));
+        c.setPhone(rs.getString("customerPhone"));
+        c.setBusinessPhone(rs.getString("customerBusinessPhone"));
+        c.setEmail(rs.getString("customerEmail"));
+        c.setRewardBalance(rs.getInt("customerRewardBalance"));
+
+        Timestamp tierDate = rs.getTimestamp("customerTierAssignedDate");
+        if (tierDate != null) {
+            c.setTierAssignedDate(tierDate.toLocalDateTime());
+        }
+
+        String userDisplay = rs.getString("userDisplay");
+        c.setUserDisplay(userDisplay != null ? rs.getInt("userId") + " - " + userDisplay : "No User");
+        c.setAddressDisplay(rs.getString("addressDisplay"));
+        c.setRewardTierDisplay(rs.getString("rewardTierDisplay"));
+
+        return c;
     }
 }
 

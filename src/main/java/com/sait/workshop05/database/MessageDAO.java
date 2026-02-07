@@ -19,7 +19,7 @@ public class MessageDAO {
      * Returns UserOption list of all users in the system.
      */
     public List<UserOption> getAllStaffUsers() throws SQLException {
-        String sql = "SELECT userId, userUsername FROM `User` ORDER BY userUsername ASC";
+        String sql = "SELECT userId, userUsername FROM `User` WHERE userRole IN ('ADMIN', 'EMPLOYEE') ORDER BY userUsername ASC";
         List<UserOption> users = new ArrayList<>();
 
         try (Connection conn = DBUtil.getConnection();

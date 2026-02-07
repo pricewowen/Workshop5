@@ -2,9 +2,11 @@ package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.database.*;
 import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.models.Order;
 import com.sait.workshop05.models.OrderItem;
 import com.sait.workshop05.models.Product;
+import com.sait.workshop05.util.OrderStatus;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -20,7 +22,6 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,9 +29,7 @@ public class OrderManagementController {
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    private static final List<String> STATUS_FLOW = Arrays.asList(
-            "Pending", "Processing", "Ready", "Out for Delivery", "Completed", "Cancelled"
-    );
+    private static final List<String> STATUS_FLOW = OrderStatus.ALL_STATUSES;
 
     // ════════════════════════════════════════════════════════════
     // TAB 1: All Orders — FXML bindings
@@ -167,13 +166,11 @@ public class OrderManagementController {
         tblOrderItems.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         // Status filter ComboBox
-        ObservableList<String> statusOptions = FXCollections.observableArrayList("All");
-        statusOptions.addAll(STATUS_FLOW);
-        cboStatusFilter.setItems(statusOptions);
+        cboStatusFilter.setItems(FXCollections.observableArrayList(OrderStatus.FILTER_STATUSES));
         cboStatusFilter.setValue("All");
 
         // Status update ComboBox
-        cboNewStatus.setItems(FXCollections.observableArrayList(STATUS_FLOW));
+        cboNewStatus.setItems(FXCollections.observableArrayList(OrderStatus.ALL_STATUSES));
 
         // Filtering
         orderFiltered = new FilteredList<>(orderMaster, o -> true);
@@ -300,7 +297,7 @@ public class OrderManagementController {
             cboNewAddress.setItems(FXCollections.observableArrayList(orderDao.getAddressOptions()));
         } catch (SQLException e) {
             LogData.handleException("LOAD_ORDER_COMBOS", e);
-            showError("Database Error", "Could not load dropdown lists.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load dropdown lists.", e.getMessage());
         }
     }
 
@@ -310,7 +307,7 @@ public class OrderManagementController {
             catalogMaster.addAll(productDao.getAllProducts());
         } catch (SQLException e) {
             LogData.handleException("LOAD_PRODUCT_CATALOG", e);
-            showError("Database Error", "Could not load product catalog.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load product catalog.", e.getMessage());
         }
     }
 
@@ -326,7 +323,7 @@ public class OrderManagementController {
             LogData.logAction("READ", "Order");
         } catch (SQLException e) {
             LogData.handleException("READ_ORDERS", e);
-            showError("Database Error", "Could not load orders.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load orders.", e.getMessage());
         }
     }
 
@@ -341,20 +338,20 @@ public class OrderManagementController {
     private void onUpdateStatus() {
         Order selected = tblOrders.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showWarning("Update Status", "Select an order first.");
+            ErrorHandler.showWarning("Update Status", "Select an order first.");
             return;
         }
 
         String newStatus = cboNewStatus.getValue();
         if (newStatus == null || newStatus.isBlank()) {
-            showWarning("Update Status", "Select a new status.");
+            ErrorHandler.showWarning("Update Status", "Select a new status.");
             return;
         }
 
         // Validate status transition
         String currentStatus = selected.getOrderStatus();
         if (!isValidStatusTransition(currentStatus, newStatus)) {
-            showWarning("Invalid Transition",
+            ErrorHandler.showWarning("Invalid Transition",
                     "Cannot change status from '" + currentStatus + "' to '" + newStatus + "'.\n"
                     + "Status can only move forward (except Cancelled which is always allowed).");
             return;
@@ -368,7 +365,7 @@ public class OrderManagementController {
             lblOrderStatus.setText("Updated order #" + selected.getOrderId() + " to " + newStatus);
         } catch (SQLException e) {
             LogData.handleException("UPDATE_ORDER_STATUS", e);
-            showError("Update Failed", "Could not update order status.", e.getMessage());
+            ErrorHandler.showErrorDialog("Update Failed", "Could not update order status.", e.getMessage());
         }
     }
 
@@ -377,10 +374,10 @@ public class OrderManagementController {
         if (current.equalsIgnoreCase(next)) return false;
 
         // Cancelled is always allowed (from any state)
-        if ("Cancelled".equalsIgnoreCase(next)) return true;
+        if (OrderStatus.CANCELLED.equalsIgnoreCase(next)) return true;
 
         // Cannot transition FROM Completed or Cancelled
-        if ("Completed".equalsIgnoreCase(current) || "Cancelled".equalsIgnoreCase(current)) return false;
+        if (OrderStatus.COMPLETED.equalsIgnoreCase(current) || OrderStatus.CANCELLED.equalsIgnoreCase(current)) return false;
 
         // Must move forward in the flow
         int currentIdx = getStatusIndex(current);
@@ -403,7 +400,7 @@ public class OrderManagementController {
     private void onAddToOrder() {
         Product selected = tblCatalog.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showWarning("Add Item", "Select a product from the catalog first.");
+            ErrorHandler.showWarning("Add Item", "Select a product from the catalog first.");
             return;
         }
 
@@ -437,7 +434,7 @@ public class OrderManagementController {
     private void onRemoveFromOrder() {
         OrderItem selected = tblCart.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showWarning("Remove Item", "Select an item from the cart to remove.");
+            ErrorHandler.showWarning("Remove Item", "Select an item from the cart to remove.");
             return;
         }
 
@@ -472,19 +469,19 @@ public class OrderManagementController {
         String method = cboNewMethod.getValue();
 
         if (customer == null) {
-            showWarning("Validation", "Please select a customer.");
+            ErrorHandler.showWarning("Validation", "Please select a customer.");
             return;
         }
         if (bakery == null) {
-            showWarning("Validation", "Please select a bakery location.");
+            ErrorHandler.showWarning("Validation", "Please select a bakery location.");
             return;
         }
         if (method == null || method.isBlank()) {
-            showWarning("Validation", "Please select an order method.");
+            ErrorHandler.showWarning("Validation", "Please select an order method.");
             return;
         }
         if (cartItems.isEmpty()) {
-            showWarning("Validation", "Add at least one product to the order.");
+            ErrorHandler.showWarning("Validation", "Add at least one product to the order.");
             return;
         }
 
@@ -502,7 +499,7 @@ public class OrderManagementController {
 
         // Validation: discount cannot exceed subtotal (proposal rule)
         if (discount > subtotal) {
-            showWarning("Validation", "Discount ($" + String.format("%.2f", discount)
+            ErrorHandler.showWarning("Validation", "Discount ($" + String.format("%.2f", discount)
                     + ") cannot exceed subtotal ($" + String.format("%.2f", subtotal) + ").");
             return;
         }
@@ -520,7 +517,7 @@ public class OrderManagementController {
                 try {
                     schedTime = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"));
                 } catch (DateTimeParseException e) {
-                    showWarning("Validation", "Scheduled time format must be HH:mm (e.g., 14:30).");
+                    ErrorHandler.showWarning("Validation", "Scheduled time format must be HH:mm (e.g., 14:30).");
                     return;
                 }
             }
@@ -528,7 +525,7 @@ public class OrderManagementController {
 
             // Validation: scheduled date must be after now (proposal rule)
             if (scheduledDateTime.isBefore(LocalDateTime.now())) {
-                showWarning("Validation", "Scheduled date/time must be in the future.");
+                ErrorHandler.showWarning("Validation", "Scheduled date/time must be in the future.");
                 return;
             }
         }
@@ -547,7 +544,7 @@ public class OrderManagementController {
         order.setOrderComment(txtNewComment.getText() != null ? txtNewComment.getText().trim() : null);
         order.setOrderTotal(total);
         order.setOrderDiscount(discount);
-        order.setOrderStatus("Pending");
+        order.setOrderStatus(OrderStatus.PENDING);
 
         // Build items list
         List<OrderItem> items = new ArrayList<>(cartItems);
@@ -576,7 +573,7 @@ public class OrderManagementController {
 
         } catch (SQLException e) {
             LogData.handleException("CREATE_ORDER", e);
-            showError("Order Failed", "Could not place order.", e.getMessage());
+            ErrorHandler.showErrorDialog("Order Failed", "Could not place order.", e.getMessage());
         }
     }
 
@@ -597,22 +594,6 @@ public class OrderManagementController {
     // ════════════════════════════════════════════════════════════
     // Helpers
     // ════════════════════════════════════════════════════════════
-
-    private void showWarning(String title, String content) {
-        Alert a = new Alert(Alert.AlertType.WARNING);
-        a.setTitle(title);
-        a.setHeaderText(null);
-        a.setContentText(content);
-        a.showAndWait();
-    }
-
-    private void showError(String title, String header, String content) {
-        Alert a = new Alert(Alert.AlertType.ERROR);
-        a.setTitle(title);
-        a.setHeaderText(header);
-        a.setContentText(content);
-        a.showAndWait();
-    }
 
     private static boolean contains(String field, String q) {
         if (field == null) return false;

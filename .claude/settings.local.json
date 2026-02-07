@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn compile:*)",
+      "Bash(where:*)",
+      "Bash(grep:*)",
+      "Bash(cmd.exe:*)"
+    ]
+  }
+}
