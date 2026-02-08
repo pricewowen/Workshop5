@@ -117,7 +117,7 @@ public class MainController {
 
     @FXML
     void onLocationsClick(ActionEvent event) {
-        // TODO: Phase 7
+        loadPage("bakery-locations-view.fxml");
     }
 
     @FXML
