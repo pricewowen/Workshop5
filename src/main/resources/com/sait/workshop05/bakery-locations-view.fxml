@@ -40,7 +40,7 @@
                 <Region HBox.hgrow="ALWAYS" />
 
                 <Label style="-fx-font-size: 13px;" text="Search:" />
-                <TextField fx:id="txtSearch" prefWidth="420" promptText="Search name, role, phone, email, user, address" style="-fx-font-size: 13px;" />
+                <TextField fx:id="txtSearch" prefWidth="420" promptText="Search" style="-fx-font-size: 13px;" />
 
                 <Button fx:id="btnRefresh" onAction="#onRefresh" prefWidth="100" style="-fx-font-size: 13px;" text="Refresh" />
             </HBox>

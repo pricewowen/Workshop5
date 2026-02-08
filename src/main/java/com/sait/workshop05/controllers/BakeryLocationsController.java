@@ -2,13 +2,18 @@ package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.database.BakeryDAO;
 import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.models.Address;
 import com.sait.workshop05.models.Bakery;
+import com.sait.workshop05.models.Employee;
 import com.sait.workshop05.models.Province;
+import com.sait.workshop05.util.StringUtil;
 import com.sait.workshop05.util.Validator;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -187,32 +192,68 @@ public class BakeryLocationsController {
 
     }
 
+    private ObservableList<Bakery> bakeryList = FXCollections.observableArrayList();
+    private FilteredList<Bakery> filtered;
+
     @FXML
     void initialize() {
         setComboBox();
         phoneNumberFormatter();
         postalCodeFormatter();
         setupTableColumns();
+        setupSearchFiltering();
         displayBakeries();
+    }
+
+    /**
+     * Sets up the search functionality
+     */
+    private void setupSearchFiltering() {
+        filtered = new FilteredList<>(bakeryList, e -> true);
+
+        txtSearch.textProperty().addListener((obs, oldText, newText) -> {
+            String q = newText == null ? "" : newText.trim().toLowerCase();
+
+            filtered.setPredicate(bakery -> {
+                if (q.isEmpty()) return true;
+
+                Address addr = bakery.getAddress();
+
+                return String.valueOf(bakery.getBakeryId()).contains(q)
+                        || StringUtil.containsIgnoreCase(bakery.getBakeryName(), q)
+                        || StringUtil.containsIgnoreCase(bakery.getBakeryEmail(), q)
+                        || StringUtil.containsIgnoreCase(bakery.getBakeryPhone(), q)
+                        || (addr != null && (
+                                StringUtil.containsIgnoreCase(bakery.getAddress().getAddressLine1(), q)
+                                || StringUtil.containsIgnoreCase(bakery.getAddress().getAddressLine2(), q)
+                                || StringUtil.containsIgnoreCase(bakery.getAddress().getAddressCity(), q)
+                                || StringUtil.containsIgnoreCase(bakery.getAddress().getAddressProvince(), q)
+                                || StringUtil.containsIgnoreCase(bakery.getAddress().getAddressPostalCode(), q)
+                        ));
+
+            });
+        });
+
+        SortedList<Bakery> sorted = new SortedList<>(filtered);
+        sorted.comparatorProperty().bind(tblBakeryLocations.comparatorProperty());
+        tblBakeryLocations.setItems(sorted);
     }
 
     /**
      * Displays all bakeries
      */
     private void displayBakeries() {
-        ArrayList<Bakery> bakeries;
-
         try {
             BakeryDAO dao = new BakeryDAO();
-            bakeries = dao.getAllBakeries();
-
-            ObservableList<Bakery> observableList = FXCollections.observableArrayList(bakeries);
-            tblBakeryLocations.setItems(observableList);
+            bakeryList.setAll(dao.getAllBakeries());
         } catch (SQLException e) {
             LogData.handleException("GET_BAKERIES", e);
         }
     }
 
+    /**
+     * Sets up the columns with the appropriate values
+     */
     private void setupTableColumns() {
         colBakeryId.setCellValueFactory(cellData -> new ReadOnlyObjectWrapper<>(cellData.getValue().getBakeryId()));
         colBakeryName.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getBakeryName()));
