@@ -3,6 +3,9 @@ package com.sait.workshop05.controllers;
 import com.sait.workshop05.database.ProductDAO;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Product;
+import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.StringUtil;
+import com.sait.workshop05.util.ValidationResult;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -17,8 +20,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class ProductManagementController {
-
-    private static final String LOG_USER = "PRODUCT_VIEW";
 
     // ── Table ──────────────────────────────────────────────────
     @FXML private TableView<Product> tblProducts;
@@ -97,7 +98,7 @@ public class ProductManagementController {
             cboTag.setItems(FXCollections.observableArrayList(tags));
         } catch (SQLException e) {
             LogData.handleException("LOAD_TAG_OPTIONS", e);
-            showError("Database Error", "Could not load tag options.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load tag options.", e.getMessage());
         }
     }
 
@@ -106,8 +107,8 @@ public class ProductManagementController {
             if (selected == null) return;
 
             txtProductId.setText(String.valueOf(selected.getProductId()));
-            txtProductName.setText(nz(selected.getProductName()));
-            txtDescription.setText(nz(selected.getProductDescription()));
+            txtProductName.setText(StringUtil.nz(selected.getProductName()));
+            txtDescription.setText(StringUtil.nz(selected.getProductDescription()));
             txtBasePrice.setText(String.format("%.2f", selected.getProductBasePrice()));
 
             // Load assigned tags for this product
@@ -134,9 +135,9 @@ public class ProductManagementController {
             filtered.setPredicate(prod -> {
                 if (q.isEmpty()) return true;
 
-                return contains(prod.getProductName(), q)
-                        || contains(prod.getProductDescription(), q)
-                        || contains(prod.getTagsDisplay(), q)
+                return StringUtil.containsIgnoreCase(prod.getProductName(), q)
+                        || StringUtil.containsIgnoreCase(prod.getProductDescription(), q)
+                        || StringUtil.containsIgnoreCase(prod.getTagsDisplay(), q)
                         || String.valueOf(prod.getProductId()).contains(q)
                         || String.format("%.2f", prod.getProductBasePrice()).contains(q);
             });
@@ -161,7 +162,7 @@ public class ProductManagementController {
             LogData.logAction("READ", "Product");
         } catch (SQLException e) {
             LogData.handleException("READ_PRODUCTS", e);
-            showError("Database Error", "Could not load products.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load products.", e.getMessage());
         }
     }
 
@@ -179,11 +180,11 @@ public class ProductManagementController {
     private void onAddTag() {
         String selectedTag = cboTag.getValue();
         if (selectedTag == null || selectedTag.isBlank()) {
-            showWarning("Tag", "Select a tag from the dropdown first.");
+            ErrorHandler.showWarning("Tag", "Select a tag from the dropdown first.");
             return;
         }
         if (assignedTags.contains(selectedTag)) {
-            showWarning("Tag", "This tag is already assigned.");
+            ErrorHandler.showWarning("Tag", "This tag is already assigned.");
             return;
         }
         assignedTags.add(selectedTag);
@@ -193,7 +194,7 @@ public class ProductManagementController {
     private void onRemoveTag() {
         String selected = lstAssignedTags.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showWarning("Tag", "Select a tag from the list to remove.");
+            ErrorHandler.showWarning("Tag", "Select a tag from the list to remove.");
             return;
         }
         assignedTags.remove(selected);
@@ -206,9 +207,9 @@ public class ProductManagementController {
     @FXML
     private void onCreate() {
         ValidationResult vr = validateForm(false);
-        if (!vr.ok) {
+        if (!vr.isOk()) {
             LogData.logAction("VALIDATION_FAILED", "Product");
-            showWarning("Validation", vr.message);
+            ErrorHandler.showWarning("Validation", vr.getMessage());
             return;
         }
 
@@ -234,22 +235,22 @@ public class ProductManagementController {
 
         } catch (SQLException ex) {
             LogData.handleException("CREATE_PRODUCT", ex);
-            String friendly = friendlyDbMessage(ex);
-            showError("Create Failed", "Could not create product.", friendly);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Create Failed", "Could not create product.", friendly);
         }
     }
 
     @FXML
     private void onUpdate() {
         if (txtProductId.getText() == null || txtProductId.getText().trim().isEmpty()) {
-            showWarning("Update", "Select a product row to update.");
+            ErrorHandler.showWarning("Update", "Select a product row to update.");
             return;
         }
 
         ValidationResult vr = validateForm(true);
-        if (!vr.ok) {
+        if (!vr.isOk()) {
             LogData.logAction("VALIDATION_FAILED", "Product");
-            showWarning("Validation", vr.message);
+            ErrorHandler.showWarning("Validation", vr.getMessage());
             return;
         }
 
@@ -267,8 +268,8 @@ public class ProductManagementController {
             lblStatus.setText(ok ? "Updated product #" + p.getProductId() : "No update applied");
         } catch (SQLException ex) {
             LogData.handleException("UPDATE_PRODUCT", ex);
-            String friendly = friendlyDbMessage(ex);
-            showError("Update Failed", "Could not update product.", friendly);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Update Failed", "Could not update product.", friendly);
         }
     }
 
@@ -276,7 +277,7 @@ public class ProductManagementController {
     private void onDelete() {
         Product selected = tblProducts.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showWarning("Delete", "Select a product row to delete.");
+            ErrorHandler.showWarning("Delete", "Select a product row to delete.");
             return;
         }
 
@@ -296,8 +297,8 @@ public class ProductManagementController {
             lblStatus.setText("Deleted product #" + selected.getProductId());
         } catch (SQLException ex) {
             LogData.handleException("DELETE_PRODUCT", ex);
-            String friendly = friendlyDbMessage(ex);
-            showError("Delete Failed", "Could not delete product.", friendly);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete product.", friendly);
         }
     }
 
@@ -332,12 +333,12 @@ public class ProductManagementController {
     }
 
     private ValidationResult validateForm(boolean isUpdate) {
-        String name = safe(txtProductName.getText());
-        String description = safe(txtDescription.getText());
-        String priceStr = safe(txtBasePrice.getText());
+        String name = StringUtil.safe(txtProductName.getText());
+        String description = StringUtil.safe(txtDescription.getText());
+        String priceStr = StringUtil.safe(txtBasePrice.getText());
 
         if (isUpdate) {
-            String id = safe(txtProductId.getText());
+            String id = StringUtil.safe(txtProductId.getText());
             if (id.isBlank()) return ValidationResult.fail("Product ID is missing (select a row first).");
             try {
                 Integer.parseInt(id);
@@ -367,26 +368,6 @@ public class ProductManagementController {
         return ValidationResult.ok();
     }
 
-    private String friendlyDbMessage(SQLException ex) {
-        String sqlState = ex.getSQLState();
-        String msg = (ex.getMessage() == null) ? "" : ex.getMessage();
-
-        if (sqlState != null && sqlState.startsWith("23")) {
-            if (msg.toLowerCase().contains("duplicate")) {
-                return "A product with that name may already exist.";
-            }
-            if (msg.toLowerCase().contains("chk_product_price") || msg.toLowerCase().contains("check constraint")) {
-                return "Price cannot be negative (database constraint).";
-            }
-            if (msg.toLowerCase().contains("foreign key constraint")) {
-                return "This product is referenced by other records (e.g., orders). Remove those references first.";
-            }
-            return "This operation violates a database constraint.";
-        }
-
-        return msg.isBlank() ? "Unknown database error." : msg;
-    }
-
     private void selectProductById(int id) {
         for (Product p : master) {
             if (p.getProductId() == id) {
@@ -394,55 +375,6 @@ public class ProductManagementController {
                 tblProducts.scrollTo(p);
                 return;
             }
-        }
-    }
-
-    private void showWarning(String title, String content) {
-        Alert a = new Alert(Alert.AlertType.WARNING);
-        a.setTitle(title);
-        a.setHeaderText(null);
-        a.setContentText(content);
-        a.showAndWait();
-    }
-
-    private void showError(String title, String header, String content) {
-        Alert a = new Alert(Alert.AlertType.ERROR);
-        a.setTitle(title);
-        a.setHeaderText(header);
-        a.setContentText(content);
-        a.showAndWait();
-    }
-
-    private static boolean contains(String field, String q) {
-        if (field == null) return false;
-        return field.toLowerCase().contains(q);
-    }
-
-    private static String nz(String s) {
-        return s == null ? "" : s;
-    }
-
-    private static String safe(String s) {
-        return s == null ? "" : s.trim();
-    }
-
-    // ── Validation result ──────────────────────────────────────
-
-    private static class ValidationResult {
-        final boolean ok;
-        final String message;
-
-        private ValidationResult(boolean ok, String message) {
-            this.ok = ok;
-            this.message = message;
-        }
-
-        static ValidationResult ok() {
-            return new ValidationResult(true, "");
-        }
-
-        static ValidationResult fail(String msg) {
-            return new ValidationResult(false, msg);
         }
     }
 }

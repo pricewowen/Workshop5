@@ -8,9 +8,9 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="800.0" prefWidth="1200.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.controllers.ActivityLogController">
+<AnchorPane prefHeight="750.0" prefWidth="1100.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.controllers.ActivityLogController">
    <children>
-      <VBox layoutX="14.0" layoutY="14.0" prefHeight="767.0" prefWidth="1165.0">
+      <VBox layoutX="12.0" layoutY="14.0" prefHeight="717.0" prefWidth="1164.0">
          <children>
             <HBox alignment="CENTER_LEFT" prefHeight="47.0" prefWidth="667.0">
                <children>
@@ -24,7 +24,7 @@
                   </Label>
                </children>
             </HBox>
-            <ListView fx:id="lstLogs" prefHeight="727.0" prefWidth="1165.0" />
+            <ListView fx:id="lstLogs" prefHeight="722.0" prefWidth="1170.0" />
          </children>
       </VBox>
    </children>

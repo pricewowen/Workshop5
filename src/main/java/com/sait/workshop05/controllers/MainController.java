@@ -2,6 +2,7 @@ package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.session.UserSession;
+import com.sait.workshop05.util.ErrorHandler;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -164,8 +165,8 @@ public class MainController {
             stage.setMinHeight(600);
             stage.centerOnScreen();
         } catch (IOException e) {
-            showError("Logout Error", "Could not return to login screen", e.getMessage());
-            e.printStackTrace();
+            ErrorHandler.showErrorDialog("Logout Error", "Could not return to login screen", e.getMessage());
+            LogData.handleException("LOGOUT", e);
         }
     }
 
@@ -202,8 +203,8 @@ public class MainController {
             AnchorPane.setRightAnchor(page, 0.0);
 
         } catch (Exception e) {
-            showError("Navigation Error", "Could not load page: " + view, e.getMessage());
-            e.printStackTrace();
+            ErrorHandler.showErrorDialog("Navigation Error", "Could not load page: " + view, e.getMessage());
+            LogData.handleException("LOAD_PAGE", e);
         }
     }
 
@@ -225,11 +226,4 @@ public class MainController {
         loadPage("dashboard-view.fxml");
     }
 
-    private void showError(String title, String header, String content) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(header);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
 }

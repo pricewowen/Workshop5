@@ -1,4 +1,4 @@
-package com.sait.workshop05.database;
+package com.sait.workshop05.models;
 
 public class UserOption {
     private final int userId;

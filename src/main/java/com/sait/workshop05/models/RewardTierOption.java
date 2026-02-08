@@ -1,4 +1,4 @@
-package com.sait.workshop05.database;
+package com.sait.workshop05.models;
 
 public class RewardTierOption {
     private final int rewardTierId;
