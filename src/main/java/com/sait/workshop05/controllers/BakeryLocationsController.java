@@ -6,7 +6,9 @@ import com.sait.workshop05.models.Address;
 import com.sait.workshop05.models.Bakery;
 import com.sait.workshop05.models.Employee;
 import com.sait.workshop05.models.Province;
+import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
+import com.sait.workshop05.util.ValidationResult;
 import com.sait.workshop05.util.Validator;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -118,6 +120,34 @@ public class BakeryLocationsController {
 
     @FXML
     void onCreate(ActionEvent event) {
+        validateInputs();
+    }
+
+    @FXML
+    void onDelete(ActionEvent event) {
+
+    }
+
+    @FXML
+    void onRefresh(ActionEvent event) {
+        txtSearch.clear();
+        refreshTable();
+    }
+
+    @FXML
+    void onUpdate(ActionEvent event) {
+        if (txtBakeryId.getText() == null || txtBakeryId.getText().trim().isEmpty()) {
+            ErrorHandler.showWarning("Update", "Select a bakery row to update.");
+            return;
+        }
+
+        validateInputs();
+    }
+
+    /**
+     * validates all user inputs
+     */
+    private void validateInputs() {
         // validation variables
         String nameError = Validator.isValidName(txtBakeryName.getText(), "Name");
         String emailError = Validator.isValidEmail(txtBakeryEmail.getText());
@@ -177,21 +207,7 @@ public class BakeryLocationsController {
         }
     }
 
-    @FXML
-    void onDelete(ActionEvent event) {
-
-    }
-
-    @FXML
-    void onRefresh(ActionEvent event) {
-
-    }
-
-    @FXML
-    void onUpdate(ActionEvent event) {
-
-    }
-
+    private BakeryDAO dao = new BakeryDAO();
     private ObservableList<Bakery> bakeryList = FXCollections.observableArrayList();
     private FilteredList<Bakery> filtered;
 
@@ -203,6 +219,47 @@ public class BakeryLocationsController {
         setupTableColumns();
         setupSearchFiltering();
         displayBakeries();
+        rowSelected();
+    }
+
+    /**
+     * Gets the row selected
+     */
+    private void rowSelected() {
+        tblBakeryLocations.getSelectionModel().selectedItemProperty()
+                .addListener((obs, oldBakery, newBakery) -> {
+            if (newBakery != null) {
+                populateForm(newBakery);
+            }
+        });
+    }
+
+    /**
+     * populates the text fields with bakery object
+     * @param bakery object to be entered into text fields
+     */
+    private void populateForm(Bakery bakery) {
+        txtBakeryId.setText(String.valueOf(bakery.getBakeryId()));
+        txtBakeryName.setText(bakery.getBakeryName());
+        txtBakeryEmail.setText(bakery.getBakeryEmail());
+        txtBakeryPhone.setText(bakery.getBakeryPhone());
+
+        Address addr = bakery.getAddress();
+
+        if (addr != null) {
+            txtAddressLine1.setText(addr.getAddressLine1());
+            txtAddressLine2.setText(addr.getAddressLine2());
+            txtAddressCity.setText(addr.getAddressCity());
+            txtAddressPostalCode.setText(addr.getAddressPostalCode());
+
+            // sets the combo box
+            for (Province p : cboAddressProvince.getItems()) {
+                if (p.getCode().equals(addr.getAddressProvince())) {
+                    cboAddressProvince.setValue(p);
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -244,10 +301,23 @@ public class BakeryLocationsController {
      */
     private void displayBakeries() {
         try {
-            BakeryDAO dao = new BakeryDAO();
             bakeryList.setAll(dao.getAllBakeries());
         } catch (SQLException e) {
             LogData.handleException("GET_BAKERIES", e);
+        }
+    }
+
+    /**
+     * Refreshes the table view
+     */
+    private void refreshTable() {
+        try {
+            bakeryList.clear();
+            bakeryList.addAll(dao.getAllBakeries());
+            LogData.logAction("READ", "Bakeries");
+        } catch (SQLException e) {
+            LogData.handleException("READ_BAKERIES", e);
+            ErrorHandler.showErrorDialog("Database Error", "Could not load bakeries.", e.getMessage());
         }
     }
 
