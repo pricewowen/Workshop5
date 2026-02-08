@@ -20,6 +20,9 @@ public class ActivityLogController {
         showLogs();
     }
 
+    /**
+     * Displays all logs
+     */
     public void showLogs() {
         ArrayList<String> listLogs = readLogs();
 

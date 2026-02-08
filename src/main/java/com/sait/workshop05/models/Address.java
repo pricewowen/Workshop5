@@ -8,8 +8,8 @@ public class Address {
     private String addressProvince;
     private String addressPostalCode;
 
-    public Address(String addressLine1, String addressLine2, String addressCity, String addressProvince, String addressPostalCode) {
-//        this.addressId = addressId;
+    public Address(int addressId, String addressLine1, String addressLine2, String addressCity, String addressProvince, String addressPostalCode) {
+        this.addressId = addressId;
         this.addressLine1 = addressLine1;
         this.addressLine2 = addressLine2;
         this.addressCity = addressCity;

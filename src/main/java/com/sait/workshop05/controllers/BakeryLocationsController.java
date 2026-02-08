@@ -1,7 +1,12 @@
-package com.sait.workshop05;
+package com.sait.workshop05.controllers;
 
+import com.sait.workshop05.database.BakeryDAO;
+import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.models.Bakery;
 import com.sait.workshop05.models.Province;
 import com.sait.workshop05.util.Validator;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -9,6 +14,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.util.StringConverter;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 public class BakeryLocationsController {
@@ -35,34 +42,34 @@ public class BakeryLocationsController {
     private ComboBox<Province> cboAddressProvince;
 
     @FXML
-    private TableColumn<?, ?> colBakeryAddress;
+    private TableColumn<Bakery, String> colBakeryAddress;
 
     @FXML
-    private TableColumn<?, ?> colBakeryCity;
+    private TableColumn<Bakery, String> colBakeryCity;
 
     @FXML
-    private TableColumn<?, ?> colBakeryEmail;
+    private TableColumn<Bakery, String> colBakeryEmail;
 
     @FXML
-    private TableColumn<?, ?> colBakeryId;
+    private TableColumn<Bakery, Integer> colBakeryId;
 
     @FXML
-    private TableColumn<?, ?> colBakeryName;
+    private TableColumn<Bakery, String> colBakeryName;
 
     @FXML
-    private TableColumn<?, ?> colBakeryPhone;
+    private TableColumn<Bakery, String> colBakeryPhone;
 
     @FXML
-    private TableColumn<?, ?> colBakeryPostalCode;
+    private TableColumn<Bakery, String> colBakeryPostalCode;
 
     @FXML
-    private TableColumn<?, ?> colBakeryProvince;
+    private TableColumn<Bakery, String> colBakeryProvince;
 
     @FXML
     private Label lblStatus1;
 
     @FXML
-    private TableView<?> tblBakeryLocations;
+    private TableView<Bakery> tblBakeryLocations;
 
     @FXML
     private TextField txtAddressCity;
@@ -182,17 +189,48 @@ public class BakeryLocationsController {
 
     @FXML
     void initialize() {
-        displayBakeries();
         setComboBox();
         phoneNumberFormatter();
         postalCodeFormatter();
+        setupTableColumns();
+        displayBakeries();
     }
 
     /**
      * Displays all bakeries
      */
     private void displayBakeries() {
+        ArrayList<Bakery> bakeries;
 
+        try {
+            BakeryDAO dao = new BakeryDAO();
+            bakeries = dao.getAllBakeries();
+
+            ObservableList<Bakery> observableList = FXCollections.observableArrayList(bakeries);
+            tblBakeryLocations.setItems(observableList);
+        } catch (SQLException e) {
+            LogData.handleException("GET_BAKERIES", e);
+        }
+    }
+
+    private void setupTableColumns() {
+        colBakeryId.setCellValueFactory(cellData -> new ReadOnlyObjectWrapper<>(cellData.getValue().getBakeryId()));
+        colBakeryName.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getBakeryName()));
+        colBakeryPhone.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getBakeryPhone()));
+        colBakeryEmail.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getBakeryEmail()));
+        colBakeryAddress.setCellValueFactory(cellData -> {
+                    String fullAddress = cellData.getValue().getAddress().getAddressLine1();
+                    String line2 =  cellData.getValue().getAddress().getAddressLine2();
+
+                    if (line2 != null) {
+                        fullAddress += ", " + line2;
+                    }
+
+                    return new ReadOnlyStringWrapper(fullAddress);
+                });
+        colBakeryCity.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getAddress().getAddressCity()));
+        colBakeryProvince.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getAddress().getAddressProvince()));
+        colBakeryPostalCode.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getAddress().getAddressPostalCode()));
     }
 
     /**
