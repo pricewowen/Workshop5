@@ -7,7 +7,7 @@
 
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.sait.workshop05.controllers.EmployeeManagementController"
+            fx:controller="com.sait.workshop05.controllers.CustomerManagementController"
             prefWidth="1200" prefHeight="800"
             style="-fx-background-color: white;">
 
@@ -25,7 +25,7 @@
             </padding>
 
             <HBox spacing="12" alignment="CENTER_LEFT">
-                <Label text="Employee Management">
+                <Label text="Customer Management">
                     <font>
                         <Font size="24"/>
                     </font>
@@ -35,7 +35,7 @@
 
                 <Label text="Search:" style="-fx-font-size: 13px;"/>
                 <TextField fx:id="txtSearch"
-                           promptText="Search name, role, phone, email, user, address"
+                           promptText="Search name, email, phone, tier, address"
                            prefWidth="420"
                            style="-fx-font-size: 13px;"/>
 
@@ -46,29 +46,28 @@
                         style="-fx-font-size: 13px;"/>
             </HBox>
 
-            <SplitPane dividerPositions="0.70" VBox.vgrow="ALWAYS" prefWidth="1.0" prefHeight="1.0">
+            <SplitPane dividerPositions="0.65" VBox.vgrow="ALWAYS" prefWidth="1.0" prefHeight="1.0">
 
                 <items>
 
                     <VBox spacing="10" SplitPane.resizableWithParent="true" fillWidth="true">
 
-                        <TableView fx:id="tblEmployees"
+                        <TableView fx:id="tblCustomers"
                                    VBox.vgrow="ALWAYS"
                                    prefWidth="1.0"
                                    style="-fx-font-size: 13px;">
                             <fixedCellSize>28</fixedCellSize>
 
                             <columns>
-                                <TableColumn fx:id="colEmployeeId" text="ID" prefWidth="70"/>
-                                <TableColumn fx:id="colFirstName" text="First" prefWidth="140"/>
-                                <TableColumn fx:id="colMiddleInitial" text="MI" prefWidth="60"/>
-                                <TableColumn fx:id="colLastName" text="Last" prefWidth="140"/>
-                                <TableColumn fx:id="colRole" text="Role" prefWidth="140"/>
-                                <TableColumn fx:id="colPhone" text="Phone" prefWidth="150"/>
-                                <TableColumn fx:id="colBusinessPhone" text="Business Phone" prefWidth="170"/>
-                                <TableColumn fx:id="colEmail" text="Email" prefWidth="230"/>
-                                <TableColumn fx:id="colUser" text="User" prefWidth="150"/>
-                                <TableColumn fx:id="colAddress" text="Address" prefWidth="260"/>
+                                <TableColumn fx:id="colCustomerId" text="ID" prefWidth="55"/>
+                                <TableColumn fx:id="colFirstName" text="First" prefWidth="110"/>
+                                <TableColumn fx:id="colMiddleInitial" text="MI" prefWidth="40"/>
+                                <TableColumn fx:id="colLastName" text="Last" prefWidth="110"/>
+                                <TableColumn fx:id="colEmail" text="Email" prefWidth="180"/>
+                                <TableColumn fx:id="colPhone" text="Phone" prefWidth="120"/>
+                                <TableColumn fx:id="colRewardTier" text="Tier" prefWidth="90"/>
+                                <TableColumn fx:id="colRewardBalance" text="Points" prefWidth="70"/>
+                                <TableColumn fx:id="colAddress" text="Address" prefWidth="200"/>
                             </columns>
                         </TableView>
 
@@ -81,7 +80,7 @@
                                 fitToHeight="true"
                                 hbarPolicy="NEVER"
                                 vbarPolicy="AS_NEEDED"
-                                prefWidth="420"
+                                prefWidth="440"
                                 SplitPane.resizableWithParent="true">
 
                         <content>
@@ -94,18 +93,18 @@
                                     <Insets top="16" right="16" bottom="16" left="16"/>
                                 </padding>
 
-                                <Label text="Employee Details"
+                                <Label text="Customer Details"
                                        style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
 
                                 <GridPane hgap="12" vgap="12" prefWidth="1.0">
                                     <columnConstraints>
-                                        <ColumnConstraints minWidth="150"/>
+                                        <ColumnConstraints minWidth="130"/>
                                         <ColumnConstraints hgrow="ALWAYS"/>
                                     </columnConstraints>
 
-                                    <Label text="Employee ID:" style="-fx-font-size: 13px;"
+                                    <Label text="Customer ID:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtEmployeeId" editable="false" promptText="Auto"
+                                    <TextField fx:id="txtCustomerId" editable="false" promptText="Auto"
                                                style="-fx-font-size: 13px;"
                                                GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
@@ -127,9 +126,9 @@
                                                style="-fx-font-size: 13px;"
                                                GridPane.rowIndex="3" GridPane.columnIndex="1"/>
 
-                                    <Label text="Role*:" style="-fx-font-size: 13px;"
+                                    <Label text="Role:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboRole"
+                                    <ComboBox fx:id="cboRole" promptText="Select role"
                                               style="-fx-font-size: 13px;"
                                               GridPane.rowIndex="4" GridPane.columnIndex="1"/>
 
@@ -151,17 +150,29 @@
                                                style="-fx-font-size: 13px;"
                                                GridPane.rowIndex="7" GridPane.columnIndex="1"/>
 
-                                    <Label text="User*:" style="-fx-font-size: 13px;"
+                                    <Label text="Address*:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="8" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboUser"
+                                    <ComboBox fx:id="cboAddress" promptText="Select address"
                                               style="-fx-font-size: 13px;"
                                               GridPane.rowIndex="8" GridPane.columnIndex="1"/>
 
-                                    <Label text="Address*:" style="-fx-font-size: 13px;"
+                                    <Label text="User Account:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="9" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboAddress"
+                                    <ComboBox fx:id="cboUser" promptText="(Optional)"
                                               style="-fx-font-size: 13px;"
                                               GridPane.rowIndex="9" GridPane.columnIndex="1"/>
+
+                                    <Label text="Reward Tier*:" style="-fx-font-size: 13px;"
+                                           GridPane.rowIndex="10" GridPane.columnIndex="0"/>
+                                    <ComboBox fx:id="cboRewardTier" promptText="Select tier"
+                                              style="-fx-font-size: 13px;"
+                                              GridPane.rowIndex="10" GridPane.columnIndex="1"/>
+
+                                    <Label text="Reward Points:" style="-fx-font-size: 13px;"
+                                           GridPane.rowIndex="11" GridPane.columnIndex="0"/>
+                                    <TextField fx:id="txtRewardBalance" promptText="0"
+                                               style="-fx-font-size: 13px;"
+                                               GridPane.rowIndex="11" GridPane.columnIndex="1"/>
                                 </GridPane>
 
                                 <Separator/>
@@ -180,6 +191,19 @@
                                             prefHeight="38" style="-fx-font-size: 13px;"
                                             HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
                                     <Button text="Clear" fx:id="btnClear" onAction="#onClear"
+                                            prefHeight="38" style="-fx-font-size: 13px;"
+                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                                </HBox>
+
+                                <Separator/>
+
+                                <HBox spacing="12">
+                                    <Button text="View Order History" fx:id="btnOrderHistory"
+                                            onAction="#onViewOrderHistory"
+                                            prefHeight="38" style="-fx-font-size: 13px;"
+                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                                    <Button text="Adjust Points" fx:id="btnAdjustPoints"
+                                            onAction="#onAdjustPoints"
                                             prefHeight="38" style="-fx-font-size: 13px;"
                                             HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
                                 </HBox>

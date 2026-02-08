@@ -260,6 +260,21 @@ CREATE TABLE Reward (
     CONSTRAINT FK_Reward_Order FOREIGN KEY (orderId) REFERENCES `Order`(orderId)
 ) ENGINE = InnoDB;
 
+-- Table: Message
+CREATE TABLE Message (
+    messageId           INT AUTO_INCREMENT NOT NULL,
+    senderId            INT NOT NULL,
+    receiverId          INT NOT NULL,
+    messageSubject      VARCHAR(255) NOT NULL,
+    messageContent      VARCHAR(2000) NOT NULL,
+    messageSentDateTime DATETIME(0) NOT NULL,
+    messageIsRead       TINYINT(1) NOT NULL DEFAULT 0,
+    CONSTRAINT PK_Message PRIMARY KEY (messageId),
+    CONSTRAINT FK_Message_Sender   FOREIGN KEY (senderId)   REFERENCES `User`(userId),
+    CONSTRAINT FK_Message_Receiver FOREIGN KEY (receiverId)  REFERENCES `User`(userId)
+    ) ENGINE = InnoDB;
+
+
 -- TABLE: Review
 CREATE TABLE Review (
     reviewId INT AUTO_INCREMENT NOT NULL,

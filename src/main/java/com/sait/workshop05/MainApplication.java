@@ -15,23 +15,23 @@ public class MainApplication extends Application {
 
         // Test DB connection on startup
         try (Connection conn = DBUtil.getConnection()) {
-            System.out.println("Connected to MySQL on startup");
+            // Connection successful
         } catch (Exception e) {
-            System.err.println("Database connection failed on startup");
             e.printStackTrace();
             System.exit(1);
         }
 
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("main-view.fxml"));
+        // Load login view (staff-only: Admin / Employee)
+        FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-        stage.setTitle("Peelin' Good");
+        stage.setTitle("Peelin' Good - Login");
         stage.setScene(scene);
 
-        stage.setWidth(1400);
-        stage.setHeight(850);
+        stage.setWidth(800);
+        stage.setHeight(600);
 
-        stage.setMinWidth(1200);
-        stage.setMinHeight(750);
+        stage.setMinWidth(800);
+        stage.setMinHeight(600);
 
         stage.setResizable(true);
 
