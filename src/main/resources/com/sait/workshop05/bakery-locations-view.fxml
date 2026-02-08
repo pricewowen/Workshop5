@@ -50,14 +50,14 @@
                   <children>
                      <TableView fx:id="tblBakeryLocations" fixedCellSize="28" prefWidth="1.0" style="-fx-font-size: 13px;" VBox.vgrow="ALWAYS">
                         <columns>
-                           <TableColumn fx:id="colBakeryId" prefWidth="70" text="ID" />
-                           <TableColumn fx:id="colBakeryName" prefWidth="124.0" text="Bakery Name" />
-                           <TableColumn fx:id="colBakeryPhone" prefWidth="150.66659545898438" text="Phone Number" />
-                           <TableColumn fx:id="colBakeryEmail" prefWidth="144.66668701171875" text="Email" />
-                           <TableColumn fx:id="colBakeryAddress" prefWidth="336.6666259765625" text="Address" />
-                           <TableColumn fx:id="colBakeryCity" prefWidth="122.66668701171875" text="City" />
-                           <TableColumn fx:id="colBakeryProvince" prefWidth="89.3333740234375" text="Province" />
-                           <TableColumn fx:id="colBakeryPostalCode" prefWidth="132.6666259765625" text="Postal Code" />
+                           <TableColumn fx:id="colBakeryId" prefWidth="48.66669023036957" text="ID" />
+                           <TableColumn fx:id="colBakeryName" prefWidth="225.9999656677246" text="Bakery Name" />
+                           <TableColumn fx:id="colBakeryPhone" prefWidth="117.33334350585938" text="Phone Number" />
+                           <TableColumn fx:id="colBakeryEmail" prefWidth="244.00003051757812" text="Email" />
+                           <TableColumn fx:id="colBakeryAddress" prefWidth="207.3333740234375" text="Address" />
+                           <TableColumn fx:id="colBakeryCity" prefWidth="111.99993896484375" text="City" />
+                           <TableColumn fx:id="colBakeryProvince" prefWidth="74.6666259765625" text="Province" />
+                           <TableColumn fx:id="colBakeryPostalCode" prefWidth="119.9998779296875" text="Postal Code" />
                         </columns>
                      </TableView>
                      <Label fx:id="lblStatus1" style="-fx-text-fill: #444; -fx-font-size: 13px;" text="" />
