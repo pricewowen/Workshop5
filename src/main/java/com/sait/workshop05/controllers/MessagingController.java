@@ -1,9 +1,10 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.database.ConversationSummary;
+import com.sait.workshop05.models.ConversationSummary;
 import com.sait.workshop05.database.MessageDAO;
-import com.sait.workshop05.database.UserOption;
+import com.sait.workshop05.models.UserOption;
 import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.models.Message;
 import com.sait.workshop05.session.UserSession;
 import javafx.collections.FXCollections;
@@ -168,7 +169,7 @@ public class MessagingController {
             lblUnreadCount.setText(totalUnread > 0 ? totalUnread + " unread" : "No unread messages");
 
         } catch (SQLException e) {
-            showError("Load Error", "Could not load conversations", e.getMessage());
+            ErrorHandler.showErrorDialog("Load Error", "Could not load conversations", e.getMessage());
             LogData.handleException("LOAD_CONVERSATIONS", e);
         }
     }
@@ -225,7 +226,7 @@ public class MessagingController {
             }
 
         } catch (SQLException e) {
-            showError("Load Error", "Could not load message thread", e.getMessage());
+            ErrorHandler.showErrorDialog("Load Error", "Could not load message thread", e.getMessage());
             LogData.handleException("LOAD_THREAD", e);
         } finally {
             isLoadingThread = false;
@@ -308,7 +309,7 @@ public class MessagingController {
             allUsers.removeIf(u -> u.getUserId() == currentUserId);
 
             if (allUsers.isEmpty()) {
-                showInfo("No Recipients", "There are no other staff users to message.");
+                ErrorHandler.showInfo("No Recipients", "There are no other staff users to message.");
                 return;
             }
 
@@ -359,7 +360,7 @@ public class MessagingController {
             });
 
         } catch (SQLException e) {
-            showError("Error", "Could not load staff users", e.getMessage());
+            ErrorHandler.showErrorDialog("Error", "Could not load staff users", e.getMessage());
             LogData.handleException("LOAD_STAFF_USERS", e);
         }
     }
@@ -367,7 +368,7 @@ public class MessagingController {
     @FXML
     void onSendMessage() {
         if (selectedPartnerId < 0) {
-            showError("No Recipient", "Please select a conversation or start a new message.", null);
+            ErrorHandler.showErrorDialog("No Recipient", "Please select a conversation or start a new message.", null);
             return;
         }
 
@@ -376,7 +377,7 @@ public class MessagingController {
 
         // Validation
         if (content.isEmpty()) {
-            showError("Validation Error", "Message content cannot be empty.", null);
+            ErrorHandler.showErrorDialog("Validation Error", "Message content cannot be empty.", null);
             txtMessageContent.requestFocus();
             return;
         }
@@ -386,12 +387,12 @@ public class MessagingController {
         }
 
         if (subject.length() > 255) {
-            showError("Validation Error", "Subject must be 255 characters or less.", null);
+            ErrorHandler.showErrorDialog("Validation Error", "Subject must be 255 characters or less.", null);
             return;
         }
 
         if (content.length() > 2000) {
-            showError("Validation Error", "Message content must be 2000 characters or less.", null);
+            ErrorHandler.showErrorDialog("Validation Error", "Message content must be 2000 characters or less.", null);
             return;
         }
 
@@ -417,11 +418,11 @@ public class MessagingController {
                 // Reload conversation
                 loadConversationThread();
             } else {
-                showError("Send Error", "Message could not be sent.", null);
+                ErrorHandler.showErrorDialog("Send Error", "Message could not be sent.", null);
             }
 
         } catch (SQLException e) {
-            showError("Send Error", "Failed to send message", friendlyDbMessage(e));
+            ErrorHandler.showErrorDialog("Send Error", "Failed to send message", ErrorHandler.friendlyDbMessage(e));
             LogData.handleException("SEND_MESSAGE", e);
         }
     }
@@ -457,36 +458,4 @@ public class MessagingController {
         txtMessageContent.setDisable(false);
     }
 
-    private String friendlyDbMessage(SQLException e) {
-        String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
-
-        if (msg.contains("message") && msg.contains("doesn't exist") || msg.contains("does not exist")) {
-            return "The Message table does not exist in the database.\n" +
-                    "Please run the sql/create_message_table.sql script first.";
-        }
-        if (msg.contains("foreign key") || msg.contains("fk_")) {
-            return "Invalid user reference. The selected user may not exist.";
-        }
-        if (msg.contains("data too long")) {
-            return "One of the fields exceeds the maximum allowed length.";
-        }
-
-        return e.getMessage();
-    }
-
-    private void showError(String title, String header, String content) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(header);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
-
-    private void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
 }

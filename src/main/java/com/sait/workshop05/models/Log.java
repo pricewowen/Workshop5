@@ -1,9 +1,6 @@
 package com.sait.workshop05.models;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
 
 public class Log {
     private  String user;
@@ -11,8 +8,8 @@ public class Log {
     private String target;
     private String currentDate;
 
+    private static final String DEFAULT_USER = "SYSTEM";
     private static String loggedInUser = null;
-    private final static DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
     /**
      * Sets the username of the logged-in user called when user logs in
@@ -31,7 +28,7 @@ public class Log {
 
     public Log(String action, String description) {
         // get the logged-in username
-        String user = "SYSTEM";
+        String user = DEFAULT_USER;
 
         if (loggedInUser != null && !loggedInUser.trim().isEmpty()) {
             user = loggedInUser;

@@ -2,9 +2,11 @@ package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.database.*;
 import com.sait.workshop05.logging.LogData;
-import com.sait.workshop05.models.Customer;
-import com.sait.workshop05.models.Order;
-import com.sait.workshop05.models.OrderItem;
+import com.sait.workshop05.models.*;
+import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.OrderStatus;
+import com.sait.workshop05.util.StringUtil;
+import com.sait.workshop05.util.ValidationResult;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -22,11 +24,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 public class CustomerManagementController {
-
-    private static final String LOG_USER = "CUSTOMER_VIEW";
 
     // ── Table ──────────────────────────────────────────────────
     @FXML private TableView<Customer> tblCustomers;
@@ -72,8 +71,6 @@ public class CustomerManagementController {
     private final ObservableList<Customer> master = FXCollections.observableArrayList();
     private FilteredList<Customer> filtered;
 
-    private static final Pattern EMAIL_RX = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
-    private static final Pattern PHONE_RX = Pattern.compile("^[0-9+()\\-\\s]{7,20}$");
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     // ────────────────────────────────────────────────────────────
@@ -118,13 +115,13 @@ public class CustomerManagementController {
             if (selected == null) return;
 
             txtCustomerId.setText(String.valueOf(selected.getCustomerId()));
-            txtFirstName.setText(nz(selected.getFirstName()));
-            txtMiddleInitial.setText(nz(selected.getMiddleInitial()));
-            txtLastName.setText(nz(selected.getLastName()));
+            txtFirstName.setText(StringUtil.nz(selected.getFirstName()));
+            txtMiddleInitial.setText(StringUtil.nz(selected.getMiddleInitial()));
+            txtLastName.setText(StringUtil.nz(selected.getLastName()));
             cboRole.setValue(selected.getRole());
-            txtPhone.setText(nz(selected.getPhone()));
-            txtBusinessPhone.setText(nz(selected.getBusinessPhone()));
-            txtEmail.setText(nz(selected.getEmail()));
+            txtPhone.setText(StringUtil.nz(selected.getPhone()));
+            txtBusinessPhone.setText(StringUtil.nz(selected.getBusinessPhone()));
+            txtEmail.setText(StringUtil.nz(selected.getEmail()));
             txtRewardBalance.setText(String.valueOf(selected.getRewardBalance()));
 
             selectAddressById(selected.getAddressId());
@@ -142,15 +139,15 @@ public class CustomerManagementController {
             filtered.setPredicate(cust -> {
                 if (q.isEmpty()) return true;
 
-                return contains(cust.getFirstName(), q)
-                        || contains(cust.getMiddleInitial(), q)
-                        || contains(cust.getLastName(), q)
-                        || contains(cust.getEmail(), q)
-                        || contains(cust.getPhone(), q)
-                        || contains(cust.getBusinessPhone(), q)
-                        || contains(cust.getRole(), q)
-                        || contains(cust.getRewardTierDisplay(), q)
-                        || contains(cust.getAddressDisplay(), q)
+                return StringUtil.containsIgnoreCase(cust.getFirstName(), q)
+                        || StringUtil.containsIgnoreCase(cust.getMiddleInitial(), q)
+                        || StringUtil.containsIgnoreCase(cust.getLastName(), q)
+                        || StringUtil.containsIgnoreCase(cust.getEmail(), q)
+                        || StringUtil.containsIgnoreCase(cust.getPhone(), q)
+                        || StringUtil.containsIgnoreCase(cust.getBusinessPhone(), q)
+                        || StringUtil.containsIgnoreCase(cust.getRole(), q)
+                        || StringUtil.containsIgnoreCase(cust.getRewardTierDisplay(), q)
+                        || StringUtil.containsIgnoreCase(cust.getAddressDisplay(), q)
                         || String.valueOf(cust.getCustomerId()).contains(q)
                         || String.valueOf(cust.getRewardBalance()).contains(q);
             });
@@ -175,7 +172,7 @@ public class CustomerManagementController {
             cboAddress.setItems(FXCollections.observableArrayList(addresses));
         } catch (SQLException e) {
             LogData.handleException("LOAD_CUSTOMER_COMBOS", e);
-            showError("Database Error", "Could not load dropdown lists.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load dropdown lists.", e.getMessage());
         }
     }
 
@@ -191,7 +188,7 @@ public class CustomerManagementController {
             LogData.logAction("READ", "Customer");
         } catch (SQLException e) {
             LogData.handleException("READ_CUSTOMERS", e);
-            showError("Database Error", "Could not load customers.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load customers.", e.getMessage());
         }
     }
 
@@ -226,9 +223,9 @@ public class CustomerManagementController {
     @FXML
     private void onCreate() {
         ValidationResult vr = validateForm(false);
-        if (!vr.ok) {
+        if (!vr.isOk()) {
             LogData.logAction("VALIDATION_FAILED", "Customer");
-            showWarning("Validation", vr.message);
+            ErrorHandler.showWarning("Validation", vr.getMessage());
             return;
         }
 
@@ -247,22 +244,22 @@ public class CustomerManagementController {
             }
         } catch (SQLException ex) {
             LogData.handleException("CREATE_CUSTOMER", ex);
-            String friendly = friendlyDbMessage(ex);
-            showError("Create Failed", "Could not create customer.", friendly);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Create Failed", "Could not create customer.", friendly);
         }
     }
 
     @FXML
     private void onUpdate() {
         if (txtCustomerId.getText() == null || txtCustomerId.getText().trim().isEmpty()) {
-            showWarning("Update", "Select a customer row to update.");
+            ErrorHandler.showWarning("Update", "Select a customer row to update.");
             return;
         }
 
         ValidationResult vr = validateForm(true);
-        if (!vr.ok) {
+        if (!vr.isOk()) {
             LogData.logAction("VALIDATION_FAILED", "Customer");
-            showWarning("Validation", vr.message);
+            ErrorHandler.showWarning("Validation", vr.getMessage());
             return;
         }
 
@@ -276,8 +273,8 @@ public class CustomerManagementController {
             lblStatus.setText(ok ? "Updated customer #" + c.getCustomerId() : "No update applied");
         } catch (SQLException ex) {
             LogData.handleException("UPDATE_CUSTOMER", ex);
-            String friendly = friendlyDbMessage(ex);
-            showError("Update Failed", "Could not update customer.", friendly);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Update Failed", "Could not update customer.", friendly);
         }
     }
 
@@ -285,7 +282,7 @@ public class CustomerManagementController {
     private void onDelete() {
         Customer selected = tblCustomers.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showWarning("Delete", "Select a customer row to delete.");
+            ErrorHandler.showWarning("Delete", "Select a customer row to delete.");
             return;
         }
 
@@ -306,8 +303,8 @@ public class CustomerManagementController {
             lblStatus.setText("Deleted customer #" + selected.getCustomerId());
         } catch (SQLException ex) {
             LogData.handleException("DELETE_CUSTOMER", ex);
-            String friendly = friendlyDbMessage(ex);
-            showError("Delete Failed", "Could not delete customer.", friendly);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete customer.", friendly);
         }
     }
 
@@ -319,7 +316,7 @@ public class CustomerManagementController {
     private void onViewOrderHistory() {
         Customer selected = tblCustomers.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showWarning("Order History", "Select a customer row first.");
+            ErrorHandler.showWarning("Order History", "Select a customer row first.");
             return;
         }
 
@@ -330,13 +327,13 @@ public class CustomerManagementController {
             showOrderHistoryDialog(selected, orders);
         } catch (SQLException e) {
             LogData.handleException("VIEW_ORDER_HISTORY", e);
-            showError("Database Error", "Could not load order history.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load order history.", e.getMessage());
         }
     }
 
     private void showOrderHistoryDialog(Customer customer, List<Order> orders) {
         Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Order History — " + customer.getFullName());
+        dialog.setTitle("Order History \u2014 " + customer.getFullName());
         dialog.setHeaderText(orders.size() + " order(s) found for " + customer.getFullName());
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         dialog.setResizable(true);
@@ -379,7 +376,7 @@ public class CustomerManagementController {
                 } else {
                     Order o = getTableView().getItems().get(getIndex());
                     setText(o.getOrderScheduledDateTime() != null
-                            ? o.getOrderScheduledDateTime().format(DT_FMT) : "—");
+                            ? o.getOrderScheduledDateTime().format(DT_FMT) : "\u2014");
                 }
             }
         });
@@ -473,7 +470,7 @@ public class CustomerManagementController {
             try {
                 List<OrderItem> items = orderDao.getOrderItems(selOrder.getOrderId());
                 tblItems.setItems(FXCollections.observableArrayList(items));
-                lblItems.setText("Order #" + selOrder.getOrderId() + " — "
+                lblItems.setText("Order #" + selOrder.getOrderId() + " \u2014 "
                         + items.size() + " item(s)");
             } catch (SQLException e) {
                 LogData.handleException("LOAD_ORDER_ITEMS", e);
@@ -483,7 +480,7 @@ public class CustomerManagementController {
 
         // ── Status filter ──────────────────────────────────────
         ComboBox<String> cboStatusFilter = new ComboBox<>(FXCollections.observableArrayList(
-                "All", "Pending", "Processing", "Ready", "Completed", "Cancelled"
+                OrderStatus.FILTER_STATUSES
         ));
         cboStatusFilter.setValue("All");
         cboStatusFilter.setStyle("-fx-font-size: 13px;");
@@ -528,7 +525,7 @@ public class CustomerManagementController {
     private void onAdjustPoints() {
         Customer selected = tblCustomers.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showWarning("Adjust Points", "Select a customer row first.");
+            ErrorHandler.showWarning("Adjust Points", "Select a customer row first.");
             return;
         }
 
@@ -581,7 +578,7 @@ public class CustomerManagementController {
         result.ifPresent(adjustment -> {
             int newBalance = selected.getRewardBalance() + adjustment;
             if (newBalance < 0) {
-                showWarning("Invalid", "Reward balance cannot go below 0.");
+                ErrorHandler.showWarning("Invalid", "Reward balance cannot go below 0.");
                 return;
             }
 
@@ -597,7 +594,7 @@ public class CustomerManagementController {
                         + " by " + adjustment + " -> " + newBalance);
             } catch (SQLException e) {
                 LogData.handleException("ADJUST_POINTS", e);
-                showError("Error", "Could not update reward balance.", e.getMessage());
+                ErrorHandler.showErrorDialog("Error", "Could not update reward balance.", e.getMessage());
             }
         });
     }
@@ -614,11 +611,11 @@ public class CustomerManagementController {
         }
 
         c.setFirstName(txtFirstName.getText().trim());
-        c.setMiddleInitial(trimToNull(txtMiddleInitial.getText()));
+        c.setMiddleInitial(StringUtil.trimToNull(txtMiddleInitial.getText()));
         c.setLastName(txtLastName.getText().trim());
         c.setRole(cboRole.getValue());
         c.setPhone(txtPhone.getText().trim());
-        c.setBusinessPhone(trimToNull(txtBusinessPhone.getText()));
+        c.setBusinessPhone(StringUtil.trimToNull(txtBusinessPhone.getText()));
         c.setEmail(txtEmail.getText().trim());
 
         AddressOption addr = cboAddress.getValue();
@@ -630,7 +627,7 @@ public class CustomerManagementController {
         RewardTierOption tier = cboRewardTier.getValue();
         c.setRewardTierId(tier.getRewardTierId());
 
-        String balStr = safe(txtRewardBalance.getText());
+        String balStr = StringUtil.safe(txtRewardBalance.getText());
         c.setRewardBalance(balStr.isEmpty() ? 0 : Integer.parseInt(balStr));
 
         c.setTierAssignedDate(LocalDateTime.now());
@@ -639,16 +636,16 @@ public class CustomerManagementController {
     }
 
     private ValidationResult validateForm(boolean isUpdate) {
-        String first = safe(txtFirstName.getText());
-        String last = safe(txtLastName.getText());
-        String phone = safe(txtPhone.getText());
-        String email = safe(txtEmail.getText());
-        String mi = safe(txtMiddleInitial.getText());
+        String first = StringUtil.safe(txtFirstName.getText());
+        String last = StringUtil.safe(txtLastName.getText());
+        String phone = StringUtil.safe(txtPhone.getText());
+        String email = StringUtil.safe(txtEmail.getText());
+        String mi = StringUtil.safe(txtMiddleInitial.getText());
         AddressOption addr = cboAddress.getValue();
         RewardTierOption tier = cboRewardTier.getValue();
 
         if (isUpdate) {
-            String id = safe(txtCustomerId.getText());
+            String id = StringUtil.safe(txtCustomerId.getText());
             if (id.isBlank()) return ValidationResult.fail("Customer ID is missing (select a row first).");
             try {
                 Integer.parseInt(id);
@@ -661,10 +658,10 @@ public class CustomerManagementController {
         if (last.isBlank()) return ValidationResult.fail("Last name is required.");
 
         if (phone.isBlank()) return ValidationResult.fail("Phone is required.");
-        if (!PHONE_RX.matcher(phone).matches()) return ValidationResult.fail("Phone format looks invalid.");
+        if (!StringUtil.PHONE_RX.matcher(phone).matches()) return ValidationResult.fail("Phone format looks invalid.");
 
         if (email.isBlank()) return ValidationResult.fail("Email is required.");
-        if (!EMAIL_RX.matcher(email).matches()) return ValidationResult.fail("Email format looks invalid.");
+        if (!StringUtil.EMAIL_RX.matcher(email).matches()) return ValidationResult.fail("Email format looks invalid.");
 
         if (!mi.isBlank() && mi.trim().length() > 2) return ValidationResult.fail("Middle initial must be 1-2 characters.");
 
@@ -675,12 +672,12 @@ public class CustomerManagementController {
         if (first.length() > 50) return ValidationResult.fail("First name must be 50 characters or less.");
         if (last.length() > 50) return ValidationResult.fail("Last name must be 50 characters or less.");
         if (phone.length() > 20) return ValidationResult.fail("Phone must be 20 characters or less.");
-        String biz = safe(txtBusinessPhone.getText());
+        String biz = StringUtil.safe(txtBusinessPhone.getText());
         if (!biz.isBlank() && biz.length() > 20) return ValidationResult.fail("Business phone must be 20 characters or less.");
         if (email.length() > 254) return ValidationResult.fail("Email must be 254 characters or less.");
 
         // Reward balance validation
-        String balStr = safe(txtRewardBalance.getText());
+        String balStr = StringUtil.safe(txtRewardBalance.getText());
         if (!balStr.isEmpty()) {
             try {
                 int bal = Integer.parseInt(balStr);
@@ -691,23 +688,6 @@ public class CustomerManagementController {
         }
 
         return ValidationResult.ok();
-    }
-
-    private String friendlyDbMessage(SQLException ex) {
-        String sqlState = ex.getSQLState();
-        String msg = (ex.getMessage() == null) ? "" : ex.getMessage();
-
-        if (sqlState != null && sqlState.startsWith("23")) {
-            if (msg.toLowerCase().contains("duplicate")) {
-                return "A customer with that email or user account may already exist.";
-            }
-            if (msg.toLowerCase().contains("foreign key constraint")) {
-                return "This customer is referenced by other records (e.g., orders). Remove those references first.";
-            }
-            return "This operation violates a database constraint.";
-        }
-
-        return msg.isBlank() ? "Unknown database error." : msg;
     }
 
     private void selectCustomerById(int id) {
@@ -755,60 +735,5 @@ public class CustomerManagementController {
             }
         }
         cboRewardTier.getSelectionModel().clearSelection();
-    }
-
-    private void showWarning(String title, String content) {
-        Alert a = new Alert(Alert.AlertType.WARNING);
-        a.setTitle(title);
-        a.setHeaderText(null);
-        a.setContentText(content);
-        a.showAndWait();
-    }
-
-    private void showError(String title, String header, String content) {
-        Alert a = new Alert(Alert.AlertType.ERROR);
-        a.setTitle(title);
-        a.setHeaderText(header);
-        a.setContentText(content);
-        a.showAndWait();
-    }
-
-    private static boolean contains(String field, String q) {
-        if (field == null) return false;
-        return field.toLowerCase().contains(q);
-    }
-
-    private static String nz(String s) {
-        return s == null ? "" : s;
-    }
-
-    private static String safe(String s) {
-        return s == null ? "" : s.trim();
-    }
-
-    private static String trimToNull(String s) {
-        if (s == null) return null;
-        String t = s.trim();
-        return t.isEmpty() ? null : t;
-    }
-
-    // ── Validation result ──────────────────────────────────────
-
-    private static class ValidationResult {
-        final boolean ok;
-        final String message;
-
-        private ValidationResult(boolean ok, String message) {
-            this.ok = ok;
-            this.message = message;
-        }
-
-        static ValidationResult ok() {
-            return new ValidationResult(true, "");
-        }
-
-        static ValidationResult fail(String msg) {
-            return new ValidationResult(false, msg);
-        }
     }
 }
