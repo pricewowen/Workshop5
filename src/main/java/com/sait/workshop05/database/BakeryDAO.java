@@ -191,4 +191,47 @@ public class BakeryDAO {
             }
         }
     }
+
+    public void deleteBakery(Bakery bakery) throws SQLException {
+        String sqlBakery = "DELETE FROM Bakery WHERE bakeryId = ?";
+        String sqlAddress = "DELETE FROM Address WHERE addressId = ?";
+
+        Connection conn = null;
+
+        try {
+            conn = DBUtil.getConnection();
+            conn.setAutoCommit(false);
+
+            // delete bakery first
+            try (PreparedStatement stmt = conn.prepareStatement(sqlBakery)) {
+                stmt.setInt(1, bakery.getBakeryId());
+                stmt.executeUpdate();
+            }
+
+            // delete the address
+            try (PreparedStatement stmt = conn.prepareStatement(sqlAddress)) {
+                stmt.setInt(1, bakery.getAddress().getAddressId());
+                stmt.executeUpdate();
+            }
+
+            conn.commit();
+        } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackE) {
+                    LogData.handleException("Rollback", rollbackE);
+                }
+            }
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    LogData.handleException("Closing_Connection", e);
+                }
+            }
+        }
+    }
 }

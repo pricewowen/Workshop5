@@ -20,6 +20,7 @@ import javafx.util.StringConverter;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class BakeryLocationsController {
@@ -162,7 +163,42 @@ public class BakeryLocationsController {
 
     @FXML
     void onDelete(ActionEvent event) {
+        Bakery selected = tblBakeryLocations.getSelectionModel().getSelectedItem();
 
+        if (selected == null) {
+            ErrorHandler.showWarning("Update", "Select a bakery row to delete.");
+            return;
+        }
+
+        // confirmation check
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirm Delete");
+        confirm.setHeaderText("Delete customer #" + selected.getBakeryId()
+                + " (" + selected.getBakeryName() + ")?");
+        confirm.setContentText("This cannot be undone. Employees linked to this bakery may also be affected.");
+
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) return;
+
+        // attempt to delete
+        try {
+            dao.deleteBakery(selected);
+
+            refreshTable();
+            LogData.logAction("DELETE", "Bakery_" + selected.getBakeryId());
+
+            // show alert
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Success");
+            alert.setHeaderText(null);
+            alert.setContentText("Bakery deleted successfully");
+            alert.showAndWait();
+
+            clearTextFields();
+        } catch (SQLException e) {
+            LogData.handleException("DELETE_BAKER", e);
+            ErrorHandler.showErrorDialog("Update failed", "Could not update bakery", e.getMessage());
+        }
     }
 
     @FXML
