@@ -2,10 +2,7 @@ package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.database.BakeryDAO;
 import com.sait.workshop05.logging.LogData;
-import com.sait.workshop05.models.Address;
-import com.sait.workshop05.models.Bakery;
-import com.sait.workshop05.models.Employee;
-import com.sait.workshop05.models.Province;
+import com.sait.workshop05.models.*;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
 import com.sait.workshop05.util.ValidationResult;
@@ -107,6 +104,14 @@ public class BakeryLocationsController {
 
     @FXML
     void onClear(ActionEvent event) {
+        clearTextFields();
+    }
+
+    /**
+     * clears the text fields
+     */
+    private void clearTextFields() {
+        tblBakeryLocations.getSelectionModel().clearSelection();
         txtAddressCity.clear();
         txtAddressLine1.clear();
         txtAddressLine2.clear();
@@ -136,12 +141,53 @@ public class BakeryLocationsController {
 
     @FXML
     void onUpdate(ActionEvent event) {
-        if (txtBakeryId.getText() == null || txtBakeryId.getText().trim().isEmpty()) {
+        Bakery selected = tblBakeryLocations.getSelectionModel().getSelectedItem();
+
+        if (selected == null) {
             ErrorHandler.showWarning("Update", "Select a bakery row to update.");
             return;
         }
 
         validateInputs();
+
+        try {
+            selected.setBakeryName(txtBakeryName.getText());
+            selected.setBakeryPhone(txtBakeryPhone.getText());
+            selected.setBakeryEmail(txtBakeryEmail.getText());
+
+            Address oldAddr = selected.getAddress();
+
+            if (oldAddr != null) {
+                Address newAddr = new Address(
+                        oldAddr.getAddressId(),
+                        txtAddressLine1.getText(),
+                        txtAddressLine2.getText(),
+                        txtAddressCity.getText(),
+                        cboAddressProvince.getValue().getCode(),
+                        txtAddressPostalCode.getText()
+                );
+                selected.setAddress(newAddr);
+            }
+
+            dao.updateBakery(selected);
+
+            // refresh
+            tblBakeryLocations.refresh();
+            LogData.logAction("UPDATE", "Bakery_" + selected.getBakeryId());
+
+            // show alert
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Success");
+            alert.setHeaderText(null);
+            alert.setContentText("Bakery updated successfully");
+            alert.showAndWait();
+
+            clearTextFields();
+        } catch (SQLException e) {
+            LogData.handleException("UPDATE_BAKERY", e);
+            ErrorHandler.showErrorDialog("Update failed", "Could not update bakery", e.getMessage());
+        }
+
     }
 
     /**
