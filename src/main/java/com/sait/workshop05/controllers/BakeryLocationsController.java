@@ -329,6 +329,7 @@ public class BakeryLocationsController {
     void initialize() {
         setComboBox();
         phoneNumberFormatter();
+        capFirstLetter();
         postalCodeFormatter();
         setupTableColumns();
         setupSearchFiltering();
@@ -549,6 +550,25 @@ public class BakeryLocationsController {
 
             if (!phoneFormatter.toString().equals(newText)) {
                 txtBakeryPhone.setText(phoneFormatter.toString());
+            }
+        });
+    }
+
+    /**
+     * capitalizes the first letter of text boxes
+     */
+    private void capFirstLetter() {
+        txtAddressCity.textProperty().addListener((obs, oldText, newText) -> {
+            if (newText == null || newText.isEmpty()) {
+                return;
+            }
+
+            String firstLetter = newText.substring(0, 1).toUpperCase();
+            String restOfWord = newText.substring(1).toLowerCase();
+            String city = firstLetter + restOfWord;
+
+            if (!newText.equals(city)) {
+                txtAddressCity.setText(city);
             }
         });
     }
