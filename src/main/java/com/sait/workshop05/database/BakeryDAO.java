@@ -56,6 +56,11 @@ public class BakeryDAO {
         }
     }
 
+    /**
+     * Updates the values of a bakery
+     * @param bakery the bakery object with updated values
+     * @throws SQLException if fails
+     */
     public void updateBakery(Bakery bakery) throws SQLException {
         String sql = "UPDATE Bakery " +
                 "SET bakeryName = ?, " +
