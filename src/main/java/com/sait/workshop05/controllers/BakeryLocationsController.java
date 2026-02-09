@@ -126,6 +126,38 @@ public class BakeryLocationsController {
     @FXML
     void onCreate(ActionEvent event) {
         validateInputs();
+
+        try {
+            // create an address object
+            Address addr = new Address(
+                    0,
+                    txtAddressLine1.getText(),
+                    txtAddressLine2.getText(),
+                    txtAddressCity.getText(),
+                    cboAddressProvince.getValue().getCode(),
+                    txtAddressPostalCode.getText()
+            );
+
+            //create bakery object
+            Bakery bakery = new Bakery(
+                    0,
+                    addr,
+                    txtBakeryName.getText(),
+                    txtBakeryPhone.getText(),
+                    txtBakeryEmail.getText()
+            );
+
+            // insert into database
+            dao.insertBakery(bakery);
+
+            refreshTable();
+            clearTextFields();
+
+            LogData.logAction("CREATE", "Bakery");
+        } catch (SQLException e) {
+            LogData.handleException("CREATE_BAKERY", e);
+            ErrorHandler.showErrorDialog("Create failed", "Could not add new bakery ", e.getMessage());
+        }
     }
 
     @FXML
