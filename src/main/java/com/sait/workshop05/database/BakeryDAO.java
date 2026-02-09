@@ -192,6 +192,11 @@ public class BakeryDAO {
         }
     }
 
+    /**
+     * Deletes a bakery and address
+     * @param bakery bakery to be deleted
+     * @throws SQLException if fails
+     */
     public void deleteBakery(Bakery bakery) throws SQLException {
         String sqlBakery = "DELETE FROM Bakery WHERE bakeryId = ?";
         String sqlAddress = "DELETE FROM Address WHERE addressId = ?";
