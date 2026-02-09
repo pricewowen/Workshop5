@@ -166,16 +166,16 @@ public class BakeryLocationsController {
         Bakery selected = tblBakeryLocations.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
-            ErrorHandler.showWarning("Update", "Select a bakery row to delete.");
+            ErrorHandler.showWarning("Delete", "Select a bakery row to delete.");
             return;
         }
 
         // confirmation check
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirm Delete");
-        confirm.setHeaderText("Delete customer #" + selected.getBakeryId()
+        confirm.setHeaderText("Delete bakery #" + selected.getBakeryId()
                 + " (" + selected.getBakeryName() + ")?");
-        confirm.setContentText("This cannot be undone. Employees linked to this bakery may also be affected.");
+        confirm.setContentText("This cannot be undone. Employees or \nProducts linked to this bakery may also be affected.");
 
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
@@ -197,7 +197,7 @@ public class BakeryLocationsController {
             clearTextFields();
         } catch (SQLException e) {
             LogData.handleException("DELETE_BAKER", e);
-            ErrorHandler.showErrorDialog("Update failed", "Could not update bakery", e.getMessage());
+            ErrorHandler.showErrorDialog("Delete failed", "This bakery cannot be deleted as it is referenced by other records.");
         }
     }
 
