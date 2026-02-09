@@ -99,15 +99,15 @@
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Bakery Email:" GridPane.columnIndex="2" GridPane.rowIndex="2" />
                                  <TextField fx:id="txtBakeryEmail" style="-fx-font-size: 13px;" GridPane.columnIndex="3" GridPane.rowIndex="2" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Address Line 1:" GridPane.rowIndex="4" />
-                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Address Line 2:" GridPane.columnIndex="2" GridPane.rowIndex="4" />
-                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="City:" GridPane.rowIndex="6" />
-                                 <Label maxWidth="133.0" prefHeight="26.0" prefWidth="133.0" style="-fx-font-size: 13px;" text="Province:" GridPane.columnIndex="2" GridPane.rowIndex="6" />
-                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Postal Code:" GridPane.rowIndex="8" />
-                                 <TextField fx:id="txtAddressLine2" style="-fx-font-size: 13px;" GridPane.columnIndex="3" GridPane.rowIndex="4" />
-                                 <TextField fx:id="txtAddressCity" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
                                  <TextField fx:id="txtAddressLine1" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                                 <TextField fx:id="txtAddressPostalCode" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Address Line 2:" GridPane.columnIndex="2" GridPane.rowIndex="4" />
+                                 <TextField fx:id="txtAddressLine2" style="-fx-font-size: 13px;" GridPane.columnIndex="3" GridPane.rowIndex="4" />
+                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="City:" GridPane.rowIndex="6" />
+                                 <TextField fx:id="txtAddressCity" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+                                 <Label maxWidth="133.0" prefHeight="26.0" prefWidth="133.0" style="-fx-font-size: 13px;" text="Province:" GridPane.columnIndex="2" GridPane.rowIndex="6" />
                                  <ComboBox fx:id="cboAddressProvince" prefHeight="25.0" prefWidth="963.0" GridPane.columnIndex="3" GridPane.rowIndex="6" />
+                                 <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Postal Code:" GridPane.rowIndex="8" />
+                                 <TextField fx:id="txtAddressPostalCode" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="8" />
                                  <Text fill="#7b7878" strokeType="OUTSIDE" strokeWidth="0.0" text="*required" GridPane.columnIndex="2" GridPane.rowIndex="8" />
                               </children>
                            </GridPane>
