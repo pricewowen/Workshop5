@@ -126,7 +126,9 @@ public class BakeryLocationsController {
 
     @FXML
     void onCreate(ActionEvent event) {
-        validateInputs();
+        if (!validateInputs()) {
+            return;
+        }
 
         try {
             // create an address object
@@ -216,7 +218,9 @@ public class BakeryLocationsController {
             return;
         }
 
-        validateInputs();
+        if (!validateInputs()) {
+            return;
+        }
 
         try {
             selected.setBakeryName(txtBakeryName.getText());
@@ -261,7 +265,7 @@ public class BakeryLocationsController {
     /**
      * validates all user inputs
      */
-    private void validateInputs() {
+    private boolean validateInputs() {
         // validation variables
         String nameError = Validator.isValidName(txtBakeryName.getText(), "Name");
         String emailError = Validator.isValidEmail(txtBakeryEmail.getText());
@@ -275,50 +279,52 @@ public class BakeryLocationsController {
         // display error message for name validation
         if (nameError != null) {
             showWarning("Validation Error", nameError);
-            return;
+            return false;
         }
 
         // display error message for email error
         if (emailError != null) {
             showWarning("Validation Error", emailError);
-            return;
+            return false;
         }
 
         // display error message for phone number
         if (phoneError != null) {
             showWarning("Validation Error", phoneError);
-            return;
+            return false;
         }
 
         // display error messages for address lines
         if (address1Error != null) {
             showWarning("Validation Error", address1Error);
-            return;
+            return false;
         }
 
         // display error messages for second address line
         if (address2Error != null) {
             showWarning("Validation Error", address2Error);
-            return;
+            return false;
         }
 
         // display error message for city error
         if (cityError != null) {
             showWarning("Validation Error", cityError);
-            return;
+            return false;
         }
 
         // display error message for province error
         if (provinceError != null) {
             showWarning("Validation Error", provinceError);
-            return;
+            return false;
         }
 
         // display error message for postal code
         if (postalCodeError != null) {
             showWarning("Validation Error", postalCodeError);
-            return;
+            return false;
         }
+
+        return true;
     }
 
     private BakeryDAO dao = new BakeryDAO();

@@ -7,7 +7,7 @@ public class Validator {
      * @return String with an error message if invalid. Null if valid
      */
     public static String isValidEmail(String email) {
-        String emailRegex = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
+        String emailRegex = "^[^\\s@]+@([^\\s@]+\\.)+[A-Za-z]{2,}$";
 
         if (email.isEmpty()) {
             return "Email is required";
@@ -29,6 +29,12 @@ public class Validator {
         String phoneRegex = "^[0-9+()\\-\\s]{7,20}$";
         if (phoneNum.isEmpty()) {
             return "Phone number is required";
+        }
+
+        // make sure there are not less than 10 numbers
+        String digits = phoneNum.replaceAll("\\D", "");
+        if (digits.length() != 10) {
+            return ("Phone number must be 10 digits");
         }
 
         if (!phoneNum.matches(phoneRegex)) {
