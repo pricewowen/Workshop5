@@ -20,8 +20,12 @@ import javafx.util.StringConverter;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
+
+import static com.sait.workshop05.util.StringUtil.safe;
 
 public class BakeryLocationsController {
 
@@ -130,6 +134,11 @@ public class BakeryLocationsController {
             return;
         }
 
+        // check for duplicate emails, phone numbers, names, addresses
+        if (!duplicateCheck()) {
+            return;
+        }
+
         try {
             // create an address object
             Address addr = new Address(
@@ -161,6 +170,72 @@ public class BakeryLocationsController {
             LogData.handleException("CREATE_BAKERY", e);
             ErrorHandler.showErrorDialog("Create failed", "Could not add new bakery ", e.getMessage());
         }
+    }
+
+    /**
+     * Checks for duplicate names, phone numbers, emails, addresses
+     * @return true if no duplicates are found. False otherwise
+     */
+    private boolean duplicateCheck() {
+        ArrayList<Bakery> bakeries = new ArrayList<Bakery>();
+        try {
+            bakeries = dao.getAllBakeries();
+        } catch (SQLException e) {
+            LogData.handleException("GET_BAKERIES", e);
+            ErrorHandler.showErrorDialog("Database Error", "Could not get bakeries.", e.getMessage());
+            return false;
+        }
+
+        // check for duplicates
+        String names = txtBakeryName.getText().toLowerCase();
+        String emails = txtBakeryEmail.getText().toLowerCase();
+        String phone = txtBakeryPhone.getText().toLowerCase();
+        String addressLine1 = txtAddressLine1.getText().toLowerCase();
+        String addressLine2 = txtAddressLine2.getText().toLowerCase();
+
+        if (bakeries != null) {
+            for (Bakery b : bakeries) {
+                Address a = b.getAddress();
+
+                String address = "";
+
+                if (a == null) {
+                    continue;
+                }
+
+                // check names
+                if (b.getBakeryName().trim().toLowerCase().equals(names)){
+                    showWarning("Duplicate Entry", "Bakery name already exists");
+                    return false;
+                }
+
+                // check emails
+                if (b.getBakeryEmail().trim().toLowerCase().equals(emails)) {
+                    showWarning("Duplicate Entry", "Bakery email already exists");
+                    return false;
+                }
+
+                // check phone
+                if (b.getBakeryPhone().trim().toLowerCase().equals(phone)) {
+                    showWarning("Duplicate Entry", "Bakery phone already exists");
+                    return false;
+                }
+
+                // check AddressLine1
+                if (a.getAddressLine1().trim().toLowerCase().equals(addressLine1)) {
+                    showWarning("Duplicate Entry", "Bakery address line 1 already exists");
+                    return false;
+                }
+
+                // check AddressLine2
+                String line2 = a.getAddressLine2() == null ? "" : a.getAddressLine2().trim().toLowerCase();
+                if (!line2.isEmpty() && line2.equals(addressLine2)) {
+                    showWarning("Duplicate Entry", "Bakery address line 2 already exists");
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @FXML
@@ -282,15 +357,15 @@ public class BakeryLocationsController {
             return false;
         }
 
-        // display error message for email error
-        if (emailError != null) {
-            showWarning("Validation Error", emailError);
-            return false;
-        }
-
         // display error message for phone number
         if (phoneError != null) {
             showWarning("Validation Error", phoneError);
+            return false;
+        }
+
+        // display error message for email error
+        if (emailError != null) {
+            showWarning("Validation Error", emailError);
             return false;
         }
 
@@ -425,6 +500,7 @@ public class BakeryLocationsController {
             bakeryList.setAll(dao.getAllBakeries());
         } catch (SQLException e) {
             LogData.handleException("GET_BAKERIES", e);
+            ErrorHandler.showErrorDialog("Database Error", "Could not get bakeries.", e.getMessage());
         }
     }
 

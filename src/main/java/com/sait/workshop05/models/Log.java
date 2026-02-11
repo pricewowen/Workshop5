@@ -1,6 +1,9 @@
 package com.sait.workshop05.models;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Log {
     private  String user;
@@ -35,12 +38,18 @@ public class Log {
         }
 
         // gets the current time in ISO_8601/RFC 3339
-        String currentTimeString = Instant.now().toString();
+//        String currentTimeString = Instant.now().toString();
+
+        // get current time with timezone
+        Instant now = Instant.now();
+        ZonedDateTime localTime = now.atZone(ZoneId.systemDefault());
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
 
         this.user = user.toUpperCase();
         this.action = action.toUpperCase();
         this.target = description.toUpperCase();
-        this.currentDate = currentTimeString;
+        this.currentDate = localTime.format(formatter);
     }
 
     public String getCurrentDate() {
