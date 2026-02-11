@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class ActivityLogController {
 
@@ -25,6 +26,9 @@ public class ActivityLogController {
      */
     public void showLogs() {
         ArrayList<String> listLogs = readLogs();
+
+        // reverse logs so newest are on top
+        Collections.reverse(listLogs);
 
         // display the logs in the ListView
         for (String log : listLogs) {
