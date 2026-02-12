@@ -13,7 +13,8 @@
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.sait.workshop05.controllers.MainController"
-            style="-fx-background-color: white;">
+            style="-fx-background-color: white;"
+            >
 
    <padding>
       <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
@@ -55,14 +56,17 @@
                   </Label>
 
                   <Button fx:id="btnDashboard" mnemonicParsing="false" onAction="#onDashboardClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Dashboard">
+                          prefHeight="25.0" prefWidth="204.0" text="Dashboard"
+                          style="-fx-background-color: transparent;
+                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnOrders" mnemonicParsing="false" onAction="#onOrdersClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Orders">
+                          prefHeight="25.0" prefWidth="204.0" text="Orders" style="-fx-background-color: transparent;
+                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
@@ -85,28 +89,32 @@
                   </Label>
 
                   <Button fx:id="btnProducts" mnemonicParsing="false" onAction="#onProductsClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Products">
+                          prefHeight="25.0" prefWidth="204.0" text="Products" style="-fx-background-color: transparent;
+                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0" top="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnCustomers" mnemonicParsing="false" onAction="#onCustomersClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Customers">
+                          prefHeight="25.0" prefWidth="204.0" text="Customers" style="-fx-background-color: transparent;
+                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnEmployees" mnemonicParsing="false" onAction="#onEmployeesClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Employees">
+                          prefHeight="25.0" prefWidth="204.0" text="Employees" style="-fx-background-color: transparent;
+                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnLocations" mnemonicParsing="false" onAction="#onLocationsClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Locations">
+                          prefHeight="25.0" prefWidth="204.0" text="Locations" style="-fx-background-color: transparent;
+                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
@@ -130,28 +138,32 @@
                   </Label>
 
                   <Button fx:id="btnRewards" mnemonicParsing="false" onAction="#onRewardsClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Rewards">
+                          prefHeight="25.0" prefWidth="204.0" text="Rewards" style="-fx-background-color: transparent;
+                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0" top="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnMessages" mnemonicParsing="false" onAction="#onMessagesClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Messages">
+                          prefHeight="25.0" prefWidth="204.0" text="Messages" style="-fx-background-color: transparent;
+                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnAnalytics" mnemonicParsing="false" onAction="#onAnalyticsClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Analytics">
+                          prefHeight="25.0" prefWidth="204.0" text="Analytics" style="-fx-background-color: transparent;
+                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnActivityLog" mnemonicParsing="false" onAction="#onActivityLogClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Activity Log">
+                          prefHeight="25.0" prefWidth="204.0" text="Activity Log" style="-fx-background-color: transparent;
+                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
@@ -171,7 +183,8 @@
                <children>
                   <Button fx:id="btnLogout" mnemonicParsing="false" onAction="#onLogoutClick"
                           prefHeight="25.0" prefWidth="204.0" text="Logout"
-                          style="-fx-text-fill: #8B0000;">
+                          style="-fx-background-color: transparent;
+                          -fx-text-fill: #8B0000; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
