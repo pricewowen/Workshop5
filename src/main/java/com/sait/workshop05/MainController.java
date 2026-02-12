@@ -48,6 +48,9 @@ public class MainController {
     private Button btnRewards;
 
     @FXML
+    private Button btnRewardTier;
+
+    @FXML
     private TextField srcSearchBar;
 
     @FXML
@@ -103,6 +106,11 @@ public class MainController {
     @FXML
     void onRewardsClick(ActionEvent event) {
         loadPage("reward-view.fxml");
+    }
+
+    @FXML
+    void onRewardTierClick(ActionEvent event) {
+        loadPage("reward-tier-view.fxml");
     }
 
     /**

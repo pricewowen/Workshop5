@@ -1,0 +1,463 @@
+package com.sait.workshop05;
+
+import com.sait.workshop05.database.RewardTierDAO;
+import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.models.RewardTier;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.Optional;
+
+public class RewardTierController {
+
+    private static final String LOG_USER = "REWARD_TIER_VIEW";
+
+    @FXML private TableView<RewardTier> tblRewardTiers;
+    @FXML private TableColumn<RewardTier, Integer> colTierId;
+    @FXML private TableColumn<RewardTier, String> colTierName;
+    @FXML private TableColumn<RewardTier, Integer> colMinPoints;
+    @FXML private TableColumn<RewardTier, Integer> colMaxPoints;
+    @FXML private TableColumn<RewardTier, BigDecimal> colDiscountRate;
+    @FXML private TextField txtSearch;
+    @FXML private Label lblStatus;
+    @FXML private TextField txtTierId;
+    @FXML private TextField txtTierName;
+    @FXML private TextField txtMinPoints;
+    @FXML private TextField txtMaxPoints;
+    @FXML private CheckBox chkUnlimited;
+    @FXML private TextField txtDiscountRate;
+
+    private final RewardTierDAO dao = new RewardTierDAO();
+    private final ObservableList<RewardTier> master = FXCollections.observableArrayList();
+    private FilteredList<RewardTier> filtered;
+
+    @FXML
+    void initialize() {
+        setColumns();
+        setSelectionBinding();
+        setSearchFiltering();
+        setupListeners();
+        refreshTable();
+    }
+
+    private void setColumns() {
+        colTierId.setCellValueFactory(new PropertyValueFactory<>("rewardTierId"));
+        colTierName.setCellValueFactory(new PropertyValueFactory<>("rewardTierName"));
+        colMinPoints.setCellValueFactory(new PropertyValueFactory<>("rewardTierMinPoints"));
+        colMaxPoints.setCellValueFactory(new PropertyValueFactory<>("rewardTierMaxPoints"));
+        colDiscountRate.setCellValueFactory(new PropertyValueFactory<>("rewardTierDiscountRate"));
+
+        // Format discount rate col
+        colDiscountRate.setCellFactory(column -> new TableCell<RewardTier, BigDecimal>() {
+            @Override
+            protected void updateItem(BigDecimal item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("%.0f%%", item));
+                }
+            }
+        });
+
+        // Format max points col
+        colMaxPoints.setCellFactory(column -> new TableCell<RewardTier, Integer>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setText(null);
+                } else if (item == null || item == 0) {
+                    setText("Unlimited");
+                } else {
+                    setText(String.format("%,d", item));
+                }
+            }
+        });
+
+        // Format min points col
+        colMinPoints.setCellFactory(column -> new TableCell<RewardTier, Integer>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("%,d", item));
+                }
+            }
+        });
+
+        tblRewardTiers.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+    }
+
+    private void setSelectionBinding() {
+        tblRewardTiers.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> {
+            if (selected == null) return;
+
+            txtTierId.setText(String.valueOf(selected.getRewardTierId()));
+            txtTierName.setText(selected.getRewardTierName());
+            txtMinPoints.setText(String.valueOf(selected.getRewardTierMinPoints()));
+
+            // Handle max points
+            if (selected.getRewardTierMaxPoints() == 0) {
+                txtMaxPoints.clear();
+                chkUnlimited.setSelected(true);
+                txtMaxPoints.setDisable(true);
+            } else {
+                txtMaxPoints.setText(String.valueOf(selected.getRewardTierMaxPoints()));
+                chkUnlimited.setSelected(false);
+                txtMaxPoints.setDisable(false);
+            }
+
+            // Handle discount rate
+            if (selected.getRewardTierDiscountRate() != null) {
+                txtDiscountRate.setText(selected.getRewardTierDiscountRate().toString());
+            } else {
+                txtDiscountRate.clear();
+            }
+        });
+    }
+
+    private void setSearchFiltering() {
+        filtered = new FilteredList<>(master, e -> true);
+
+        txtSearch.textProperty().addListener((obs, oldText, newText) -> {
+            String q = (newText == null) ? "" : newText.trim().toLowerCase();
+
+            filtered.setPredicate(tier -> {
+                if (q.isEmpty()) return true;
+
+                return contains(tier.getRewardTierName(), q)
+                        || String.valueOf(tier.getRewardTierId()).contains(q)
+                        || String.valueOf(tier.getRewardTierMinPoints()).contains(q)
+                        || (tier.getRewardTierMaxPoints() > 0 &&
+                        String.valueOf(tier.getRewardTierMaxPoints()).contains(q))
+                        || (tier.getRewardTierDiscountRate() != null &&
+                        tier.getRewardTierDiscountRate().toString().contains(q));
+            });
+            lblStatus.setText(filtered.size() + " tier(s) shown");
+        });
+
+        SortedList<RewardTier> sorted = new SortedList<>(filtered);
+        sorted.comparatorProperty().bind(tblRewardTiers.comparatorProperty());
+        tblRewardTiers.setItems(sorted);
+    }
+
+    private void setupListeners() {
+        chkUnlimited.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            txtMaxPoints.setDisable(newVal);
+            if (newVal) {
+                txtMaxPoints.clear();
+            }
+        });
+
+        // Add input validation
+        txtMinPoints.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal.matches("\\d*")) {
+                txtMinPoints.setText(newVal.replaceAll("[^\\d]", ""));
+            }
+        });
+        txtMaxPoints.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!chkUnlimited.isSelected() && !newVal.matches("\\d*")) {
+                txtMaxPoints.setText(newVal.replaceAll("[^\\d]", ""));
+            }
+        });
+
+        txtDiscountRate.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal.matches("\\d*\\.?\\d*")) {
+                txtDiscountRate.setText(oldVal);
+            }
+        });
+    }
+
+    private void refreshTable() {
+        try {
+            master.clear();
+            master.addAll(dao.getAllRewardTiers());
+            lblStatus.setText(master.size() + " tier(s) loaded");
+            LogData.logAction("READ", "RewardTier");
+        } catch (SQLException e) {
+            LogData.handleException("READ_REWARD_TIERS", e);
+            showError("Database Error", "Could not load reward tiers.", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void onRefresh() {
+        refreshTable();
+    }
+
+    @FXML
+    private void onClear() {
+        tblRewardTiers.getSelectionModel().clearSelection();
+        txtTierId.clear();
+        txtTierName.clear();
+        txtMinPoints.clear();
+        txtMaxPoints.clear();
+        txtDiscountRate.clear();
+        chkUnlimited.setSelected(false);
+        txtMaxPoints.setDisable(false);
+        lblStatus.setText("Cleared");
+    }
+
+    @FXML
+    private void onCreate() {
+        ValidationResult vr = validateForm(false);
+        if (!vr.ok) {
+            LogData.logAction("VALIDATION_FAILED", "RewardTier");
+            showWarning("Validation", vr.message);
+            return;
+        }
+
+        RewardTier tier = buildFromForm(false);
+
+        try {
+            // Check for overlapping ranges
+            Integer maxPoints = chkUnlimited.isSelected() ? null :
+                    (txtMaxPoints.getText().isEmpty() ? null : Integer.parseInt(txtMaxPoints.getText()));
+
+            if (!dao.validatePointsRange(tier.getRewardTierMinPoints(), maxPoints, null)) {
+                showWarning("Validation", "Point range overlaps with an existing tier.");
+                return;
+            }
+
+            int newId = dao.insertRewardTier(tier);
+            LogData.logAction("CREATE", "RewardTier");
+            refreshTable();
+
+            if (newId > 0) {
+                selectTierById(newId);
+                lblStatus.setText("Created tier #" + newId);
+            }
+
+        } catch (SQLException ex) {
+            LogData.handleException("CREATE_REWARD_TIER", ex);
+            showError("Create Failed", "Could not create reward tier.", friendlyDbMessage(ex));
+        }
+    }
+
+    @FXML
+    private void onUpdate() {
+        if (txtTierId.getText() == null || txtTierId.getText().trim().isEmpty()) {
+            showWarning("Update", "Select a tier row to update.");
+            return;
+        }
+
+        ValidationResult vr = validateForm(true);
+        if (!vr.ok) {
+            LogData.logAction("VALIDATION_FAILED", "RewardTier");
+            showWarning("Validation", vr.message);
+            return;
+        }
+
+        RewardTier tier = buildFromForm(true);
+
+        try {
+            // Check for overlapping points range
+            Integer maxPoints = chkUnlimited.isSelected() ? null :
+                    (txtMaxPoints.getText().isEmpty() ? null : Integer.parseInt(txtMaxPoints.getText()));
+
+            if (!dao.validatePointsRange(tier.getRewardTierMinPoints(), maxPoints, tier.getRewardTierId())) {
+                showWarning("Validation", "Points range overlaps with an existing tier.");
+                return;
+            }
+
+            boolean ok = dao.updateRewardTier(tier);
+            LogData.logAction("UPDATE", "RewardTier");
+            refreshTable();
+            selectTierById(tier.getRewardTierId());
+            lblStatus.setText(ok ? "Updated tier #" + tier.getRewardTierId() : "No update applied");
+        } catch (SQLException ex) {
+            LogData.handleException("UPDATE_REWARD_TIER", ex);
+            showError("Update Failed", "Could not update reward tier.", friendlyDbMessage(ex));
+        }
+    }
+
+    @FXML
+    private void onDelete() {
+        RewardTier selected = tblRewardTiers.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showWarning("Delete", "Select a tier row to delete.");
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirm Delete");
+        confirm.setHeaderText("Delete tier: " + selected.getRewardTierName());
+        confirm.setContentText("This cannot be undone. Customers assigned to this tier will be affected.");
+
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) return;
+
+        try {
+            dao.deleteRewardTier(selected.getRewardTierId());
+            LogData.logAction("DELETE", "RewardTier");
+            refreshTable();
+            onClear();
+            lblStatus.setText("Deleted tier #" + selected.getRewardTierId());
+        } catch (SQLException ex) {
+            LogData.handleException("DELETE_REWARD_TIER", ex);
+
+            String friendly = friendlyDbMessage(ex);
+            if (friendly.contains("assigned to customers")) {
+                showError("Delete Failed", "Cannot delete tier", "This tier is currently assigned to customers. Please reassign customers first.");
+            } else {
+                showError("Delete Failed", "Could not delete reward tier.", friendly);
+            }
+        }
+    }
+
+    private RewardTier buildFromForm(boolean includeId) {
+        RewardTier tier = new RewardTier();
+
+        if (includeId) {
+            tier.setRewardTierId(Integer.parseInt(txtTierId.getText().trim()));
+        }
+
+        tier.setRewardTierName(txtTierName.getText().trim());
+        tier.setRewardTierMinPoints(Integer.parseInt(txtMinPoints.getText().trim()));
+
+        // Handle max points
+        if (chkUnlimited.isSelected() || txtMaxPoints.getText().trim().isEmpty()) {
+            tier.setRewardTierMaxPoints(null);
+        } else {
+            tier.setRewardTierMaxPoints(Integer.parseInt(txtMaxPoints.getText().trim()));
+        }
+
+        // Handle discount rate
+        String discountStr = txtDiscountRate.getText().trim();
+        if (!discountStr.isEmpty()) {
+            tier.setRewardTierDiscountRate(new BigDecimal(discountStr));
+        } else {
+            tier.setRewardTierDiscountRate(null);
+        }
+
+        return tier;
+    }
+
+    private ValidationResult validateForm(boolean isUpdate) {
+        String name = safe(txtTierName.getText());
+        String minPoints = safe(txtMinPoints.getText());
+
+        if (isUpdate) {
+            String id = safe(txtTierId.getText());
+            if (id.isBlank()) return ValidationResult.fail("Tier ID is missing (select a row first).");
+            try {
+                Integer.parseInt(id);
+            } catch (NumberFormatException ex) {
+                return ValidationResult.fail("Tier ID is invalid.");
+            }
+        }
+
+        if (name.isBlank()) return ValidationResult.fail("Tier name is required.");
+        if (name.length() > 30) return ValidationResult.fail("Tier name must be 30 characters or less.");
+
+        if (minPoints.isBlank()) return ValidationResult.fail("Minimum points is required.");
+        try {
+            int minPointsValue = Integer.parseInt(minPoints);
+            if (minPointsValue < 0) return ValidationResult.fail("Minimum points must be 0 or greater.");
+        } catch (NumberFormatException ex) {
+            return ValidationResult.fail("Minimum points must be a valid integer.");
+        }
+
+        // Validate max points if provided
+        if (!chkUnlimited.isSelected() && !txtMaxPoints.getText().trim().isEmpty()) {
+            try {
+                int maxPointsValue = Integer.parseInt(txtMaxPoints.getText().trim());
+                int minPointsValue = Integer.parseInt(minPoints);
+                if (maxPointsValue <= minPointsValue) {
+                    return ValidationResult.fail("Maximum points must be greater than minimum points.");
+                }
+            } catch (NumberFormatException ex) {
+                return ValidationResult.fail("Maximum points must be a valid integer.");
+            }
+        }
+
+        // Validate discount rate if provided
+        String discountStr = safe(txtDiscountRate.getText());
+        if (!discountStr.isEmpty()) {
+            try {
+                BigDecimal discount = new BigDecimal(discountStr);
+                if (discount.compareTo(BigDecimal.ZERO) < 0 || discount.compareTo(new BigDecimal("100")) > 0) {
+                    return ValidationResult.fail("Discount rate must be between 0 and 100.");
+                }
+            } catch (NumberFormatException ex) {
+                return ValidationResult.fail("Discount rate must be a valid number.");
+            }
+        }
+
+        return ValidationResult.ok();
+    }
+
+    private String friendlyDbMessage(SQLException ex) {
+        String sqlState = ex.getSQLState();
+        String msg = (ex.getMessage() == null) ? "" : ex.getMessage();
+
+        if (sqlState != null && sqlState.startsWith("23")) {
+            if (msg.toLowerCase().contains("uq_rewardtier_name")) {
+                return "A tier with this name already exists.";
+            }
+            if (msg.toLowerCase().contains("ck_rewardtier_maxpoints")) {
+                return "Maximum points must be greater than or equal to minimum points.";
+            }
+            return "This operation violates a database constraint.";
+        }
+
+        return msg.isBlank() ? "Unknown database error." : msg;
+    }
+
+    private void selectTierById(int id) {
+        for (RewardTier t : master) {
+            if (t.getRewardTierId() == id) {
+                tblRewardTiers.getSelectionModel().select(t);
+                tblRewardTiers.scrollTo(t);
+                return;
+            }
+        }
+    }
+
+    private void showWarning(String title, String content) {
+        Alert a = new Alert(Alert.AlertType.WARNING);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(content);
+        a.showAndWait();
+    }
+
+    private void showError(String title, String header, String content) {
+        Alert a = new Alert(Alert.AlertType.ERROR);
+        a.setTitle(title);
+        a.setHeaderText(header);
+        a.setContentText(content);
+        a.showAndWait();
+    }
+
+    private static boolean contains(String field, String q) {
+        if (field == null) return false;
+        return field.toLowerCase().contains(q);
+    }
+
+    private static String safe(String s) {
+        return s == null ? "" : s.trim();
+    }
+
+    private static class ValidationResult {
+        final boolean ok;
+        final String message;
+
+        private ValidationResult(boolean ok, String message) {
+            this.ok = ok;
+            this.message = message;
+        }
+        static ValidationResult ok() {return new ValidationResult(true, "");}
+        static ValidationResult fail(String msg) {return new ValidationResult(false, msg);}
+    }
+}
