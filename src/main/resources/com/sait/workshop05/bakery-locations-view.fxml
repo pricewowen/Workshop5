@@ -44,9 +44,9 @@
 
                 <Button fx:id="btnRefresh" onAction="#onRefresh" prefWidth="100" style="-fx-font-size: 13px;" text="Refresh" />
             </HBox>
-         <SplitPane dividerPositions="0.42604651162790697" orientation="VERTICAL" prefHeight="719.0" prefWidth="1172.0">
+         <SplitPane dividerPositions="0.38976744186046514" orientation="VERTICAL" prefHeight="719.0" prefWidth="1172.0">
            <items>
-               <VBox fillWidth="true" prefHeight="306.0" prefWidth="1169.0" spacing="10">
+               <VBox fillWidth="true" prefHeight="284.0" prefWidth="1169.0" spacing="10">
                   <children>
                      <TableView fx:id="tblBakeryLocations" fixedCellSize="28" prefWidth="1.0" style="-fx-font-size: 13px;" VBox.vgrow="ALWAYS">
                         <columns>
@@ -65,7 +65,7 @@
                </VBox>
                <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" prefHeight="409.0" prefWidth="1169.0" vbarPolicy="AS_NEEDED">
                   <content>
-                     <VBox fillWidth="true" prefHeight="424.0" prefWidth="1169.0" spacing="14" style="-fx-background-color: #fafafa; -fx-border-color: #e6e6e6;">
+                     <VBox fillWidth="true" prefHeight="416.0" prefWidth="1169.0" spacing="14" style="-fx-background-color: #fafafa; -fx-border-color: #e6e6e6;">
                         <padding>
                            <Insets bottom="16.0" left="16.0" right="16.0" />
                         </padding>
