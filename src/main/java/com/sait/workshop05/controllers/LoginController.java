@@ -1,5 +1,6 @@
 package com.sait.workshop05.controllers;
 
+import com.sait.workshop05.MainApplication;
 import com.sait.workshop05.database.AuthDAO;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.User;
@@ -109,6 +110,9 @@ public class LoginController {
     private void openMainView() throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/sait/workshop05/main-view.fxml"));
         Scene scene = new Scene(loader.load());
+
+        // connect stylesheet
+        scene.getStylesheets().add(this.getClass().getResource("/com/sait/workshop05/styles.css").toString());
 
         Stage stage = (Stage) loginButton.getScene().getWindow();
         stage.setScene(scene);

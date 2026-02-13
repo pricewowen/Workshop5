@@ -1,7 +1,4 @@
 /* General Styles */
-.root {
-    -fx-font-family: "Segoe UI", "Arial", sans-serif;
-}
 
 /* Navigation Buttons */
 .nav-button {
@@ -200,6 +197,28 @@
     -fx-padding: 2 6;
     -fx-background-radius: 10;
     -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.sidebar_button {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 6 0 6 20;
+}
+
+.sidebar_button:hover {
+    -fx-background-color: #d1ba9d;
+}
+
+.sidebar_button:pressed {
+    -fx-background-color: #c38f4e;
+}
+
+.sidebar_button.active {
+    -fx-background-color: #bfa17e;
+    -fx-text-fill: white;
     -fx-font-weight: bold;
 }
 

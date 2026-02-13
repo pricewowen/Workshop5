@@ -34,7 +34,7 @@
                <children>
                   <Label text="Peelin' Good">
                      <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="18.0"/>
+                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="18.0" />
                      </font>
                   </Label>
                   <Label text="Management System"/>
@@ -48,7 +48,7 @@
                <children>
                   <Label text="Main">
                      <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="14.0"/>
+                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="16.0"/>
                      </font>
                      <VBox.margin>
                         <Insets bottom="10.0" left="15.0"/>
@@ -56,17 +56,15 @@
                   </Label>
 
                   <Button fx:id="btnDashboard" mnemonicParsing="false" onAction="#onDashboardClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Dashboard"
-                          style="-fx-background-color: transparent;
-                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Dashboard" styleClass="sidebar_button"
+                           >
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnOrders" mnemonicParsing="false" onAction="#onOrdersClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Orders" style="-fx-background-color: transparent;
-                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Orders" styleClass="sidebar_button">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
@@ -81,7 +79,7 @@
                <children>
                   <Label text="Management">
                      <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="14.0"/>
+                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="16.0"/>
                      </font>
                      <VBox.margin>
                         <Insets left="15.0"/>
@@ -89,32 +87,28 @@
                   </Label>
 
                   <Button fx:id="btnProducts" mnemonicParsing="false" onAction="#onProductsClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Products" style="-fx-background-color: transparent;
-                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Products" styleClass="sidebar_button">
                      <VBox.margin>
                         <Insets bottom="10.0" top="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnCustomers" mnemonicParsing="false" onAction="#onCustomersClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Customers" style="-fx-background-color: transparent;
-                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Customers" styleClass="sidebar_button">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnEmployees" mnemonicParsing="false" onAction="#onEmployeesClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Employees" style="-fx-background-color: transparent;
-                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Employees" styleClass="sidebar_button">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnLocations" mnemonicParsing="false" onAction="#onLocationsClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Locations" style="-fx-background-color: transparent;
-                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Locations" styleClass="sidebar_button">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
@@ -130,7 +124,7 @@
                <children>
                   <Label text="System">
                      <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="14.0"/>
+                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="16.0"/>
                      </font>
                      <VBox.margin>
                         <Insets left="15.0"/>
@@ -138,32 +132,28 @@
                   </Label>
 
                   <Button fx:id="btnRewards" mnemonicParsing="false" onAction="#onRewardsClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Rewards" style="-fx-background-color: transparent;
-                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Rewards" styleClass="sidebar_button">
                      <VBox.margin>
                         <Insets bottom="10.0" top="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnMessages" mnemonicParsing="false" onAction="#onMessagesClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Messages" style="-fx-background-color: transparent;
-                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Messages" styleClass="sidebar_button">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnAnalytics" mnemonicParsing="false" onAction="#onAnalyticsClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Analytics" style="-fx-background-color: transparent;
-                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Analytics" styleClass="sidebar_button">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnActivityLog" mnemonicParsing="false" onAction="#onActivityLogClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Activity Log" style="-fx-background-color: transparent;
-                          -fx-text-fill: white; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Activity Log" styleClass="sidebar_button">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
@@ -182,9 +172,8 @@
             <VBox prefWidth="191.0">
                <children>
                   <Button fx:id="btnLogout" mnemonicParsing="false" onAction="#onLogoutClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Logout"
-                          style="-fx-background-color: transparent;
-                          -fx-text-fill: #8B0000; -fx-font-size: 14px; -fx-alignment: CENTER_LEFT; -fx-padding: 6 0 6 20;">
+                          prefHeight="25.0" prefWidth="204.0" text="Logout" style="-fx-text-fill: red" styleClass="sidebar_button"
+                          >
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
