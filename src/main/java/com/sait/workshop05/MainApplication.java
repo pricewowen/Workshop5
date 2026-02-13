@@ -24,14 +24,15 @@ public class MainApplication extends Application {
         // Load login view (staff-only: Admin / Employee)
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
+
         stage.setTitle("Peelin' Good - Login");
         stage.setScene(scene);
 
-        stage.setWidth(800);
-        stage.setHeight(600);
+        stage.setWidth(700);
+        stage.setHeight(730);
 
-        stage.setMinWidth(800);
-        stage.setMinHeight(600);
+        stage.setMinWidth(700);
+        stage.setMinHeight(730);
 
         stage.setResizable(true);
 

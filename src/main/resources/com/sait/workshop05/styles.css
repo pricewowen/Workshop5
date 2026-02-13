@@ -1,7 +1,4 @@
 /* General Styles */
-.root {
-    -fx-font-family: "Segoe UI", "Arial", sans-serif;
-}
 
 /* Navigation Buttons */
 .nav-button {
@@ -14,11 +11,11 @@
 }
 
 .nav-button:hover {
-    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-background-color: rgba(255,255,255,0.1);
 }
 
 .nav-button:pressed {
-    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-background-color: rgba(255,255,255,0.2);
 }
 
 /* Sidebar Buttons */
@@ -48,7 +45,7 @@
     -fx-border-radius: 8;
     -fx-background-radius: 8;
     -fx-padding: 15;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1),5,0,0,2);
 }
 
 .card:hover {
@@ -200,6 +197,28 @@
     -fx-padding: 2 6;
     -fx-background-radius: 10;
     -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.sidebar_button {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 6 0 6 20;
+}
+
+.sidebar_button:hover {
+    -fx-background-color: #d1ba9d;
+}
+
+.sidebar_button:pressed {
+    -fx-background-color: #c38f4e;
+}
+
+.sidebar_button.active {
+    -fx-background-color: #bfa17e;
+    -fx-text-fill: white;
     -fx-font-weight: bold;
 }
 

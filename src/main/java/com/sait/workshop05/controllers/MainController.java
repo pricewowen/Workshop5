@@ -58,6 +58,8 @@ public class MainController {
     @FXML
     private TextField srcSearchBar;
 
+    private Button activeButton;
+
     @FXML
     void initialize() {
         applyRoleBasedVisibility();
@@ -93,51 +95,61 @@ public class MainController {
 
     @FXML
     void onActivityLogClick(ActionEvent event) {
+        setActiveButton(btnActivityLog);
         loadPage("activity-log-view.fxml");
     }
 
     @FXML
     void onAnalyticsClick(ActionEvent event) {
+        setActiveButton(btnAnalytics);
         // TODO: Phase 9
     }
 
     @FXML
     void onCustomersClick(ActionEvent event) {
+        setActiveButton(btnCustomers);
         loadPage("customer-management-view.fxml");
     }
 
     @FXML
     void onDashboardClick(ActionEvent event) {
+        setActiveButton(btnDashboard);
         loadPage("dashboard-view.fxml");
     }
 
     @FXML
     void onEmployeesClick(ActionEvent event) {
+        setActiveButton(btnEmployees);
         loadPage("employee-management-view.fxml");
     }
 
     @FXML
     void onLocationsClick(ActionEvent event) {
+        setActiveButton(btnLocations);
         loadPage("bakery-locations-view.fxml");
     }
 
     @FXML
     void onMessagesClick(ActionEvent event) {
+        setActiveButton(btnMessages);
         loadPage("messaging-view.fxml");
     }
 
     @FXML
     void onOrdersClick(ActionEvent event) {
+        setActiveButton(btnOrders);
         loadPage("order-management-view.fxml");
     }
 
     @FXML
     void onProductsClick(ActionEvent event) {
+        setActiveButton(btnProducts);
         loadPage("product-management-view.fxml");
     }
 
     @FXML
     void onRewardsClick(ActionEvent event) {
+        setActiveButton(btnRewards);
         // TODO: Phase 8
     }
 
@@ -168,6 +180,19 @@ public class MainController {
             ErrorHandler.showErrorDialog("Logout Error", "Could not return to login screen", e.getMessage());
             LogData.handleException("LOGOUT", e);
         }
+    }
+
+    /**
+     * Sets the active button for styling
+     * @param button that is active
+     */
+    private void setActiveButton(Button button) {
+        if (activeButton != null) {
+            activeButton.getStyleClass().remove("active");
+        }
+
+        button.getStyleClass().add("active");
+        activeButton = button;
     }
 
     /**
@@ -223,6 +248,7 @@ public class MainController {
     }
 
     private void showDashboard() {
+        setActiveButton(btnDashboard);
         loadPage("dashboard-view.fxml");
     }
 
