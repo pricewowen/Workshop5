@@ -8,9 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class AnalyticsController {
 
@@ -23,15 +21,9 @@ public class AnalyticsController {
     @FXML private Label kpiTitleLabel;
     @FXML private StackPane chartContainer;
 
-    private final Map<KPIType, KPIHandler> handlers = new HashMap<>();
-
     @FXML
     public void initialize() {
 
-        // Register handlers
-        handlers.put(KPIType.REVENUE_OVER_TIME, new RevenueOverTimeHandler());
-
-        // Populate KPI dropdown
         kpiComboBox.setItems(FXCollections.observableArrayList(
                 KPIType.REVENUE_OVER_TIME.getDisplayName(),
                 KPIType.REVENUE_BY_BAKERY.getDisplayName(),
@@ -42,7 +34,6 @@ public class AnalyticsController {
 
         kpiComboBox.setValue(KPIType.REVENUE_OVER_TIME.getDisplayName());
 
-        // Chart types
         chartTypeComboBox.setItems(FXCollections.observableArrayList(
                 ChartType.LINE.getDisplayName(),
                 ChartType.BAR.getDisplayName(),
@@ -51,11 +42,9 @@ public class AnalyticsController {
 
         chartTypeComboBox.setValue(ChartType.LINE.getDisplayName());
 
-        // Bakery default
         bakeryComboBox.setItems(FXCollections.observableArrayList("All Bakeries"));
         bakeryComboBox.setValue("All Bakeries");
 
-        // Load initial
         onRefresh();
     }
 
@@ -66,14 +55,33 @@ public class AnalyticsController {
 
         try {
 
-            KPIHandler handler = KPIType.fromDisplayName(kpiComboBox.getValue());
+            // Use your enum factory method properly
+        	KPIType type =
+        	        KPIType.fromDisplayName(kpiComboBox.getValue());
+
+        	KPIHandler handler = type.createHandler();
 
             LocalDate start = startDatePicker.getValue();
             LocalDate end = endDatePicker.getValue();
             String bakery = bakeryComboBox.getValue();
 
-            double primaryValue = handler.getPrimaryValue(start, end, bakery);
-            kpiValueLabel.setText(String.format("%.2f", primaryValue));
+            double primaryValue =
+                    handler.getPrimaryValue(start, end, bakery);
+
+            // Intelligent formatting
+            String selectedKPI = kpiComboBox.getValue();
+
+            if (selectedKPI.equals(KPIType.TOP_PRODUCTS.getDisplayName())) {
+                kpiValueLabel.setText(String.format("%.0f Units", primaryValue));
+            }
+            else if (selectedKPI.equals(KPIType.COMPLETION_RATE.getDisplayName())) {
+                kpiValueLabel.setText(String.format("%.2f%%", primaryValue));
+            }
+            else {
+                // Revenue & AOV are currency
+                kpiValueLabel.setText(String.format("$%.2f", primaryValue));
+            }
+
             kpiTitleLabel.setText(handler.getTitle());
 
             ChartType chartType =
@@ -106,12 +114,15 @@ public class AnalyticsController {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
-        LineChart<String, Number> chart = new LineChart<>(xAxis, yAxis);
+        LineChart<String, Number> chart =
+                new LineChart<>(xAxis, yAxis);
 
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        XYChart.Series<String, Number> series =
+                new XYChart.Series<>();
 
         for (DataPoint dp : data) {
-            series.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+            series.getData().add(
+                    new XYChart.Data<>(dp.getLabel(), dp.getValue()));
         }
 
         chart.getData().add(series);
@@ -122,12 +133,15 @@ public class AnalyticsController {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
-        BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
+        BarChart<String, Number> chart =
+                new BarChart<>(xAxis, yAxis);
 
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        XYChart.Series<String, Number> series =
+                new XYChart.Series<>();
 
         for (DataPoint dp : data) {
-            series.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+            series.getData().add(
+                    new XYChart.Data<>(dp.getLabel(), dp.getValue()));
         }
 
         chart.getData().add(series);
@@ -139,7 +153,8 @@ public class AnalyticsController {
         PieChart chart = new PieChart();
 
         for (DataPoint dp : data) {
-            chart.getData().add(new PieChart.Data(dp.getLabel(), dp.getValue()));
+            chart.getData().add(
+                    new PieChart.Data(dp.getLabel(), dp.getValue()));
         }
 
         chartContainer.getChildren().add(chart);
