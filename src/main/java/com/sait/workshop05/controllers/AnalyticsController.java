@@ -1,0 +1,141 @@
+package com.sait.workshop05.controllers;
+
+import com.sait.workshop05.analytics.*;
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.scene.chart.*;
+import javafx.scene.control.*;
+import javafx.scene.layout.StackPane;
+
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class AnalyticsController {
+
+    @FXML private DatePicker startDatePicker;
+    @FXML private DatePicker endDatePicker;
+    @FXML private ComboBox<String> bakeryComboBox;
+    @FXML private ComboBox<String> kpiComboBox;
+    @FXML private ComboBox<String> chartTypeComboBox;
+    @FXML private Label kpiValueLabel;
+    @FXML private Label kpiTitleLabel;
+    @FXML private StackPane chartContainer;
+
+    private final Map<KPIType, KPIHandler> handlers = new HashMap<>();
+
+    @FXML
+    public void initialize() {
+
+        // Register handlers
+        handlers.put(KPIType.REVENUE_OVER_TIME, new RevenueOverTimeHandler());
+
+        // Populate KPI dropdown
+        kpiComboBox.setItems(FXCollections.observableArrayList(
+                KPIType.REVENUE_OVER_TIME.getDisplayName(),
+                KPIType.REVENUE_BY_BAKERY.getDisplayName(),
+                KPIType.AVERAGE_ORDER_VALUE.getDisplayName(),
+                KPIType.COMPLETION_RATE.getDisplayName(),
+                KPIType.TOP_PRODUCTS.getDisplayName()
+        ));
+
+        kpiComboBox.setValue(KPIType.REVENUE_OVER_TIME.getDisplayName());
+
+        // Chart types
+        chartTypeComboBox.setItems(FXCollections.observableArrayList(
+                ChartType.LINE.getDisplayName(),
+                ChartType.BAR.getDisplayName(),
+                ChartType.PIE.getDisplayName()
+        ));
+
+        chartTypeComboBox.setValue(ChartType.LINE.getDisplayName());
+
+        // Bakery default
+        bakeryComboBox.setItems(FXCollections.observableArrayList("All Bakeries"));
+        bakeryComboBox.setValue("All Bakeries");
+
+        // Load initial
+        onRefresh();
+    }
+
+    @FXML
+    private void onRefresh() {
+
+        KPIType type = KPIType.fromDisplay(kpiComboBox.getValue());
+        ChartType chartType = ChartType.fromDisplay(chartTypeComboBox.getValue());
+
+        if (type == null || !handlers.containsKey(type)) {
+            return;
+        }
+
+        KPIHandler handler = handlers.get(type);
+
+        LocalDate start = startDatePicker.getValue();
+        LocalDate end = endDatePicker.getValue();
+        String bakery = bakeryComboBox.getValue();
+
+        kpiTitleLabel.setText(handler.getTitle());
+
+        double primaryValue = handler.getPrimaryValue(start, end, bakery);
+        kpiValueLabel.setText(String.format("%.2f", primaryValue));
+
+        List<DataPoint> data = handler.getChartData(start, end, bakery);
+
+        renderChart(data, chartType);
+    }
+
+    private void renderChart(List<DataPoint> data, ChartType type) {
+
+        chartContainer.getChildren().clear();
+
+        switch (type) {
+            case LINE -> renderLineChart(data);
+            case BAR -> renderBarChart(data);
+            case PIE -> renderPieChart(data);
+        }
+    }
+
+    private void renderLineChart(List<DataPoint> data) {
+
+        CategoryAxis xAxis = new CategoryAxis();
+        NumberAxis yAxis = new NumberAxis();
+        LineChart<String, Number> chart = new LineChart<>(xAxis, yAxis);
+
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+
+        for (DataPoint dp : data) {
+            series.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+        }
+
+        chart.getData().add(series);
+        chartContainer.getChildren().add(chart);
+    }
+
+    private void renderBarChart(List<DataPoint> data) {
+
+        CategoryAxis xAxis = new CategoryAxis();
+        NumberAxis yAxis = new NumberAxis();
+        BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
+
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+
+        for (DataPoint dp : data) {
+            series.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+        }
+
+        chart.getData().add(series);
+        chartContainer.getChildren().add(chart);
+    }
+
+    private void renderPieChart(List<DataPoint> data) {
+
+        PieChart chart = new PieChart();
+
+        for (DataPoint dp : data) {
+            chart.getData().add(new PieChart.Data(dp.getLabel(), dp.getValue()));
+        }
+
+        chartContainer.getChildren().add(chart);
+    }
+}

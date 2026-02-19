@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.chart.*?>
+
+<VBox spacing="20"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.sait.workshop05.controllers.AnalyticsController"
+      style="-fx-padding: 20;">
+
+    <!-- Title -->
+    <Label text="Analytics Overview"
+           style="-fx-font-size: 22px; -fx-font-weight: bold;" />
+
+    <!-- Filters -->
+    <HBox spacing="15">
+
+        <DatePicker fx:id="startDatePicker" promptText="Start Date" />
+        <DatePicker fx:id="endDatePicker" promptText="End Date" />
+
+        <ComboBox fx:id="bakeryComboBox" promptText="All Bakeries" />
+
+        <ComboBox fx:id="kpiComboBox" promptText="Select KPI" />
+
+        <ComboBox fx:id="chartTypeComboBox" promptText="Chart Type" />
+
+        <Button text="Refresh"
+                fx:id="refreshButton"
+                onAction="#onRefresh" />
+    </HBox>
+
+    <!-- KPI Card -->
+    <HBox>
+        <VBox styleClass="analytics-card" spacing="5">
+
+            <Label fx:id="kpiValueLabel"
+                   text="0.00"
+                   style="-fx-font-size: 28px; -fx-font-weight: bold;" />
+            <Label fx:id="kpiTitleLabel"
+                   text="KPI Name"
+                   style="-fx-text-fill: #555;" />
+        </VBox>
+    </HBox>
+
+    <!-- Chart Container -->
+    <StackPane fx:id="chartContainer"
+           prefHeight="400"
+           styleClass="analytics-chart-container"/>
+
+</VBox>
