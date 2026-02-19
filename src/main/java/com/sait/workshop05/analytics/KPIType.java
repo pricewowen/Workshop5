@@ -18,16 +18,16 @@ public enum KPIType {
         return displayName;
     }
 
-    public static KPIHandler fromDisplayName(String displayName) {
+    public static KPIType fromDisplayName(String displayName) {
         for (KPIType type : values()) {
             if (type.displayName.equals(displayName)) {
-                return type.createHandler();
+                return type;
             }
         }
         throw new IllegalArgumentException("Unknown KPI: " + displayName);
     }
 
-    private KPIHandler createHandler() {
+    public KPIHandler createHandler() {
         return switch (this) {
             case REVENUE_OVER_TIME -> new RevenueOverTimeHandler();
             case REVENUE_BY_BAKERY -> new RevenueByBakeryHandler();
