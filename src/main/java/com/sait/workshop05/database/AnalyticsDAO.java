@@ -9,103 +9,293 @@ import java.util.List;
 
 public class AnalyticsDAO {
 
-    private static final String VALID_STATUS = "('Completed','Delivered')";
+    /* ==============================
+       Revenue Over Time
+       ============================== */
 
-    public double getTotalRevenue(LocalDate start, LocalDate end, String bakery) {
+    public double getTotalRevenue(LocalDate start, LocalDate end, String bakery) throws SQLException {
 
-        StringBuilder sql = new StringBuilder(
-                "SELECT IFNULL(SUM(orderTotal),0) AS revenue " +
-                "FROM `Order` WHERE orderStatus IN " + VALID_STATUS
-        );
+        StringBuilder sql = new StringBuilder("""
+            SELECT IFNULL(SUM(orderTotal - orderDiscount),0) AS revenue
+            FROM `Order` o
+            JOIN Bakery b ON o.bakeryId = b.bakeryId
+            WHERE 1=1
+        """);
 
         List<Object> params = new ArrayList<>();
 
         if (start != null) {
-            sql.append(" AND DATE(orderPlacedDateTime) >= ?");
+            sql.append(" AND DATE(o.orderPlacedDateTime) >= ?");
             params.add(Date.valueOf(start));
         }
 
         if (end != null) {
-            sql.append(" AND DATE(orderPlacedDateTime) <= ?");
+            sql.append(" AND DATE(o.orderPlacedDateTime) <= ?");
             params.add(Date.valueOf(end));
         }
 
         if (bakery != null && !bakery.equals("All Bakeries")) {
-            sql.append(" AND bakeryId = ?");
-            params.add(Integer.parseInt(bakery));
+            sql.append(" AND b.bakeryName = ?");
+            params.add(bakery);
         }
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            setParameters(ps, params);
+            for (int i = 0; i < params.size(); i++)
+                ps.setObject(i + 1, params.get(i));
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getDouble("revenue");
-                }
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble("revenue");
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
         return 0.0;
     }
 
-    public List<DataPoint> getRevenueOverTime(LocalDate start, LocalDate end, String bakery) {
+    public List<DataPoint> getRevenueOverTime(LocalDate start, LocalDate end, String bakery) throws SQLException {
 
-        StringBuilder sql = new StringBuilder(
-                "SELECT DATE(orderPlacedDateTime) AS day, " +
-                "       SUM(orderTotal) AS revenue " +
-                "FROM `Order` WHERE orderStatus IN " + VALID_STATUS
-        );
+        StringBuilder sql = new StringBuilder("""
+            SELECT DATE(o.orderPlacedDateTime) AS day,
+                   SUM(o.orderTotal - o.orderDiscount) AS revenue
+            FROM `Order` o
+            JOIN Bakery b ON o.bakeryId = b.bakeryId
+            WHERE 1=1
+        """);
 
         List<Object> params = new ArrayList<>();
 
         if (start != null) {
-            sql.append(" AND DATE(orderPlacedDateTime) >= ?");
+            sql.append(" AND DATE(o.orderPlacedDateTime) >= ?");
             params.add(Date.valueOf(start));
         }
 
         if (end != null) {
-            sql.append(" AND DATE(orderPlacedDateTime) <= ?");
+            sql.append(" AND DATE(o.orderPlacedDateTime) <= ?");
             params.add(Date.valueOf(end));
         }
 
         if (bakery != null && !bakery.equals("All Bakeries")) {
-            sql.append(" AND bakeryId = ?");
-            params.add(Integer.parseInt(bakery));
+            sql.append(" AND b.bakeryName = ?");
+            params.add(bakery);
         }
 
-        sql.append(" GROUP BY DATE(orderPlacedDateTime) ");
-        sql.append(" ORDER BY day ASC ");
+        sql.append(" GROUP BY DATE(o.orderPlacedDateTime) ORDER BY day");
 
-        List<DataPoint> results = new ArrayList<>();
+        List<DataPoint> data = new ArrayList<>();
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            setParameters(ps, params);
+            for (int i = 0; i < params.size(); i++)
+                ps.setObject(i + 1, params.get(i));
 
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    String label = rs.getDate("day").toString();
-                    double value = rs.getDouble("revenue");
-                    results.add(new DataPoint(label, value));
-                }
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                data.add(new DataPoint(
+                        rs.getString("day"),
+                        rs.getDouble("revenue")
+                ));
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
-        return results;
+        return data;
     }
 
-    private void setParameters(PreparedStatement ps, List<Object> params) throws SQLException {
-        for (int i = 0; i < params.size(); i++) {
-            ps.setObject(i + 1, params.get(i));
+    /* ==============================
+       Revenue By Bakery
+       ============================== */
+
+    public List<DataPoint> getRevenueByBakery(LocalDate start, LocalDate end) throws SQLException {
+
+        String sql = """
+            SELECT b.bakeryName,
+                   SUM(o.orderTotal - o.orderDiscount) AS revenue
+            FROM `Order` o
+            JOIN Bakery b ON o.bakeryId = b.bakeryId
+            GROUP BY b.bakeryName
+            ORDER BY revenue DESC
+        """;
+
+        List<DataPoint> list = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(new DataPoint(
+                        rs.getString("bakeryName"),
+                        rs.getDouble("revenue")
+                ));
+            }
         }
+
+        return list;
+    }
+
+    /* ==============================
+       Average Order Value (AOV)
+       ============================== */
+
+    public double getAverageOrderValue(LocalDate start, LocalDate end, String bakery) throws SQLException {
+
+        String sql = """
+            SELECT IFNULL(AVG(orderTotal - orderDiscount),0) AS aov
+            FROM `Order` o
+            JOIN Bakery b ON o.bakeryId = b.bakeryId
+        """;
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getDouble("aov");
+            }
+        }
+
+        return 0.0;
+    }
+
+    public List<DataPoint> getAverageOrderValueOverTime(LocalDate start, LocalDate end, String bakery) throws SQLException {
+
+        String sql = """
+            SELECT DATE(o.orderPlacedDateTime) AS day,
+                   AVG(o.orderTotal - o.orderDiscount) AS aov
+            FROM `Order` o
+            JOIN Bakery b ON o.bakeryId = b.bakeryId
+            GROUP BY DATE(o.orderPlacedDateTime)
+            ORDER BY day
+        """;
+
+        List<DataPoint> data = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                data.add(new DataPoint(
+                        rs.getString("day"),
+                        rs.getDouble("aov")
+                ));
+            }
+        }
+
+        return data;
+    }
+
+    /* ==============================
+       Completion Rate
+       ============================== */
+
+    public double getCompletionRate(LocalDate start, LocalDate end, String bakery) throws SQLException {
+
+        String sql = """
+            SELECT 
+                IFNULL(
+                    SUM(CASE WHEN orderStatus = 'Completed' THEN 1 ELSE 0 END) 
+                    / COUNT(*) * 100
+                ,0) AS completionRate
+            FROM `Order`
+        """;
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getDouble("completionRate");
+            }
+        }
+
+        return 0.0;
+    }
+
+    public List<DataPoint> getCompletionRateOverTime(LocalDate start, LocalDate end, String bakery) throws SQLException {
+
+        String sql = """
+            SELECT DATE(orderPlacedDateTime) AS day,
+                   SUM(CASE WHEN orderStatus = 'Completed' THEN 1 ELSE 0 END)
+                   / COUNT(*) * 100 AS completionRate
+            FROM `Order`
+            GROUP BY DATE(orderPlacedDateTime)
+            ORDER BY day
+        """;
+
+        List<DataPoint> list = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(new DataPoint(
+                        rs.getString("day"),
+                        rs.getDouble("completionRate")
+                ));
+            }
+        }
+
+        return list;
+    }
+
+    /* ==============================
+       Top Products
+       ============================== */
+
+    public List<DataPoint> getTopProducts(LocalDate start, LocalDate end, String bakery) throws SQLException {
+
+        String sql = """
+            SELECT p.productName,
+                   SUM(oi.quantity) AS totalSold
+            FROM OrderItem oi
+            JOIN Product p ON oi.productId = p.productId
+            JOIN `Order` o ON oi.orderId = o.orderId
+            GROUP BY p.productName
+            ORDER BY totalSold DESC
+            LIMIT 10
+        """;
+
+        List<DataPoint> list = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(new DataPoint(
+                        rs.getString("productName"),
+                        rs.getDouble("totalSold")
+                ));
+            }
+        }
+
+        return list;
+    }
+
+    /* ==============================
+       Bakery Names
+       ============================== */
+
+    public List<String> getBakeryNames() throws SQLException {
+
+        String sql = "SELECT bakeryName FROM Bakery ORDER BY bakeryName";
+
+        List<String> list = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(rs.getString("bakeryName"));
+            }
+        }
+
+        return list;
     }
 }

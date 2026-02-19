@@ -5,7 +5,7 @@ import com.sait.workshop05.database.AnalyticsDAO;
 import java.time.LocalDate;
 import java.util.List;
 
-public class RevenueOverTimeHandler implements KPIHandler {
+public class RevenueByBakeryHandler implements KPIHandler {
 
     private final AnalyticsDAO dao = new AnalyticsDAO();
 
@@ -16,11 +16,11 @@ public class RevenueOverTimeHandler implements KPIHandler {
 
     @Override
     public List<DataPoint> getChartData(LocalDate start, LocalDate end, String bakery) throws Exception {
-        return dao.getRevenueOverTime(start, end, bakery);
+        return dao.getRevenueByBakery(start, end);
     }
 
     @Override
     public String getTitle() {
-        return "Revenue Over Time";
+        return "Revenue by Bakery";
     }
 }

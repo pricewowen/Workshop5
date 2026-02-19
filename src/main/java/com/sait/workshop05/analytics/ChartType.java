@@ -1,6 +1,7 @@
 package com.sait.workshop05.analytics;
 
 public enum ChartType {
+
     LINE("Line Chart"),
     BAR("Bar Chart"),
     PIE("Pie Chart");
@@ -15,12 +16,12 @@ public enum ChartType {
         return displayName;
     }
 
-    public static ChartType fromDisplay(String display) {
+    public static ChartType fromDisplayName(String displayName) {
         for (ChartType type : values()) {
-            if (type.displayName.equals(display)) {
+            if (type.displayName.equals(displayName)) {
                 return type;
             }
         }
-        return LINE;
+        throw new IllegalArgumentException("Unknown chart type: " + displayName);
     }
 }
