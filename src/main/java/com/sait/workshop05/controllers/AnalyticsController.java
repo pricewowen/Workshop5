@@ -62,27 +62,33 @@ public class AnalyticsController {
     @FXML
     private void onRefresh() {
 
-        KPIType type = KPIType.fromDisplay(kpiComboBox.getValue());
-        ChartType chartType = ChartType.fromDisplay(chartTypeComboBox.getValue());
+        if (kpiComboBox.getValue() == null) return;
 
-        if (type == null || !handlers.containsKey(type)) {
-            return;
+        try {
+
+            KPIHandler handler = KPIType.fromDisplayName(kpiComboBox.getValue());
+
+            LocalDate start = startDatePicker.getValue();
+            LocalDate end = endDatePicker.getValue();
+            String bakery = bakeryComboBox.getValue();
+
+            double primaryValue = handler.getPrimaryValue(start, end, bakery);
+            kpiValueLabel.setText(String.format("%.2f", primaryValue));
+            kpiTitleLabel.setText(handler.getTitle());
+
+            ChartType chartType =
+                    ChartType.fromDisplayName(chartTypeComboBox.getValue());
+
+            renderChart(
+                    handler.getChartData(start, end, bakery),
+                    chartType
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            kpiValueLabel.setText("Error");
+            kpiTitleLabel.setText("Failed to load KPI");
         }
-
-        KPIHandler handler = handlers.get(type);
-
-        LocalDate start = startDatePicker.getValue();
-        LocalDate end = endDatePicker.getValue();
-        String bakery = bakeryComboBox.getValue();
-
-        kpiTitleLabel.setText(handler.getTitle());
-
-        double primaryValue = handler.getPrimaryValue(start, end, bakery);
-        kpiValueLabel.setText(String.format("%.2f", primaryValue));
-
-        List<DataPoint> data = handler.getChartData(start, end, bakery);
-
-        renderChart(data, chartType);
     }
 
     private void renderChart(List<DataPoint> data, ChartType type) {
