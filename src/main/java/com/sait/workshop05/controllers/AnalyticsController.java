@@ -1,6 +1,9 @@
+// η℩.cαηtor ↈ (and his AI, ⌈𝗆𝖾𝗍𝖺𝖼𝗈𝖽𝖺⌋ ⊛)
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.analytics.*;
+import com.sait.workshop05.database.AnalyticsDAO;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.chart.*;
@@ -9,6 +12,8 @@ import javafx.scene.layout.StackPane;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 public class AnalyticsController {
 
@@ -42,8 +47,55 @@ public class AnalyticsController {
 
         chartTypeComboBox.setValue(ChartType.LINE.getDisplayName());
 
-        bakeryComboBox.setItems(FXCollections.observableArrayList("All Bakeries"));
-        bakeryComboBox.setValue("All Bakeries");
+        loadBakeryNames();
+
+        // Initial date config
+        configureDatePickers("All Bakeries");
+
+        // When bakery changes → update valid dates
+        bakeryComboBox.setOnAction(e -> {
+            String selected = bakeryComboBox.getValue();
+            configureDatePickers(selected);
+            onRefresh();
+        });
+
+        // When KPI changes → enforce domain logic
+        kpiComboBox.setOnAction(e -> {
+
+            KPIType type =
+                    KPIType.fromDisplayName(kpiComboBox.getValue());
+
+            if (type == KPIType.REVENUE_BY_BAKERY) {
+
+                bakeryComboBox.setValue("All Bakeries");
+                bakeryComboBox.setDisable(true);
+                configureDatePickers("All Bakeries");
+
+            } else {
+
+                bakeryComboBox.setDisable(false);
+                configureDatePickers(bakeryComboBox.getValue());
+            }
+
+            onRefresh();
+        });
+
+        // Enforce start <= end
+        startDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (endDatePicker.getValue() != null &&
+                    newVal != null &&
+                    newVal.isAfter(endDatePicker.getValue())) {
+                endDatePicker.setValue(newVal);
+            }
+        });
+
+        endDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (startDatePicker.getValue() != null &&
+                    newVal != null &&
+                    newVal.isBefore(startDatePicker.getValue())) {
+                startDatePicker.setValue(newVal);
+            }
+        });
 
         onRefresh();
     }
@@ -55,31 +107,39 @@ public class AnalyticsController {
 
         try {
 
-            // Use your enum factory method properly
-        	KPIType type =
-        	        KPIType.fromDisplayName(kpiComboBox.getValue());
+            KPIType type =
+                    KPIType.fromDisplayName(kpiComboBox.getValue());
 
-        	KPIHandler handler = type.createHandler();
+            KPIHandler handler = type.createHandler();
 
             LocalDate start = startDatePicker.getValue();
             LocalDate end = endDatePicker.getValue();
             String bakery = bakeryComboBox.getValue();
 
+            // Defensive date validation
+            if (start != null && end != null && start.isAfter(end)) {
+                kpiValueLabel.setText("Invalid Date Range");
+                kpiTitleLabel.setText("");
+                chartContainer.getChildren().clear();
+                return;
+            }
+
             double primaryValue =
                     handler.getPrimaryValue(start, end, bakery);
 
-            // Intelligent formatting
-            String selectedKPI = kpiComboBox.getValue();
+            // Format based on KPI type
+            switch (type) {
 
-            if (selectedKPI.equals(KPIType.TOP_PRODUCTS.getDisplayName())) {
-                kpiValueLabel.setText(String.format("%.0f Units", primaryValue));
-            }
-            else if (selectedKPI.equals(KPIType.COMPLETION_RATE.getDisplayName())) {
-                kpiValueLabel.setText(String.format("%.2f%%", primaryValue));
-            }
-            else {
-                // Revenue & AOV are currency
-                kpiValueLabel.setText(String.format("$%.2f", primaryValue));
+                case TOP_PRODUCTS -> 
+                        kpiValueLabel.setText(String.format("%.0f Units", primaryValue));
+
+                case COMPLETION_RATE ->
+                        kpiValueLabel.setText(String.format("%.2f%%", primaryValue));
+
+                case REVENUE_OVER_TIME,
+                     REVENUE_BY_BAKERY,
+                     AVERAGE_ORDER_VALUE ->
+                        kpiValueLabel.setText(String.format("$%.2f", primaryValue));
             }
 
             kpiTitleLabel.setText(handler.getTitle());
@@ -96,6 +156,7 @@ public class AnalyticsController {
             e.printStackTrace();
             kpiValueLabel.setText("Error");
             kpiTitleLabel.setText("Failed to load KPI");
+            chartContainer.getChildren().clear();
         }
     }
 
@@ -116,6 +177,8 @@ public class AnalyticsController {
         NumberAxis yAxis = new NumberAxis();
         LineChart<String, Number> chart =
                 new LineChart<>(xAxis, yAxis);
+        
+        chart.setLegendVisible(false);
 
         XYChart.Series<String, Number> series =
                 new XYChart.Series<>();
@@ -135,6 +198,8 @@ public class AnalyticsController {
         NumberAxis yAxis = new NumberAxis();
         BarChart<String, Number> chart =
                 new BarChart<>(xAxis, yAxis);
+        
+        chart.setLegendVisible(false);
 
         XYChart.Series<String, Number> series =
                 new XYChart.Series<>();
@@ -158,5 +223,81 @@ public class AnalyticsController {
         }
 
         chartContainer.getChildren().add(chart);
+    }
+    
+    private void loadBakeryNames() {
+
+        try {
+            AnalyticsDAO dao = new AnalyticsDAO();
+
+            List<String> bakeries = dao.getBakeryNames();
+
+            bakeries.add(0, "All Bakeries");
+
+            bakeryComboBox.setItems(
+                    FXCollections.observableArrayList(bakeries)
+            );
+
+            bakeryComboBox.setValue("All Bakeries");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void configureDatePickers(String bakery) {
+
+        try {
+
+            AnalyticsDAO dao = new AnalyticsDAO();
+
+            List<LocalDate> validDates =
+                    dao.getAvailableOrderDates(bakery);
+
+            if (validDates.isEmpty()) {
+
+                startDatePicker.setValue(null);
+                endDatePicker.setValue(null);
+                return;
+            }
+
+            // Sort just to be safe
+            validDates.sort(LocalDate::compareTo);
+
+            LocalDate first = validDates.get(0);
+            LocalDate last  = validDates.get(validDates.size() - 1);
+
+            // Auto-set range
+            startDatePicker.setValue(first);
+            endDatePicker.setValue(last);
+
+            // Convert to Set for faster lookup
+            Set<LocalDate> validSet = new HashSet<>(validDates);
+
+            startDatePicker.setDayCellFactory(picker ->
+                    new DateCell() {
+                        @Override
+                        public void updateItem(LocalDate date, boolean empty) {
+                            super.updateItem(date, empty);
+                            if (empty || !validSet.contains(date)) {
+                                setDisable(true);
+                            }
+                        }
+                    });
+
+            endDatePicker.setDayCellFactory(picker ->
+                    new DateCell() {
+                        @Override
+                        public void updateItem(LocalDate date, boolean empty) {
+                            super.updateItem(date, empty);
+                            if (empty || !validSet.contains(date)) {
+                                setDisable(true);
+                            }
+                        }
+                    });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

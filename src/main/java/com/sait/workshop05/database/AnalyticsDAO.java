@@ -1,3 +1,5 @@
+// η℩.cαηtor ↈ (and his AI, ⌈𝗆𝖾𝗍𝖺𝖼𝗈𝖽𝖺⌋ ⊛)
+
 package com.sait.workshop05.database;
 
 import com.sait.workshop05.analytics.DataPoint;
@@ -293,5 +295,41 @@ public class AnalyticsDAO {
         }
 
         return list;
+    }
+    
+    public List<LocalDate> getAvailableOrderDates(String bakery) throws SQLException {
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT DISTINCT DATE(o.orderPlacedDateTime) AS orderDate
+            FROM `Order` o
+            JOIN Bakery b ON o.bakeryId = b.bakeryId
+            WHERE o.orderStatus = 'Completed'
+        """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (bakery != null && !bakery.equals("All Bakeries")) {
+            sql.append(" AND b.bakeryName = ?");
+            params.add(bakery);
+        }
+
+        sql.append(" ORDER BY orderDate");
+
+        List<LocalDate> dates = new ArrayList<>();
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++)
+                ps.setObject(i + 1, params.get(i));
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                dates.add(rs.getDate("orderDate").toLocalDate());
+            }
+        }
+
+        return dates;
     }
 }
