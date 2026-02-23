@@ -222,3 +222,16 @@
     -fx-font-weight: bold;
 }
 
+.analytics-card {
+    -fx-background-color: #e8f0e9;
+    -fx-padding: 20;
+    -fx-background-radius: 10;
+}
+
+.analytics-chart-container {
+    -fx-background-color: #ffffff;
+    -fx-padding: 15;
+    -fx-background-radius: 10;
+}
+
+

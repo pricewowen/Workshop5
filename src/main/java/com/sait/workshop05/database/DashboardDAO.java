@@ -13,10 +13,20 @@ import java.util.List;
 public class DashboardDAO {
 
     /**
-     * Get total revenue (sum of all order totals)
+     * Canonical sales status filter.
+     * Defines what counts as recognized revenue.
+     */
+    private static final String SALES_STATUS_FILTER =
+            "orderStatus IN ('Completed', 'Delivered')";
+
+    /**
+     * Get total revenue (sum of completed/delivered order totals)
      */
     public double getTotalRevenue() throws SQLException {
-        String sql = "SELECT IFNULL(SUM(orderTotal - orderDiscount), 0) AS revenue FROM `Order`";
+        String sql =
+                "SELECT IFNULL(SUM(orderTotal), 0) AS revenue " +
+                "FROM `Order` " +
+                "WHERE " + SALES_STATUS_FILTER;
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -30,10 +40,13 @@ public class DashboardDAO {
     }
 
     /**
-     * Get total number of orders
+     * Get total number of completed/delivered orders
      */
     public int getTotalOrders() throws SQLException {
-        String sql = "SELECT COUNT(*) AS cnt FROM `Order`";
+        String sql =
+                "SELECT COUNT(*) AS cnt " +
+                "FROM `Order` " +
+                "WHERE " + SALES_STATUS_FILTER;
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -81,8 +94,7 @@ public class DashboardDAO {
     }
 
     /**
-     * Get recent orders (most recent 15) with customer and bakery names.
-     * Returns Order objects populated with display fields.
+     * Get recent orders (most recent N) with customer and bakery names.
      */
     public List<Order> getRecentOrders(int limit) throws SQLException {
         String sql =
