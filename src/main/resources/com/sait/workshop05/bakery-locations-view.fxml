@@ -93,21 +93,21 @@
                                  <Label style="-fx-font-size: 13px;" text="Bakery ID:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
                                  <TextField fx:id="txtBakeryId" editable="false" promptText="Auto" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                                  <Label prefHeight="19.0" prefWidth="88.0" style="-fx-font-size: 13px;" text="Bakery Name:" GridPane.columnIndex="2" />
-                                 <TextField fx:id="txtBakeryName" style="-fx-font-size: 13px;" GridPane.columnIndex="3" />
+                                 <TextField fx:id="txtBakeryName" promptText="Bakery name" style="-fx-font-size: 13px;" GridPane.columnIndex="3" />
                                  <Label prefHeight="19.0" prefWidth="102.0" style="-fx-font-size: 13px;" text="Bakery Phone:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                 <TextField fx:id="txtBakeryPhone" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                 <TextField fx:id="txtBakeryPhone" promptText="Bakery phone number" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Bakery Email:" GridPane.columnIndex="2" GridPane.rowIndex="2" />
-                                 <TextField fx:id="txtBakeryEmail" style="-fx-font-size: 13px;" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+                                 <TextField fx:id="txtBakeryEmail" promptText="Bakery email" style="-fx-font-size: 13px;" GridPane.columnIndex="3" GridPane.rowIndex="2" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Address Line 1:" GridPane.rowIndex="4" />
-                                 <TextField fx:id="txtAddressLine1" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                 <TextField fx:id="txtAddressLine1" promptText="Bakery address line 1" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Address Line 2:" GridPane.columnIndex="2" GridPane.rowIndex="4" />
-                                 <TextField fx:id="txtAddressLine2" style="-fx-font-size: 13px;" GridPane.columnIndex="3" GridPane.rowIndex="4" />
+                                 <TextField fx:id="txtAddressLine2" promptText="Bakery address line 2" style="-fx-font-size: 13px;" GridPane.columnIndex="3" GridPane.rowIndex="4" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="City:" GridPane.rowIndex="6" />
-                                 <TextField fx:id="txtAddressCity" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+                                 <TextField fx:id="txtAddressCity" promptText="Bakery city" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="6" />
                                  <Label maxWidth="133.0" prefHeight="26.0" prefWidth="133.0" style="-fx-font-size: 13px;" text="Province:" GridPane.columnIndex="2" GridPane.rowIndex="6" />
                                  <ComboBox fx:id="cboAddressProvince" prefHeight="25.0" prefWidth="963.0" GridPane.columnIndex="3" GridPane.rowIndex="6" />
                                  <Label prefHeight="19.0" prefWidth="128.0" style="-fx-font-size: 13px;" text="Postal Code:" GridPane.rowIndex="8" />
-                                 <TextField fx:id="txtAddressPostalCode" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+                                 <TextField fx:id="txtAddressPostalCode" promptText="Bakery postal code" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="8" />
                                  <Text fill="#7b7878" strokeType="OUTSIDE" strokeWidth="0.0" text="*required" GridPane.columnIndex="2" GridPane.rowIndex="8" />
                               </children>
                            </GridPane>
