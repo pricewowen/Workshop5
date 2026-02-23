@@ -108,6 +108,8 @@ public class BakeryDAO {
                     LogData.handleException("Rollback", rollbackE);
                 }
             }
+            LogData.handleException("Update", e);
+            throw e;
         } finally {
             if (conn != null) {
                 try {
@@ -180,6 +182,8 @@ public class BakeryDAO {
                     LogData.handleException("Rollback", rollbackE);
                 }
             }
+            LogData.handleException("Insert", e);
+            throw e;
         } finally {
             if (conn != null) {
                 try {
@@ -228,6 +232,8 @@ public class BakeryDAO {
                     LogData.handleException("Rollback", rollbackE);
                 }
             }
+            LogData.handleException("Delete", e);
+            throw e;
         } finally {
             if (conn != null) {
                 try {
