@@ -58,9 +58,6 @@ public class MainController {
     private Button btnLogout;
 
     @FXML
-    private TextField srcSearchBar;
-
-    @FXML
     private Label lblUsername;
 
     @FXML
@@ -88,7 +85,7 @@ public class MainController {
             lblRole.setText("Admin");
         }
 
-        lblUsername.setText("");
+        lblUsername.setText(session.getCurrentUser().getUsername());
 
     }
 
