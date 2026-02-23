@@ -1,6 +1,7 @@
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.models.User;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
 import javafx.event.ActionEvent;
@@ -10,6 +11,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
@@ -56,14 +58,35 @@ public class MainController {
     private Button btnLogout;
 
     @FXML
-    private TextField srcSearchBar;
+    private Label lblUsername;
+
+    @FXML
+    private Label lblRole;
 
     private Button activeButton;
 
     @FXML
     void initialize() {
+        setUserLabels();
         applyRoleBasedVisibility();
         showDashboard();
+    }
+
+    /**
+     * Sets the username labels at the top of the main layout
+     */
+    private void setUserLabels() {
+        UserSession session = UserSession.getInstance();
+
+        // set the admin/employee roles
+        if (session.isEmployee()) {
+            lblRole.setText("Employee");
+        } else {
+            lblRole.setText("Admin");
+        }
+
+        lblUsername.setText(session.getCurrentUser().getUsername());
+
     }
 
     /**
