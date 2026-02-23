@@ -123,9 +123,9 @@ public class MainController {
     }
 
     @FXML
-    void onAnalyticsClick(ActionEvent event) {
-        setActiveButton(btnAnalytics);
-        // TODO: Phase 9
+    private void onAnalyticsClick() {
+    	setActiveButton(btnAnalytics);
+        loadPage("analytics-view.fxml");
     }
 
     @FXML
