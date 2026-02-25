@@ -194,10 +194,10 @@ public class MainController {
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Peelin' Good - Login");
-            stage.setWidth(800);
-            stage.setHeight(600);
-            stage.setMinWidth(800);
-            stage.setMinHeight(600);
+            stage.setWidth(700);
+            stage.setHeight(730);
+            stage.setMinWidth(700);
+            stage.setMinHeight(730);
             stage.centerOnScreen();
         } catch (IOException e) {
             ErrorHandler.showErrorDialog("Logout Error", "Could not return to login screen", e.getMessage());
