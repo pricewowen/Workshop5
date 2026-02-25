@@ -91,7 +91,7 @@
                               </rowConstraints>
                               <children>
                                  <Label style="-fx-font-size: 13px;" text="Bakery ID:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                 <TextField fx:id="txtBakeryId" editable="false" promptText="Auto" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                 <TextField fx:id="txtBakeryId" editable="false" promptText="Auto" style="-fx-font-size: 13px; -fx-highlight-fill: transparent; -fx-highlight-text-fill: transparent;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                                  <Label prefHeight="19.0" prefWidth="88.0" style="-fx-font-size: 13px;" text="Bakery Name:" GridPane.columnIndex="2" />
                                  <TextField fx:id="txtBakeryName" promptText="Bakery name" style="-fx-font-size: 13px;" GridPane.columnIndex="3" />
                                  <Label prefHeight="19.0" prefWidth="102.0" style="-fx-font-size: 13px;" text="Bakery Phone:" GridPane.columnIndex="0" GridPane.rowIndex="2" />

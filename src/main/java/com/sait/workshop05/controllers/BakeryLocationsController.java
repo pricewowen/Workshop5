@@ -408,6 +408,9 @@ public class BakeryLocationsController {
 
     @FXML
     void initialize() {
+        // disable the ID box
+        txtBakeryId.setDisable(true);
+
         setComboBox();
         phoneNumberFormatter();
         capFirstLetter();
