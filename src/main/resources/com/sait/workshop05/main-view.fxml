@@ -121,7 +121,15 @@
                      </VBox.margin>
                   </Button>
 
-                  <Button fx:id="btnMessages" mnemonicParsing="false" onAction="#onMessagesClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Messages">
+                  <Button fx:id="btnRewardTier" mnemonicParsing="false" onAction="#onRewardTierClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Reward Tiers">
+                     <VBox.margin>
+                        <Insets bottom="10.0"/>
+                     </VBox.margin>
+                  </Button>
+
+                  <Button fx:id="btnMessages" mnemonicParsing="false" onAction="#onMessagesClick"
+                          prefHeight="25.0" prefWidth="204.0" text="Messages">
                      <VBox.margin>
                         <Insets bottom="10.0" />
                      </VBox.margin>
