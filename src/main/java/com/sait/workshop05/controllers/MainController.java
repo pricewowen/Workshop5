@@ -1,23 +1,21 @@
 package com.sait.workshop05.controllers;
 
+import java.io.IOException;
+import java.net.URL;
+
 import com.sait.workshop05.logging.LogData;
-import com.sait.workshop05.models.User;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
-
-import java.io.IOException;
-import java.net.URL;
 
 public class MainController {
 
@@ -54,6 +52,9 @@ public class MainController {
     @FXML
     private Button btnRewards;
 
+    @FXML
+    private Button btnRewardTier;
+    
     @FXML
     private Button btnLogout;
 
@@ -173,7 +174,13 @@ public class MainController {
     @FXML
     void onRewardsClick(ActionEvent event) {
         setActiveButton(btnRewards);
-        // TODO: Phase 8
+        loadPage("reward-view.fxml");
+    }
+
+    @FXML
+    void onRewardTierClick(ActionEvent event) {
+        setActiveButton(btnRewardTier);
+        loadPage("reward-tier-view.fxml");
     }
 
     /**
