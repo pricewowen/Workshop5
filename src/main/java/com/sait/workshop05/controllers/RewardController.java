@@ -5,10 +5,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import com.sait.workshop05.database.CustomerOption;
-import com.sait.workshop05.database.OrderOption;
+import com.sait.workshop05.models.OrderOption;
 import com.sait.workshop05.database.RewardDAO;
 import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.models.CustomerOption;
 import com.sait.workshop05.models.Reward;
 
 import javafx.collections.FXCollections;
