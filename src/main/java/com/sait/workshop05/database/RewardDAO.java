@@ -1,9 +1,10 @@
 package com.sait.workshop05.database;
 
+import com.sait.workshop05.models.CustomerOption;
+import com.sait.workshop05.models.OrderOption;
 import com.sait.workshop05.models.Reward;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,7 +97,7 @@ public class RewardDAO {
      */
     public List<CustomerOption> getCustomerOptions() throws SQLException {
         String sql =
-                "SELECT customerId, CONCAT(customerFirstName, ' ', customerLastName) AS customerName " +
+                "SELECT customerId, customerFirstName, customerLastName, customerRewardBalance " +
                         "FROM Customer ORDER BY customerId DESC";
         List<CustomerOption> options = new ArrayList<>();
 
@@ -104,7 +105,11 @@ public class RewardDAO {
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                options.add(new CustomerOption(rs.getInt("customerId"), rs.getString("customerName")));
+                options.add(new CustomerOption(
+                        rs.getInt("customerId"),
+                        rs.getString("customerFirstName") + " " + rs.getString("customerLastName"),
+                        rs.getInt("customerRewardBalance")
+                ));
             }
         }
         return options;
