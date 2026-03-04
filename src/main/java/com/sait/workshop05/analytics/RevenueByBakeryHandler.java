@@ -12,17 +12,20 @@ public class RevenueByBakeryHandler implements KPIHandler {
     private final AnalyticsDAO dao = new AnalyticsDAO();
 
     @Override
-    public double getPrimaryValue(LocalDate start, LocalDate end, String bakery) throws Exception {
-        return dao.getTotalRevenue(start, end, bakery);
+    public double getPrimaryValue(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
+        // This KPI is really about the chart; primary value can be total revenue in scope.
+        return dao.getTotalRevenue(start, end, "All Bakeries", scopeBakeryIds);
     }
 
     @Override
-    public List<DataPoint> getChartData(LocalDate start, LocalDate end, String bakery) throws Exception {
-        return dao.getRevenueByBakery(start, end);
+    public List<DataPoint> getChartData(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
+        // Admin: scopeBakeryIds null/empty => global by bakery
+        // Employee: scopeBakeryIds set => "by bakery" but only within their bakeries
+        return dao.getRevenueByBakery(start, end, scopeBakeryIds);
     }
 
     @Override
     public String getTitle() {
-        return "Revenue by Bakery";
+        return "Revenue By Bakery";
     }
 }
