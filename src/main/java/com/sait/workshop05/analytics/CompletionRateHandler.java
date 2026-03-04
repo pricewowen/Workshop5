@@ -12,17 +12,17 @@ public class CompletionRateHandler implements KPIHandler {
     private final AnalyticsDAO dao = new AnalyticsDAO();
 
     @Override
-    public double getPrimaryValue(LocalDate start, LocalDate end, String bakery) throws Exception {
-        return dao.getCompletionRate(start, end, bakery);
+    public double getPrimaryValue(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
+        return dao.getCompletionRate(start, end, bakerySelection, scopeBakeryIds);
     }
 
     @Override
-    public List<DataPoint> getChartData(LocalDate start, LocalDate end, String bakery) throws Exception {
-        return dao.getCompletionRateOverTime(start, end, bakery);
+    public List<DataPoint> getChartData(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
+        return dao.getCompletionRateOverTime(start, end, bakerySelection, scopeBakeryIds);
     }
 
     @Override
     public String getTitle() {
-        return "Order Completion Rate";
+        return "Completion Rate";
     }
 }

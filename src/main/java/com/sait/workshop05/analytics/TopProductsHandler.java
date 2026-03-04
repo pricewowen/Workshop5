@@ -12,32 +12,22 @@ public class TopProductsHandler implements KPIHandler {
     private final AnalyticsDAO dao = new AnalyticsDAO();
 
     @Override
-    public double getPrimaryValue(LocalDate start,
-                                  LocalDate end,
-                                  String bakery) throws Exception {
-
-        List<DataPoint> data = dao.getTopProducts(start, end, bakery);
-
-        if (data.isEmpty()) {
-            return 0.0;
+    public double getPrimaryValue(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
+        // Primary value: total units sold across top products (sum of chart values)
+        double sum = 0;
+        for (DataPoint dp : getChartData(start, end, bakerySelection, scopeBakeryIds)) {
+            sum += dp.getValue();
         }
-
-        // Total units sold across top 10 products
-        return data.stream()
-                .mapToDouble(DataPoint::getValue)
-                .sum();
+        return sum;
     }
 
     @Override
-    public List<DataPoint> getChartData(LocalDate start,
-                                        LocalDate end,
-                                        String bakery) throws Exception {
-
-        return dao.getTopProducts(start, end, bakery);
+    public List<DataPoint> getChartData(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
+        return dao.getTopProducts(start, end, bakerySelection, scopeBakeryIds);
     }
 
     @Override
     public String getTitle() {
-        return "Top Products (Units Sold)";
+        return "Top Products";
     }
 }

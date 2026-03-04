@@ -4,6 +4,9 @@ import com.sait.workshop05.models.Log;
 import com.sait.workshop05.models.User;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Singleton class to manage user session throughout the application.
@@ -17,13 +20,15 @@ public class UserSession {
     private String userRole;
     private LocalDateTime loginTime;
 
+    // Analytics gating for EMPLOYEE
+    private Integer employeeId;                 // null if not a real Employee row
+    private List<Integer> accessibleBakeryIds;  // empty means no scope
+
     private UserSession() {
         this.isAuthenticated = false;
+        this.accessibleBakeryIds = new ArrayList<>();
     }
 
-    /**
-     * Get the singleton instance
-     */
     public static UserSession getInstance() {
         if (instance == null) {
             instance = new UserSession();
@@ -31,67 +36,79 @@ public class UserSession {
         return instance;
     }
 
-    /**
-     * Create a new session for a user
-     */
     public void createSession(User user) {
         this.currentUser = user;
         Log.setLoggedInUser(user.getUsername());
         this.userRole = user.getRole();
         this.isAuthenticated = true;
         this.loginTime = LocalDateTime.now();
+
+        // Reset employee analytics info on new login
+        this.employeeId = null;
+        this.accessibleBakeryIds = new ArrayList<>();
     }
 
-    /**
-     * Clear the current session (logout)
-     */
     public void clearSession() {
         this.currentUser = null;
         Log.clearLoggedInUser();
         this.userRole = null;
         this.isAuthenticated = false;
         this.loginTime = null;
+
+        this.employeeId = null;
+        this.accessibleBakeryIds = new ArrayList<>();
     }
 
-    /**
-     * Check if a user is currently authenticated
-     */
     public boolean isAuthenticated() {
         return isAuthenticated;
     }
 
-    /**
-     * Get the current logged-in user
-     */
     public User getCurrentUser() {
         return currentUser;
     }
 
-    /**
-     * Get the current user's role
-     */
     public String getUserRole() {
         return userRole;
     }
 
-    /**
-     * Get the login time
-     */
     public LocalDateTime getLoginTime() {
         return loginTime;
     }
 
-    /**
-     * Check if the current user is an admin
-     */
     public boolean isAdmin() {
         return isAuthenticated && userRole != null && userRole.equalsIgnoreCase("ADMIN");
     }
 
-    /**
-     * Check if the current user is an employee
-     */
     public boolean isEmployee() {
         return isAuthenticated && userRole != null && userRole.equalsIgnoreCase("EMPLOYEE");
+    }
+
+    /**
+     * Called at login for EMPLOYEE accounts.
+     * If employeeId is null or bakeryIds is empty, analytics should be disabled.
+     */
+    public void setEmployeeAnalyticsAccess(Integer employeeId, List<Integer> bakeryIds) {
+        this.employeeId = employeeId;
+        this.accessibleBakeryIds = (bakeryIds == null) ? new ArrayList<>() : new ArrayList<>(bakeryIds);
+    }
+
+    public Integer getEmployeeId() {
+        return employeeId;
+    }
+
+    public List<Integer> getAccessibleBakeryIds() {
+        return Collections.unmodifiableList(accessibleBakeryIds);
+    }
+
+    /**
+     * Policy:
+     * - Admin: always true
+     * - Employee: only true if linked to an Employee row AND has bakery scope
+     */
+    public boolean canAccessAnalytics() {
+        if (isAdmin()) return true;
+        if (!isEmployee()) return false;
+
+        return employeeId != null && !accessibleBakeryIds.isEmpty();
     }
 }

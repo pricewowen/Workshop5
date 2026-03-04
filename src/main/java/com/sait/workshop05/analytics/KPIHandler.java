@@ -1,4 +1,3 @@
-// η℩.cαηtor ↈ (and his AI, ⌈𝗆𝖾𝗍𝖺𝖼𝗈𝖽𝖺⌋ ⊛)
 
 package com.sait.workshop05.analytics;
 
@@ -7,9 +6,20 @@ import java.util.List;
 
 public interface KPIHandler {
 
-    double getPrimaryValue(LocalDate start, LocalDate end, String bakery) throws Exception;
+    /**
+     * @param bakerySelection bakery name OR "All Bakeries" OR "All My Bakeries"
+     * @param scopeBakeryIds if null/empty => no restriction (admin)
+     *                      if non-empty => restrict all queries to these bakeryIds (employee scope)
+     */
+    double getPrimaryValue(LocalDate start,
+                           LocalDate end,
+                           String bakerySelection,
+                           List<Integer> scopeBakeryIds) throws Exception;
 
-    List<DataPoint> getChartData(LocalDate start, LocalDate end, String bakery) throws Exception;
+    List<DataPoint> getChartData(LocalDate start,
+                                 LocalDate end,
+                                 String bakerySelection,
+                                 List<Integer> scopeBakeryIds) throws Exception;
 
     String getTitle();
 }
