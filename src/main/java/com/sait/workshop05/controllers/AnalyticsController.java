@@ -59,7 +59,6 @@ public class AnalyticsController {
         });
 
         kpiComboBox.setOnAction(e -> {
-
             KPIType type = KPIType.fromDisplayName(kpiComboBox.getValue());
 
             if (type == KPIType.REVENUE_BY_BAKERY) {
