@@ -1,7 +1,7 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.MainApplication;
 import com.sait.workshop05.database.AuthDAO;
+import com.sait.workshop05.database.EmployeeAccessDAO;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.User;
 import com.sait.workshop05.session.UserSession;
@@ -12,6 +12,7 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Controller for the login view.
@@ -36,28 +37,21 @@ public class LoginController {
 
     @FXML
     private void initialize() {
-        // Hide error label initially
         if (errorLabel != null) {
             errorLabel.setVisible(false);
         }
 
-        // Default role selection
         if (roleComboBox != null) {
             roleComboBox.getSelectionModel().selectFirst();
         }
 
-        // Enter key on password field triggers login
         if (passwordField != null) {
             passwordField.setOnAction(event -> handleLogin());
         }
     }
 
-    /**
-     * Handle login button click
-     */
     @FXML
     private void handleLogin() {
-        // Validate role selection
         String selectedRole = roleComboBox.getValue();
         if (selectedRole == null || selectedRole.isEmpty()) {
             showError("Please select a role");
@@ -67,36 +61,45 @@ public class LoginController {
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
 
-        // Validate input
         if (username.isEmpty() || password.isEmpty()) {
             showError("Please enter both username and password");
             return;
         }
 
-        // Attempt authentication
         User user = AuthDAO.authenticate(username, password, selectedRole);
 
         if (user != null) {
-            // Create session
-            UserSession.getInstance().createSession(user);
-            LogData.logAction("LOGIN", "User logged in: " + username + " (Role: " + selectedRole + ")");
+            UserSession session = UserSession.getInstance();
+            session.createSession(user);
 
-            // Navigate to main management view
+            // IMPORTANT: compute analytics eligibility for EMPLOYEE
+            if (session.isEmployee()) {
+                Integer employeeId = EmployeeAccessDAO.getEmployeeIdByUserId(user.getUserId());
+                List<Integer> bakeryIds = EmployeeAccessDAO.getAccessibleBakeryIdsByUserId(user.getUserId());
+                session.setEmployeeAnalyticsAccess(employeeId, bakeryIds);
+
+                if (session.canAccessAnalytics()) {
+                    LogData.logAction("LOGIN", "Employee login: " + username + " (Analytics ENABLED)");
+                } else {
+                    LogData.logAction("LOGIN", "Employee login: " + username + " (Analytics DISABLED: generic/no bakery access)");
+                }
+            } else {
+                LogData.logAction("LOGIN", "Admin login: " + username);
+            }
+
             try {
                 openMainView();
             } catch (IOException e) {
                 showError("Error loading application: " + e.getMessage());
                 LogData.handleException("LOGIN_OPEN_MAIN", e);
             }
+
         } else {
             showError("Invalid username or password");
             LogData.logAction("LOGIN_FAILED", "Failed login attempt for username: " + username + " (Role: " + selectedRole + ")");
         }
     }
 
-    /**
-     * Show error message
-     */
     private void showError(String message) {
         if (errorLabel != null) {
             errorLabel.setText(message);
@@ -104,14 +107,10 @@ public class LoginController {
         }
     }
 
-    /**
-     * Open the main management view after successful login
-     */
     private void openMainView() throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/sait/workshop05/main-view.fxml"));
         Scene scene = new Scene(loader.load());
 
-        // connect stylesheet
         scene.getStylesheets().add(this.getClass().getResource("/com/sait/workshop05/styles.css").toString());
 
         Stage stage = (Stage) loginButton.getScene().getWindow();

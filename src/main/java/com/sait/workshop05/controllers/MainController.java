@@ -54,7 +54,7 @@ public class MainController {
 
     @FXML
     private Button btnRewardTier;
-    
+
     @FXML
     private Button btnLogout;
 
@@ -79,30 +79,39 @@ public class MainController {
     private void setUserLabels() {
         UserSession session = UserSession.getInstance();
 
-        // set the admin/employee roles
         if (session.isEmployee()) {
             lblRole.setText("Employee");
         } else {
             lblRole.setText("Admin");
         }
 
-        lblUsername.setText(session.getCurrentUser().getUsername());
-
+        if (session.getCurrentUser() != null) {
+            lblUsername.setText(session.getCurrentUser().getUsername());
+        } else {
+            lblUsername.setText("Unknown");
+        }
     }
 
     /**
      * Hide sidebar buttons based on the current user's role.
-     * Admin: sees everything
-     * Employee: no Employees, Locations, or Analytics
+     *
+     * Admin: sees everything.
+     * Employee:
+     *  - no Employees
+     *  - no Locations
+     *  - Analytics only if "real" employee (Employee row + bakery access)
      */
     private void applyRoleBasedVisibility() {
         UserSession session = UserSession.getInstance();
 
         if (session.isEmployee()) {
-            // Hide admin-only buttons
             hideButton(btnEmployees);
             hideButton(btnLocations);
-            hideButton(btnAnalytics);
+
+            // Only hide analytics if the employee is NOT eligible.
+            if (!session.canAccessAnalytics()) {
+                hideButton(btnAnalytics);
+            }
         }
         // Admin sees everything — no hiding needed
     }
@@ -125,7 +134,18 @@ public class MainController {
 
     @FXML
     private void onAnalyticsClick() {
-    	setActiveButton(btnAnalytics);
+        // Extra safety: even if button is visible somehow, enforce access.
+        UserSession session = UserSession.getInstance();
+        if (!session.canAccessAnalytics()) {
+            ErrorHandler.showErrorDialog(
+                    "Access Denied",
+                    "Analytics not available",
+                    "This account is not linked to an employee with analytics access."
+            );
+            return;
+        }
+
+        setActiveButton(btnAnalytics);
         loadPage("analytics-view.fxml");
     }
 
@@ -212,10 +232,6 @@ public class MainController {
         }
     }
 
-    /**
-     * Sets the active button for styling
-     * @param button that is active
-     */
     private void setActiveButton(Button button) {
         if (activeButton != null) {
             activeButton.getStyleClass().remove("active");
@@ -225,10 +241,6 @@ public class MainController {
         activeButton = button;
     }
 
-    /**
-     * Load page in contentArea of main application
-     * @param view the .fxml file to be displayed
-     */
     private void loadPage(String view) {
         try {
             URL url = resolveFxmlUrl(view);
@@ -264,16 +276,12 @@ public class MainController {
     }
 
     private URL resolveFxmlUrl(String view) {
-        // Preferred standard Maven resources path:
-        // src/main/resources/com/sait/workshop05/*.fxml
         URL url = getClass().getResource("/com/sait/workshop05/" + view);
         if (url != null) return url;
 
-        // Fallback: dot folder structure
         url = getClass().getResource("/com.sait.workshop05/" + view);
         if (url != null) return url;
 
-        // Fallback: relative to this class package
         return getClass().getResource(view);
     }
 
@@ -281,5 +289,4 @@ public class MainController {
         setActiveButton(btnDashboard);
         loadPage("dashboard-view.fxml");
     }
-
 }
