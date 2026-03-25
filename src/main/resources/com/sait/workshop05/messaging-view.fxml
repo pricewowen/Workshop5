@@ -3,13 +3,12 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
 
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.sait.workshop05.controllers.MessagingController"
             prefWidth="1200" prefHeight="800"
-            style="-fx-background-color: white;">
+            styleClass="page-root">
 
     <children>
 
@@ -24,11 +23,7 @@
                 <Insets top="10" right="10" bottom="10" left="10"/>
             </padding>
 
-            <Label text="Staff Messaging">
-                <font>
-                    <Font size="24"/>
-                </font>
-            </Label>
+            <Label text="Staff Messaging" styleClass="page-title"/>
 
             <!-- Main split: conversation list (left 30%) | message thread (right 70%) -->
             <SplitPane dividerPositions="0.30" VBox.vgrow="ALWAYS">
@@ -36,7 +31,7 @@
 
                     <!-- ═══ LEFT PANEL: Conversations ═══ -->
                     <VBox spacing="8" fillWidth="true"
-                          style="-fx-background-color: #fafafa; -fx-border-color: #e0e0e0;">
+                          styleClass="form-panel">
                         <padding>
                             <Insets top="10" right="10" bottom="10" left="10"/>
                         </padding>
@@ -46,7 +41,7 @@
                             <Region HBox.hgrow="ALWAYS"/>
                             <Button text="New Message" fx:id="btnNewMessage"
                                     onAction="#onNewMessage"
-                                    style="-fx-font-size: 12px;"/>
+                                    styleClass="btn-accent"/>
                         </HBox>
 
                         <TextField fx:id="txtConversationSearch"
@@ -59,7 +54,7 @@
                         <HBox spacing="8" alignment="CENTER_LEFT">
                             <Button text="Refresh" fx:id="btnRefreshConversations"
                                     onAction="#onRefreshConversations"
-                                    style="-fx-font-size: 12px;"/>
+                                    styleClass="btn-muted"/>
                             <Label fx:id="lblUnreadCount" text=""
                                    style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
                         </HBox>
@@ -73,17 +68,17 @@
 
                         <!-- Thread header -->
                         <HBox spacing="12" alignment="CENTER_LEFT"
-                              style="-fx-background-color: #f5f0e8; -fx-border-color: #d4c9b0; -fx-padding: 8;">
+                              styleClass="thread-header-bar">
                             <Label fx:id="lblThreadTitle"
                                    text="Select a conversation or start a new message"
-                                   style="-fx-font-size: 15px; -fx-font-weight: bold;"/>
+                                   styleClass="section-title"/>
                         </HBox>
 
                         <!-- Message thread display -->
                         <ScrollPane fx:id="scrollMessages" fitToWidth="true"
                                     VBox.vgrow="ALWAYS"
                                     hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
-                                    style="-fx-background-color: white;">
+                                    styleClass="scroll-thread">
                             <content>
                                 <VBox fx:id="vboxMessages" spacing="8" fillWidth="true">
                                     <padding>
@@ -117,7 +112,7 @@
                                 <Button text="Send" fx:id="btnSend"
                                         onAction="#onSendMessage"
                                         prefWidth="100" prefHeight="36"
-                                        style="-fx-font-size: 13px; -fx-font-weight: bold;"/>
+                                        styleClass="btn-accent"/>
                             </HBox>
                         </VBox>
                     </VBox>

@@ -112,7 +112,7 @@ public class LoginController {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/sait/workshop05/main-view.fxml"));
         Scene scene = new Scene(loader.load());
 
-        scene.getStylesheets().add(this.getClass().getResource("/com/sait/workshop05/styles.css").toString());
+        scene.getStylesheets().add(this.getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
 
         Stage stage = (Stage) loginButton.getScene().getWindow();
         stage.setScene(scene);

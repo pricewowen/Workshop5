@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.controllers.MainController">
+<AnchorPane styleClass="app-root" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.controllers.MainController">
 
    <padding>
       <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
@@ -19,7 +19,7 @@
 
    <children>
 
-      <VBox prefWidth="191.0" style="-fx-background-color: #C19A6B;" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0">
+      <VBox prefWidth="191.0" styleClass="app-sidebar" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0">
 
          <children>
 
@@ -30,7 +30,7 @@
                         <Image smooth="true" url="@bakery_logo.png" />
                      </image>
                   </ImageView>
-                  <Label text="Management System" />
+                  <Label text="Management System" styleClass="sidebar-brand-subtitle" />
                </children>
                <padding>
                   <Insets left="20.0" top="15.0" />
@@ -39,10 +39,7 @@
 
             <VBox prefHeight="143.0" prefWidth="191.0">
                <children>
-                  <Label text="Main">
-                     <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="16.0" />
-                     </font>
+                  <Label text="Main" styleClass="sidebar-section-title">
                      <VBox.margin>
                         <Insets bottom="10.0" left="15.0" />
                      </VBox.margin>
@@ -67,10 +64,7 @@
 
             <VBox prefHeight="165.0" prefWidth="191.0">
                <children>
-                  <Label text="Management">
-                     <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="16.0" />
-                     </font>
+                  <Label text="Management" styleClass="sidebar-section-title">
                      <VBox.margin>
                         <Insets left="15.0" />
                      </VBox.margin>
@@ -108,10 +102,7 @@
 
             <VBox prefHeight="203.0" prefWidth="191.0">
                <children>
-                  <Label text="System">
-                     <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="16.0" />
-                     </font>
+                  <Label text="System" styleClass="sidebar-section-title">
                      <VBox.margin>
                         <Insets left="15.0" />
                      </VBox.margin>
@@ -155,13 +146,11 @@
                </padding>
             </VBox>
 
-            <!-- Spacer to push logout to bottom -->
             <Region VBox.vgrow="ALWAYS" />
 
-            <!-- Logout Section -->
             <VBox prefWidth="191.0">
                <children>
-                  <Button fx:id="btnLogout" mnemonicParsing="false" onAction="#onLogoutClick" prefHeight="25.0" prefWidth="204.0" style="-fx-text-fill: red" styleClass="sidebar_button" text="Logout">
+                  <Button id="btnLogout" fx:id="btnLogout" mnemonicParsing="false" onAction="#onLogoutClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Logout">
                      <VBox.margin>
                         <Insets bottom="10.0" />
                      </VBox.margin>
@@ -175,7 +164,7 @@
          </children>
       </VBox>
 
-      <HBox alignment="CENTER_RIGHT" prefHeight="61.0" prefWidth="1003.0" style="-fx-background-color: #F7F7F7;" AnchorPane.leftAnchor="191.0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+      <HBox alignment="CENTER_RIGHT" prefHeight="61.0" prefWidth="1003.0" styleClass="app-top-bar" AnchorPane.leftAnchor="191.0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
 
          <children>
 
@@ -206,6 +195,6 @@
          </children>
       </HBox>
 
-      <AnchorPane fx:id="contentArea" style="-fx-background-color: white;" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="191.0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="61.0" />
+      <AnchorPane fx:id="contentArea" styleClass="app-content" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="191.0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="61.0" />
    </children>
 </AnchorPane>

@@ -3,13 +3,12 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
 
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.sait.workshop05.controllers.CustomerManagementController"
             prefWidth="1200" prefHeight="800"
-            style="-fx-background-color: white;">
+            styleClass="page-root">
 
     <children>
 
@@ -25,11 +24,7 @@
             </padding>
 
             <HBox spacing="12" alignment="CENTER_LEFT">
-                <Label text="Customer Management">
-                    <font>
-                        <Font size="24"/>
-                    </font>
-                </Label>
+                <Label text="Customer Management" styleClass="page-title"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
 
@@ -43,7 +38,7 @@
                         fx:id="btnRefresh"
                         onAction="#onRefresh"
                         prefWidth="100"
-                        style="-fx-font-size: 13px;"/>
+                        styleClass="btn-muted"/>
             </HBox>
 
             <SplitPane dividerPositions="0.65" VBox.vgrow="ALWAYS" prefWidth="1.0" prefHeight="1.0">
@@ -87,14 +82,14 @@
                             <VBox spacing="14"
                                   fillWidth="true"
                                   prefWidth="1.0"
-                                  style="-fx-background-color: #fafafa; -fx-border-color: #e6e6e6;">
+                                  styleClass="form-panel">
 
                                 <padding>
                                     <Insets top="16" right="16" bottom="16" left="16"/>
                                 </padding>
 
                                 <Label text="Customer Details"
-                                       style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                                       styleClass="form-panel-title"/>
 
                                 <GridPane hgap="12" vgap="12" prefWidth="1.0">
                                     <columnConstraints>
@@ -177,34 +172,43 @@
 
                                 <Separator/>
 
-                                <HBox spacing="12">
+                                <GridPane hgap="12" vgap="12">
+                                    <columnConstraints>
+                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10"/>
+                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10"/>
+                                    </columnConstraints>
+                                    <rowConstraints>
+                                        <RowConstraints minHeight="38" vgrow="NEVER"/>
+                                        <RowConstraints minHeight="38" vgrow="NEVER"/>
+                                    </rowConstraints>
                                     <Button text="Create" fx:id="btnCreate" onAction="#onCreate"
-                                            prefHeight="38" style="-fx-font-size: 13px;"
-                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                                            prefHeight="38" styleClass="btn-accent"
+                                            maxWidth="1.7976931348623157E308"
+                                            GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
                                     <Button text="Update" fx:id="btnUpdate" onAction="#onUpdate"
-                                            prefHeight="38" style="-fx-font-size: 13px;"
-                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
-                                </HBox>
-
-                                <HBox spacing="12">
+                                            prefHeight="38" styleClass="btn-accent"
+                                            maxWidth="1.7976931348623157E308"
+                                            GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
                                     <Button text="Delete" fx:id="btnDelete" onAction="#onDelete"
-                                            prefHeight="38" style="-fx-font-size: 13px;"
-                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                                            prefHeight="38" styleClass="danger-button"
+                                            maxWidth="1.7976931348623157E308"
+                                            GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
                                     <Button text="Clear" fx:id="btnClear" onAction="#onClear"
-                                            prefHeight="38" style="-fx-font-size: 13px;"
-                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
-                                </HBox>
+                                            prefHeight="38" styleClass="btn-muted"
+                                            maxWidth="1.7976931348623157E308"
+                                            GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
+                                </GridPane>
 
                                 <Separator/>
 
                                 <HBox spacing="12">
                                     <Button text="View Order History" fx:id="btnOrderHistory"
                                             onAction="#onViewOrderHistory"
-                                            prefHeight="38" style="-fx-font-size: 13px;"
+                                            prefHeight="38" styleClass="btn-muted"
                                             HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
                                     <Button text="Adjust Points" fx:id="btnAdjustPoints"
                                             onAction="#onAdjustPoints"
-                                            prefHeight="38" style="-fx-font-size: 13px;"
+                                            prefHeight="38" styleClass="btn-accent"
                                             HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
                                 </HBox>
 

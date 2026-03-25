@@ -8,11 +8,12 @@
       xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.sait.workshop05.controllers.AnalyticsController"
+      styleClass="page-root"
       style="-fx-padding: 20;">
 
     <!-- Title -->
     <Label text="Analytics Overview"
-           style="-fx-font-size: 22px; -fx-font-weight: bold;" />
+           styleClass="page-title" />
 
     <!-- Filters -->
     <HBox spacing="15">
@@ -28,6 +29,7 @@
 
         <Button text="Refresh"
                 fx:id="refreshButton"
+                styleClass="btn-accent"
                 onAction="#onRefresh" />
     </HBox>
 
@@ -37,10 +39,10 @@
 
             <Label fx:id="kpiValueLabel"
                    text="0.00"
-                   style="-fx-font-size: 28px; -fx-font-weight: bold;" />
+                   styleClass="kpi-value" />
             <Label fx:id="kpiTitleLabel"
                    text="KPI Name"
-                   style="-fx-text-fill: #555;" />
+                   styleClass="hint-label" />
         </VBox>
     </HBox>
 

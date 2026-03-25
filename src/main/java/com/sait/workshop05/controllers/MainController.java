@@ -218,6 +218,7 @@ public class MainController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/sait/workshop05/login-view.fxml"));
             Scene scene = new Scene(loader.load());
+            scene.getStylesheets().add(getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
 
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             stage.setScene(scene);
