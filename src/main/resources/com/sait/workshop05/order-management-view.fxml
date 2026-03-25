@@ -184,7 +184,7 @@
 
                                 <Label text="Address:" style="-fx-font-size: 13px;"
                                        GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                                <ComboBox fx:id="cboNewAddress" promptText="(For delivery)"
+                                <ComboBox fx:id="cboNewAddress" promptText="Type address or select suggestion"
                                           style="-fx-font-size: 13px;" maxWidth="1.7976931348623157E308"
                                           GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 

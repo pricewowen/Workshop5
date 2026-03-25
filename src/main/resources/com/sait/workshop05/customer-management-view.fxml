@@ -152,7 +152,7 @@
 
                                     <Label text="Address*:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="8" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboAddress" promptText="Select address"
+                                    <ComboBox fx:id="cboAddress" promptText="Type address or select suggestion"
                                               style="-fx-font-size: 13px;"
                                               GridPane.rowIndex="8" GridPane.columnIndex="1"/>
 

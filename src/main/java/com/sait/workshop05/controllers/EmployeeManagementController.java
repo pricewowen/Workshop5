@@ -2,12 +2,14 @@ package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.models.AddressOption;
 import com.sait.workshop05.database.EmployeeDAO;
+import com.sait.workshop05.database.SharedDAO;
 import com.sait.workshop05.models.UserOption;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Employee;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
 import com.sait.workshop05.util.ValidationResult;
+import com.sait.workshop05.util.AddressInputHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -58,6 +60,7 @@ public class EmployeeManagementController {
     void initialize() {
         setupColumns();
         setupRoleOptions();
+        AddressInputHelper.configureEditableAddressCombo(cboAddress);
         setupSelectionBinding();
         setupSearchFiltering();
 
@@ -105,7 +108,7 @@ public class EmployeeManagementController {
             txtEmail.setText(StringUtil.nz(selected.getEmployeeEmail()));
 
             selectUserById(selected.getUserId());
-            selectAddressById(selected.getAddressId());
+            AddressInputHelper.selectAddressById(cboAddress, selected.getAddressId());
         });
     }
 
@@ -146,7 +149,7 @@ public class EmployeeManagementController {
             cboUser.setItems(FXCollections.observableArrayList(users));
 
             List<AddressOption> addresses = dao.getAddressOptions();
-            cboAddress.setItems(FXCollections.observableArrayList(addresses));
+            AddressInputHelper.setAddressItems(cboAddress, addresses);
         } catch (SQLException e) {
             LogData.handleException("LOAD_EMPLOYEE_COMBOS", e);
             ErrorHandler.showErrorDialog("Database Error", "Could not load User/Address lists.", e.getMessage());
@@ -183,7 +186,7 @@ public class EmployeeManagementController {
         txtBusinessPhone.clear();
         txtEmail.clear();
         cboUser.getSelectionModel().clearSelection();
-        cboAddress.getSelectionModel().clearSelection();
+        AddressInputHelper.clearAddressField(cboAddress);
         lblStatus.setText("Cleared");
     }
 
@@ -196,7 +199,17 @@ public class EmployeeManagementController {
             return;
         }
 
-        Employee e = buildFromForm(false);
+        Employee e;
+        try {
+            e = buildFromForm(false);
+        } catch (IllegalArgumentException ex) {
+            ErrorHandler.showWarning("Validation", ex.getMessage());
+            return;
+        } catch (SQLException ex) {
+            LogData.handleException("CREATE_EMPLOYEE_ADDRESS", ex);
+            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
+            return;
+        }
 
         try {
             int newId = dao.insertEmployee(e);
@@ -232,7 +245,17 @@ public class EmployeeManagementController {
             return;
         }
 
-        Employee e = buildFromForm(true);
+        Employee e;
+        try {
+            e = buildFromForm(true);
+        } catch (IllegalArgumentException ex) {
+            ErrorHandler.showWarning("Validation", ex.getMessage());
+            return;
+        } catch (SQLException ex) {
+            LogData.handleException("UPDATE_EMPLOYEE_ADDRESS", ex);
+            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
+            return;
+        }
 
         try {
             boolean ok = dao.updateEmployee(e);
@@ -278,7 +301,7 @@ public class EmployeeManagementController {
         }
     }
 
-    private Employee buildFromForm(boolean includeId) {
+    private Employee buildFromForm(boolean includeId) throws SQLException {
         Employee e = new Employee();
 
         if (includeId) {
@@ -294,7 +317,7 @@ public class EmployeeManagementController {
         e.setEmployeeEmail(txtEmail.getText().trim());
 
         UserOption u = cboUser.getValue();
-        AddressOption a = cboAddress.getValue();
+        AddressOption a = resolveAddressSelection(true);
 
         e.setUserId(u.getUserId());
         e.setAddressId(a.getAddressId());
@@ -311,6 +334,7 @@ public class EmployeeManagementController {
         String mi = StringUtil.safe(txtMiddleInitial.getText());
         UserOption user = cboUser.getValue();
         AddressOption addr = cboAddress.getValue();
+        String typedAddress = AddressInputHelper.getTypedText(cboAddress);
 
         if (isUpdate) {
             String id = StringUtil.safe(txtEmployeeId.getText());
@@ -334,7 +358,7 @@ public class EmployeeManagementController {
         if (!mi.isBlank() && mi.trim().length() > 2) return ValidationResult.fail("Middle initial must be 1\u20132 characters.");
 
         if (user == null) return ValidationResult.fail("User is required (select a User).");
-        if (addr == null) return ValidationResult.fail("Address is required (select an Address).");
+        if (addr == null && typedAddress.isBlank()) return ValidationResult.fail("Address is required.");
 
         // matches SQL limits
         if (first.length() > 50) return ValidationResult.fail("First name must be 50 characters or less.");
@@ -369,14 +393,19 @@ public class EmployeeManagementController {
         cboUser.getSelectionModel().clearSelection();
     }
 
-    private void selectAddressById(int addressId) {
-        if (cboAddress.getItems() == null) return;
-        for (AddressOption a : cboAddress.getItems()) {
-            if (a.getAddressId() == addressId) {
-                cboAddress.getSelectionModel().select(a);
-                return;
-            }
+    private AddressOption resolveAddressSelection(boolean required) throws SQLException {
+        AddressOption selected = cboAddress.getValue();
+        if (selected != null) return selected;
+
+        String typed = AddressInputHelper.getTypedText(cboAddress);
+        if (typed.isBlank()) {
+            if (required) throw new IllegalArgumentException("Address is required.");
+            return null;
         }
-        cboAddress.getSelectionModel().clearSelection();
+
+        AddressOption resolved = SharedDAO.findOrCreateAddressFromInput(typed);
+        loadCombos();
+        AddressInputHelper.selectAddressById(cboAddress, resolved.getAddressId());
+        return resolved;
     }
 }

@@ -6,6 +6,7 @@ import java.net.URL;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.StageIconHelper;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -220,7 +221,8 @@ public class MainController {
 
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             stage.setScene(scene);
-            stage.setTitle("Peelin' Good - Login");
+            stage.setTitle("Login");
+            StageIconHelper.setAppIcon(stage);
             stage.setWidth(700);
             stage.setHeight(730);
             stage.setMinWidth(700);

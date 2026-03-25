@@ -5,6 +5,7 @@ import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.*;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.OrderStatus;
+import com.sait.workshop05.util.AddressInputHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -284,6 +285,7 @@ public class OrderManagementController {
         txtDiscount.textProperty().addListener((obs, o, n) -> recalculateTotals());
 
         // Load ComboBox data
+        AddressInputHelper.configureEditableAddressCombo(cboNewAddress);
         loadTab2Combos();
         loadCatalog();
     }
@@ -292,7 +294,7 @@ public class OrderManagementController {
         try {
             cboNewCustomer.setItems(FXCollections.observableArrayList(orderDao.getCustomerOptions()));
             cboNewBakery.setItems(FXCollections.observableArrayList(orderDao.getBakeryOptions()));
-            cboNewAddress.setItems(FXCollections.observableArrayList(orderDao.getAddressOptions()));
+            AddressInputHelper.setAddressItems(cboNewAddress, orderDao.getAddressOptions());
         } catch (SQLException e) {
             LogData.handleException("LOAD_ORDER_COMBOS", e);
             ErrorHandler.showErrorDialog("Database Error", "Could not load dropdown lists.", e.getMessage());
@@ -529,7 +531,17 @@ public class OrderManagementController {
         }
 
         // Delivery address
-        AddressOption address = cboNewAddress.getValue();
+        AddressOption address;
+        try {
+            address = resolveAddressSelection(false);
+        } catch (IllegalArgumentException ex) {
+            ErrorHandler.showWarning("Validation", ex.getMessage());
+            return;
+        } catch (SQLException ex) {
+            LogData.handleException("CREATE_ORDER_ADDRESS", ex);
+            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
+            return;
+        }
 
         // Build Order
         Order order = new Order();
@@ -581,7 +593,7 @@ public class OrderManagementController {
         cboNewMethod.getSelectionModel().clearSelection();
         dpScheduledDate.setValue(null);
         txtScheduledTime.clear();
-        cboNewAddress.getSelectionModel().clearSelection();
+        AddressInputHelper.clearAddressField(cboNewAddress);
         txtNewComment.clear();
         cartItems.clear();
         txtDiscount.setText("0.00");
@@ -620,5 +632,21 @@ public class OrderManagementController {
                 setText(item.format(DT_FMT));
             }
         }
+    }
+
+    private AddressOption resolveAddressSelection(boolean required) throws SQLException {
+        AddressOption selected = cboNewAddress.getValue();
+        if (selected != null) return selected;
+
+        String typed = AddressInputHelper.getTypedText(cboNewAddress);
+        if (typed.isBlank()) {
+            if (required) throw new IllegalArgumentException("Address is required.");
+            return null;
+        }
+
+        AddressOption resolved = SharedDAO.findOrCreateAddressFromInput(typed);
+        loadTab2Combos();
+        AddressInputHelper.selectAddressById(cboNewAddress, resolved.getAddressId());
+        return resolved;
     }
 }

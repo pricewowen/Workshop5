@@ -3,6 +3,8 @@
 <?import javafx.collections.FXCollections?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 <?import java.lang.String?>
@@ -29,7 +31,11 @@
 
                 <!-- Header -->
                 <VBox alignment="CENTER" spacing="10">
-                    <Label text="Peelin' Good Bakery" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #C19A6B;"/>
+                    <ImageView fitHeight="80.0" fitWidth="320.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                            <Image smooth="true" url="@bakery_logo.png"/>
+                        </image>
+                    </ImageView>
                     <Label text="Management System" style="-fx-font-size: 16px; -fx-text-fill: #666666;"/>
                 </VBox>
 
@@ -100,9 +106,4 @@
         </VBox>
     </center>
 
-    <bottom>
-        <HBox alignment="CENTER" style="-fx-padding: 20;">
-            <Label text="2026 Peelin' Good Bakery - Workshop 5" style="-fx-font-size: 12px; -fx-text-fill: #999999;"/>
-        </HBox>
-    </bottom>
 </BorderPane>

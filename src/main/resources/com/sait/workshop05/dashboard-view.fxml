@@ -2,6 +2,8 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
@@ -24,13 +26,20 @@
             </padding>
 
             <!-- ── Page header ──────────────────────────────── -->
-            <VBox spacing="2">
-                <Label text="Dashboard Overview">
-                    <font><Font size="24"/></font>
-                </Label>
-                <Label text="Home / Dashboard"
-                       style="-fx-text-fill: #888; -fx-font-size: 12px;"/>
-            </VBox>
+            <HBox alignment="CENTER_LEFT" spacing="14">
+                <ImageView fitHeight="48.0" fitWidth="220.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image smooth="true" url="@bakery_logo.png"/>
+                    </image>
+                </ImageView>
+                <VBox spacing="2">
+                    <Label text="Dashboard Overview">
+                        <font><Font size="24"/></font>
+                    </Label>
+                    <Label text="Home / Dashboard"
+                           style="-fx-text-fill: #888; -fx-font-size: 12px;"/>
+                </VBox>
+            </HBox>
 
             <!-- ── Summary cards row ────────────────────────── -->
             <HBox spacing="14" alignment="CENTER">
