@@ -103,12 +103,12 @@ public class DashboardController {
                 } else {
                     setText(item);
                     switch (item) {
-                        case OrderStatus.PENDING -> setStyle("-fx-text-fill: #c09800; -fx-font-weight: bold;");
-                        case OrderStatus.PROCESSING -> setStyle("-fx-text-fill: #0275d8; -fx-font-weight: bold;");
-                        case OrderStatus.READY -> setStyle("-fx-text-fill: #5bc0de; -fx-font-weight: bold;");
-                        case OrderStatus.OUT_FOR_DELIVERY -> setStyle("-fx-text-fill: #f0ad4e; -fx-font-weight: bold;");
-                        case OrderStatus.COMPLETED, OrderStatus.DELIVERED -> setStyle("-fx-text-fill: #5cb85c; -fx-font-weight: bold;");
-                        case OrderStatus.CANCELLED -> setStyle("-fx-text-fill: #d9534f; -fx-font-weight: bold;");
+                        case OrderStatus.PENDING -> setStyle("-fx-text-fill: #C48A1A; -fx-font-weight: bold;");
+                        case OrderStatus.PROCESSING -> setStyle("-fx-text-fill: #4A6B8E; -fx-font-weight: bold;");
+                        case OrderStatus.READY -> setStyle("-fx-text-fill: #6B8E9E; -fx-font-weight: bold;");
+                        case OrderStatus.OUT_FOR_DELIVERY -> setStyle("-fx-text-fill: #D4A04A; -fx-font-weight: bold;");
+                        case OrderStatus.COMPLETED, OrderStatus.DELIVERED -> setStyle("-fx-text-fill: #5A9E6F; -fx-font-weight: bold;");
+                        case OrderStatus.CANCELLED -> setStyle("-fx-text-fill: #C75B52; -fx-font-weight: bold;");
                         default -> setStyle("");
                     }
                 }
@@ -136,7 +136,7 @@ public class DashboardController {
             private final Button btnView = new Button("View");
 
             {
-                btnView.setStyle("-fx-font-size: 11px;");
+                btnView.getStyleClass().add("btn-muted");
                 btnView.setOnAction(e -> {
                     Order order = getTableView().getItems().get(getIndex());
                     showOrderDetails(order);

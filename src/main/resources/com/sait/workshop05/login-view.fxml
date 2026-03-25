@@ -6,14 +6,13 @@
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
 <?import java.lang.String?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.sait.workshop05.controllers.LoginController"
             prefHeight="600.0" prefWidth="800.0"
-            style="-fx-background-color: #f5f5f5;">
+            styleClass="login-root">
 
     <center>
         <VBox alignment="CENTER" spacing="30">
@@ -21,34 +20,26 @@
                 <Insets top="50" right="50" bottom="50" left="50"/>
             </padding>
 
-            <!-- Login Card -->
             <VBox alignment="CENTER" spacing="25"
-                  style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);"
+                  styleClass="login-card"
                   prefWidth="400" maxWidth="400">
-                <padding>
-                    <Insets top="40" right="40" bottom="40" left="40"/>
-                </padding>
 
-                <!-- Header -->
                 <VBox alignment="CENTER" spacing="10">
                     <ImageView fitHeight="80.0" fitWidth="320.0" pickOnBounds="true" preserveRatio="true">
                         <image>
                             <Image smooth="true" url="@bakery_logo.png"/>
                         </image>
                     </ImageView>
-                    <Label text="Management System" style="-fx-font-size: 16px; -fx-text-fill: #666666;"/>
+                    <Label text="Management System" styleClass="login-title"/>
                 </VBox>
 
                 <Separator prefWidth="320"/>
 
-                <!-- Login Form -->
                 <VBox spacing="15" prefWidth="320">
-                    <!-- Role Selection -->
                     <VBox spacing="5">
-                        <Label text="Role" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #333333;"/>
+                        <Label text="Role" styleClass="form-label"/>
                         <ComboBox fx:id="roleComboBox"
                                   promptText="Select your role"
-                                  style="-fx-font-size: 14px; -fx-background-radius: 5;"
                                   prefWidth="320" prefHeight="40">
                             <items>
                                 <FXCollections fx:factory="observableArrayList">
@@ -59,35 +50,29 @@
                         </ComboBox>
                     </VBox>
 
-                    <!-- Username Field -->
                     <VBox spacing="5">
-                        <Label text="Username" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #333333;"/>
+                        <Label text="Username" styleClass="form-label"/>
                         <TextField fx:id="usernameField"
                                    promptText="Enter your username"
-                                   style="-fx-font-size: 14px; -fx-background-radius: 5; -fx-border-color: #cccccc; -fx-border-radius: 5;"
                                    prefHeight="40"/>
                     </VBox>
 
-                    <!-- Password Field -->
                     <VBox spacing="5">
-                        <Label text="Password" style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #333333;"/>
+                        <Label text="Password" styleClass="form-label"/>
                         <PasswordField fx:id="passwordField"
                                        promptText="Enter your password"
-                                       style="-fx-font-size: 14px; -fx-background-radius: 5; -fx-border-color: #cccccc; -fx-border-radius: 5;"
                                        prefHeight="40"/>
                     </VBox>
 
-                    <!-- Error Label -->
                     <Label fx:id="errorLabel"
                            text="Error message"
-                           style="-fx-text-fill: #d32f2f; -fx-font-size: 13px; -fx-wrap-text: true;"
+                           styleClass="error-text"
                            wrapText="true"
                            visible="false"/>
 
-                    <!-- Login Button -->
                     <Button fx:id="loginButton" text="Login"
                             onAction="#handleLogin"
-                            style="-fx-background-color: #C19A6B; -fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;"
+                            styleClass="btn-cta"
                             prefWidth="320" prefHeight="45">
                         <VBox.margin>
                             <Insets top="10"/>
@@ -95,12 +80,11 @@
                     </Button>
                 </VBox>
 
-                <!-- Help Text -->
                 <VBox alignment="CENTER" spacing="5">
                     <VBox.margin>
                         <Insets top="10"/>
                     </VBox.margin>
-                    <Label text="Contact your administrator for login credentials" style="-fx-font-size: 12px; -fx-text-fill: #999999;"/>
+                    <Label text="Contact your administrator for login credentials" styleClass="login-hint"/>
                 </VBox>
             </VBox>
         </VBox>

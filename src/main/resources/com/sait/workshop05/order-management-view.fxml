@@ -3,13 +3,11 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
-
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.sait.workshop05.controllers.OrderManagementController"
             prefWidth="1200" prefHeight="800"
-            style="-fx-background-color: white;">
+            styleClass="page-root">
 
     <children>
 
@@ -24,15 +22,10 @@
                 <Insets top="10" right="10" bottom="10" left="10"/>
             </padding>
 
-            <Label text="Order Management">
-                <font>
-                    <Font size="24"/>
-                </font>
-            </Label>
+            <Label text="Order Management" styleClass="page-title"/>
 
             <TabPane fx:id="tabPane" VBox.vgrow="ALWAYS"
-                     tabClosingPolicy="UNAVAILABLE"
-                     style="-fx-font-size: 13px;">
+                     tabClosingPolicy="UNAVAILABLE">
 
                 <!-- ═══════════════════════════════════════════════ -->
                 <!-- TAB 1: All Orders                              -->
@@ -60,7 +53,7 @@
 
                                 <Button text="Refresh" fx:id="btnRefreshOrders"
                                         onAction="#onRefreshOrders"
-                                        prefWidth="100" style="-fx-font-size: 13px;"/>
+                                        prefWidth="100" styleClass="btn-muted"/>
                             </HBox>
 
                             <!-- Orders table + details split -->
@@ -110,7 +103,7 @@
                                                       style="-fx-font-size: 13px;"/>
                                             <Button text="Update Status" fx:id="btnUpdateStatus"
                                                     onAction="#onUpdateStatus"
-                                                    style="-fx-font-size: 13px;"/>
+                                                    styleClass="btn-accent"/>
                                         </HBox>
 
                                         <TableView fx:id="tblOrderItems"
@@ -229,7 +222,7 @@
                                                      style="-fx-font-size: 13px;"/>
                                             <Button text="Add to Order" fx:id="btnAddToOrder"
                                                     onAction="#onAddToOrder"
-                                                    style="-fx-font-size: 13px;"/>
+                                                    styleClass="btn-accent"/>
                                         </HBox>
                                     </VBox>
 
@@ -252,7 +245,7 @@
 
                                         <Button text="Remove Selected" fx:id="btnRemoveFromOrder"
                                                 onAction="#onRemoveFromOrder"
-                                                style="-fx-font-size: 13px;"/>
+                                                styleClass="btn-muted"/>
 
                                         <Separator/>
 
@@ -291,7 +284,7 @@
                                         <Button text="Place Order" fx:id="btnPlaceOrder"
                                                 onAction="#onPlaceOrder"
                                                 prefHeight="42"
-                                                style="-fx-font-size: 14px; -fx-font-weight: bold;"
+                                                styleClass="btn-cta"
                                                 maxWidth="1.7976931348623157E308"/>
 
                                         <Label fx:id="lblNewOrderStatus" text=""

@@ -25,6 +25,7 @@ public class MainApplication extends Application {
         // Load login view (staff-only: Admin / Employee)
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
+        scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toExternalForm());
 
         stage.setTitle("Login");
         StageIconHelper.setAppIcon(stage);

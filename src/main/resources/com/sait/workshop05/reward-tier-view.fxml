@@ -2,13 +2,12 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
 
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.sait.workshop05.RewardTierController"
             prefWidth="1200" prefHeight="800"
-            style="-fx-background-color: white;">
+            styleClass="page-root">
     <children>
         <VBox spacing="12"
               AnchorPane.topAnchor="0"
@@ -22,11 +21,7 @@
 
             <!-- Header -->
             <HBox spacing="12" alignment="CENTER_LEFT">
-                <Label text="Reward Tier Management">
-                    <font>
-                        <Font size="24"/>
-                    </font>
-                </Label>
+                <Label text="Reward Tier Management" styleClass="page-title"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label text="Search:" style="-fx-font-size: 13px;"/>
                 <TextField fx:id="txtSearch"
@@ -37,7 +32,7 @@
                         fx:id="btnRefresh"
                         onAction="#onRefresh"
                         prefWidth="100"
-                        style="-fx-font-size: 13px;"/>
+                        styleClass="btn-muted"/>
             </HBox>
 
             <!-- Main Content -->
@@ -77,13 +72,13 @@
                             <VBox spacing="14"
                                   fillWidth="true"
                                   prefWidth="1.0"
-                                  style="-fx-background-color: #fafafa; -fx-border-color: #e6e6e6;">
+                                  styleClass="form-panel">
                                 <padding>
                                     <Insets top="16" right="16" bottom="16" left="16"/>
                                 </padding>
 
                                 <Label text="Reward Tier Details"
-                                       style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                                       styleClass="form-panel-title"/>
 
                                 <GridPane hgap="12" vgap="12" prefWidth="1.0">
                                     <columnConstraints>
@@ -140,35 +135,40 @@
                                 <Separator/>
 
                                 <!-- Buttons -->
-                                <HBox spacing="12">
+                                <GridPane hgap="12" vgap="12">
+                                    <columnConstraints>
+                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10"/>
+                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10"/>
+                                    </columnConstraints>
+                                    <rowConstraints>
+                                        <RowConstraints minHeight="38" vgrow="NEVER"/>
+                                        <RowConstraints minHeight="38" vgrow="NEVER"/>
+                                    </rowConstraints>
                                     <Button text="Create" fx:id="btnCreate"
                                             onAction="#onCreate"
                                             prefHeight="38"
-                                            style="-fx-font-size: 13px;"
-                                            HBox.hgrow="ALWAYS"
-                                            maxWidth="1.7976931348623157E308"/>
+                                            styleClass="btn-accent"
+                                            maxWidth="1.7976931348623157E308"
+                                            GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
                                     <Button text="Update" fx:id="btnUpdate"
                                             onAction="#onUpdate"
                                             prefHeight="38"
-                                            style="-fx-font-size: 13px;"
-                                            HBox.hgrow="ALWAYS"
-                                            maxWidth="1.7976931348623157E308"/>
-                                </HBox>
-
-                                <HBox spacing="12">
+                                            styleClass="btn-accent"
+                                            maxWidth="1.7976931348623157E308"
+                                            GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
                                     <Button text="Delete" fx:id="btnDelete"
                                             onAction="#onDelete"
                                             prefHeight="38"
-                                            style="-fx-font-size: 13px;"
-                                            HBox.hgrow="ALWAYS"
-                                            maxWidth="1.7976931348623157E308"/>
+                                            styleClass="danger-button"
+                                            maxWidth="1.7976931348623157E308"
+                                            GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
                                     <Button text="Clear" fx:id="btnClear"
                                             onAction="#onClear"
                                             prefHeight="38"
-                                            style="-fx-font-size: 13px;"
-                                            HBox.hgrow="ALWAYS"
-                                            maxWidth="1.7976931348623157E308"/>
-                                </HBox>
+                                            styleClass="btn-muted"
+                                            maxWidth="1.7976931348623157E308"
+                                            GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
+                                </GridPane>
 
                                 <Label text="* required fields"
                                        style="-fx-text-fill: #666; -fx-font-size: 12px;"/>

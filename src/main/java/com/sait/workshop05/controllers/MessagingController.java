@@ -100,7 +100,7 @@ public class MessagingController {
                     nameLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
 
                     Label timeLabel = new Label(item.getLastMessageTime().format(DT_FMT));
-                    timeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #888;");
+                    timeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #8A8178;");
 
                     HBox top = new HBox(8);
                     top.setAlignment(Pos.CENTER_LEFT);
@@ -108,7 +108,7 @@ public class MessagingController {
 
                     if (item.getUnreadCount() > 0) {
                         Label badge = new Label(String.valueOf(item.getUnreadCount()));
-                        badge.setStyle("-fx-background-color: #d9534f; -fx-text-fill: white; " +
+                        badge.setStyle("-fx-background-color: #C75B52; -fx-text-fill: white; " +
                                 "-fx-padding: 1 6 1 6; -fx-background-radius: 10; -fx-font-size: 11px;");
                         Region spacer = new Region();
                         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -121,7 +121,7 @@ public class MessagingController {
 
                     // Highlight rows with unread messages
                     if (item.getUnreadCount() > 0) {
-                        setStyle("-fx-background-color: #fff8e1;");
+                        setStyle("-fx-background-color: #F8EDD5;");
                     } else {
                         setStyle("");
                     }
@@ -190,7 +190,7 @@ public class MessagingController {
 
             if (messages.isEmpty()) {
                 Label empty = new Label("No messages yet. Send the first message below!");
-                empty.setStyle("-fx-text-fill: #888; -fx-font-size: 13px;");
+                empty.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 13px;");
                 vboxMessages.getChildren().add(empty);
             } else {
                 for (Message msg : messages) {
@@ -247,7 +247,7 @@ public class MessagingController {
         // Subject line (if present)
         if (msg.getMessageSubject() != null && !msg.getMessageSubject().isBlank()) {
             Label subjectLabel = new Label(msg.getMessageSubject());
-            subjectLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #555;");
+            subjectLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #4e342e;");
             subjectLabel.setWrapText(true);
             bubble.getChildren().add(subjectLabel);
         }
@@ -264,16 +264,16 @@ public class MessagingController {
                         ? msg.getMessageSentDateTime().format(DT_FMT)
                         : ""
         );
-        timeLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #999;");
+        timeLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #8A8178;");
         bubble.getChildren().add(timeLabel);
 
         // Styling
         if (isSentByMe) {
-            bubble.setStyle("-fx-background-color: #d4edda; -fx-background-radius: 10; " +
-                    "-fx-border-color: #c3e6cb; -fx-border-radius: 10;");
+            bubble.setStyle("-fx-background-color: #E8F0E5; -fx-background-radius: 12; " +
+                    "-fx-border-color: #C5D9C8; -fx-border-radius: 12;");
         } else {
-            bubble.setStyle("-fx-background-color: #e8e8e8; -fx-background-radius: 10; " +
-                    "-fx-border-color: #d6d6d6; -fx-border-radius: 10;");
+            bubble.setStyle("-fx-background-color: #F0EBE3; -fx-background-radius: 12; " +
+                    "-fx-border-color: #E8E2DA; -fx-border-radius: 12;");
         }
 
         // Wrap in HBox for alignment
@@ -334,7 +334,7 @@ public class MessagingController {
 
                     if (existing.isEmpty()) {
                         Label empty = new Label("No messages yet. Send the first message below!");
-                        empty.setStyle("-fx-text-fill: #888; -fx-font-size: 13px;");
+                        empty.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 13px;");
                         vboxMessages.getChildren().add(empty);
                     } else {
                         for (Message msg : existing) {
