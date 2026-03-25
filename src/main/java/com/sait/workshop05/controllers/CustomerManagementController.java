@@ -7,6 +7,7 @@ import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.OrderStatus;
 import com.sait.workshop05.util.StringUtil;
 import com.sait.workshop05.util.ValidationResult;
+import com.sait.workshop05.util.AddressInputHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -81,6 +82,7 @@ public class CustomerManagementController {
     void initialize() {
         setupColumns();
         setupRoleOptions();
+        AddressInputHelper.configureEditableAddressCombo(cboAddress);
         setupSelectionBinding();
         setupSearchFiltering();
         loadCombos();
@@ -124,7 +126,7 @@ public class CustomerManagementController {
             txtEmail.setText(StringUtil.nz(selected.getEmail()));
             txtRewardBalance.setText(String.valueOf(selected.getRewardBalance()));
 
-            selectAddressById(selected.getAddressId());
+            AddressInputHelper.selectAddressById(cboAddress, selected.getAddressId());
             selectUserById(selected.getUserId());
             selectRewardTierById(selected.getRewardTierId());
         });
@@ -169,7 +171,7 @@ public class CustomerManagementController {
             cboUser.setItems(FXCollections.observableArrayList(users));
 
             List<AddressOption> addresses = dao.getAddressOptions();
-            cboAddress.setItems(FXCollections.observableArrayList(addresses));
+            AddressInputHelper.setAddressItems(cboAddress, addresses);
         } catch (SQLException e) {
             LogData.handleException("LOAD_CUSTOMER_COMBOS", e);
             ErrorHandler.showErrorDialog("Database Error", "Could not load dropdown lists.", e.getMessage());
@@ -209,7 +211,7 @@ public class CustomerManagementController {
         txtPhone.clear();
         txtBusinessPhone.clear();
         txtEmail.clear();
-        cboAddress.getSelectionModel().clearSelection();
+        AddressInputHelper.clearAddressField(cboAddress);
         cboUser.getSelectionModel().clearSelection();
         cboRewardTier.getSelectionModel().clearSelection();
         txtRewardBalance.clear();
@@ -229,7 +231,17 @@ public class CustomerManagementController {
             return;
         }
 
-        Customer c = buildFromForm(false);
+        Customer c;
+        try {
+            c = buildFromForm(false);
+        } catch (IllegalArgumentException ex) {
+            ErrorHandler.showWarning("Validation", ex.getMessage());
+            return;
+        } catch (SQLException ex) {
+            LogData.handleException("CREATE_CUSTOMER_ADDRESS", ex);
+            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
+            return;
+        }
 
         try {
             int newId = dao.insertCustomer(c);
@@ -263,7 +275,17 @@ public class CustomerManagementController {
             return;
         }
 
-        Customer c = buildFromForm(true);
+        Customer c;
+        try {
+            c = buildFromForm(true);
+        } catch (IllegalArgumentException ex) {
+            ErrorHandler.showWarning("Validation", ex.getMessage());
+            return;
+        } catch (SQLException ex) {
+            LogData.handleException("UPDATE_CUSTOMER_ADDRESS", ex);
+            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
+            return;
+        }
 
         try {
             boolean ok = dao.updateCustomer(c);
@@ -603,7 +625,7 @@ public class CustomerManagementController {
     // Helpers
     // ────────────────────────────────────────────────────────────
 
-    private Customer buildFromForm(boolean includeId) {
+    private Customer buildFromForm(boolean includeId) throws SQLException {
         Customer c = new Customer();
 
         if (includeId) {
@@ -618,7 +640,7 @@ public class CustomerManagementController {
         c.setBusinessPhone(StringUtil.trimToNull(txtBusinessPhone.getText()));
         c.setEmail(txtEmail.getText().trim());
 
-        AddressOption addr = cboAddress.getValue();
+        AddressOption addr = resolveAddressSelection(true);
         c.setAddressId(addr.getAddressId());
 
         UserOption user = cboUser.getValue();
@@ -642,6 +664,7 @@ public class CustomerManagementController {
         String email = StringUtil.safe(txtEmail.getText());
         String mi = StringUtil.safe(txtMiddleInitial.getText());
         AddressOption addr = cboAddress.getValue();
+        String typedAddress = AddressInputHelper.getTypedText(cboAddress);
         RewardTierOption tier = cboRewardTier.getValue();
 
         if (isUpdate) {
@@ -665,7 +688,7 @@ public class CustomerManagementController {
 
         if (!mi.isBlank() && mi.trim().length() > 2) return ValidationResult.fail("Middle initial must be 1-2 characters.");
 
-        if (addr == null) return ValidationResult.fail("Address is required.");
+        if (addr == null && typedAddress.isBlank()) return ValidationResult.fail("Address is required.");
         if (tier == null) return ValidationResult.fail("Reward tier is required.");
 
         // Length limits matching SQL columns
@@ -700,15 +723,20 @@ public class CustomerManagementController {
         }
     }
 
-    private void selectAddressById(int addressId) {
-        if (cboAddress.getItems() == null) return;
-        for (AddressOption a : cboAddress.getItems()) {
-            if (a.getAddressId() == addressId) {
-                cboAddress.getSelectionModel().select(a);
-                return;
-            }
+    private AddressOption resolveAddressSelection(boolean required) throws SQLException {
+        AddressOption selected = cboAddress.getValue();
+        if (selected != null) return selected;
+
+        String typed = AddressInputHelper.getTypedText(cboAddress);
+        if (typed.isBlank()) {
+            if (required) throw new IllegalArgumentException("Address is required.");
+            return null;
         }
-        cboAddress.getSelectionModel().clearSelection();
+
+        AddressOption resolved = SharedDAO.findOrCreateAddressFromInput(typed);
+        loadCombos();
+        AddressInputHelper.selectAddressById(cboAddress, resolved.getAddressId());
+        return resolved;
     }
 
     private void selectUserById(int userId) {

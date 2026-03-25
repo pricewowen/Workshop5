@@ -5,6 +5,7 @@ import com.sait.workshop05.database.EmployeeAccessDAO;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.User;
 import com.sait.workshop05.session.UserSession;
+import com.sait.workshop05.util.StageIconHelper;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -115,7 +116,8 @@ public class LoginController {
 
         Stage stage = (Stage) loginButton.getScene().getWindow();
         stage.setScene(scene);
-        stage.setTitle("Peelin' Good - Management System");
+        stage.setTitle("Management System");
+        StageIconHelper.setAppIcon(stage);
         stage.setWidth(1400);
         stage.setHeight(850);
         stage.setMinWidth(1200);

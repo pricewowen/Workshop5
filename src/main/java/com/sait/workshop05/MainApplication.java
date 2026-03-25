@@ -1,6 +1,7 @@
 package com.sait.workshop05;
 
 import com.sait.workshop05.database.DBUtil;
+import com.sait.workshop05.util.StageIconHelper;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -25,7 +26,8 @@ public class MainApplication extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
-        stage.setTitle("Peelin' Good - Login");
+        stage.setTitle("Login");
+        StageIconHelper.setAppIcon(stage);
         stage.setScene(scene);
 
         stage.setWidth(700);

@@ -3,6 +3,8 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -23,11 +25,11 @@
 
             <VBox prefHeight="63.0" prefWidth="191.0">
                <children>
-                  <Label text="Peelin' Good">
-                     <font>
-                        <Font name="JetBrainsMonoNL NF ExtraBold Italic" size="18.0" />
-                     </font>
-                  </Label>
+                  <ImageView fitHeight="44.0" fitWidth="160.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image smooth="true" url="@bakery_logo.png" />
+                     </image>
+                  </ImageView>
                   <Label text="Management System" />
                </children>
                <padding>
@@ -122,14 +124,14 @@
                   </Button>
 
                   <Button fx:id="btnRewardTier" mnemonicParsing="false" onAction="#onRewardTierClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Reward Tiers">
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Reward Tiers">
                      <VBox.margin>
                         <Insets bottom="10.0"/>
                      </VBox.margin>
                   </Button>
 
                   <Button fx:id="btnMessages" mnemonicParsing="false" onAction="#onMessagesClick"
-                          prefHeight="25.0" prefWidth="204.0" text="Messages">
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Messages">
                      <VBox.margin>
                         <Insets bottom="10.0" />
                      </VBox.margin>

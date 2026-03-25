@@ -19,6 +19,22 @@ public class AddressOption {
         return addressId;
     }
 
+    public String getLine1() {
+        return line1;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public String getProvince() {
+        return province;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
     @Override
     public String toString() {
         String c = (city == null) ? "" : (city.trim() + ", ");
