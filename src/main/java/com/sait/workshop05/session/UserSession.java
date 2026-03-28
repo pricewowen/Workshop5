@@ -19,6 +19,7 @@ public class UserSession {
     private boolean isAuthenticated;
     private String userRole;
     private LocalDateTime loginTime;
+    private String jwtToken;
 
     // Analytics gating for EMPLOYEE
     private Integer employeeId;                 // null if not a real Employee row
@@ -36,8 +37,9 @@ public class UserSession {
         return instance;
     }
 
-    public void createSession(User user) {
+    public void createSession(User user, String jwtToken) {
         this.currentUser = user;
+        this.jwtToken = jwtToken;
         Log.setLoggedInUser(user.getUsername());
         this.userRole = user.getRole();
         this.isAuthenticated = true;
@@ -50,6 +52,7 @@ public class UserSession {
 
     public void clearSession() {
         this.currentUser = null;
+        this.jwtToken = null;
         Log.clearLoggedInUser();
         this.userRole = null;
         this.isAuthenticated = false;
@@ -57,6 +60,10 @@ public class UserSession {
 
         this.employeeId = null;
         this.accessibleBakeryIds = new ArrayList<>();
+    }
+
+    public String getJwtToken() {
+        return jwtToken;
     }
 
     public boolean isAuthenticated() {

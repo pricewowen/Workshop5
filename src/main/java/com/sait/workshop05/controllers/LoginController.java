@@ -1,6 +1,8 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.database.AuthDAO;
+import com.sait.workshop05.api.ApiClient;
+import com.sait.workshop05.api.dto.AuthResponseDto;
+import com.sait.workshop05.api.dto.LoginRequestDto;
 import com.sait.workshop05.database.EmployeeAccessDAO;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.User;
@@ -13,42 +15,22 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.util.List;
 
-/**
- * Controller for the login view.
- * Handles authentication for Admin and Employee roles only.
- */
 public class LoginController {
 
-    @FXML
-    private ComboBox<String> roleComboBox;
-
-    @FXML
-    private TextField usernameField;
-
-    @FXML
-    private PasswordField passwordField;
-
-    @FXML
-    private Button loginButton;
-
-    @FXML
-    private Label errorLabel;
+    @FXML private ComboBox<String> roleComboBox;
+    @FXML private TextField emailField;
+    @FXML private PasswordField passwordField;
+    @FXML private Button loginButton;
+    @FXML private Label errorLabel;
 
     @FXML
     private void initialize() {
-        if (errorLabel != null) {
-            errorLabel.setVisible(false);
-        }
-
-        if (roleComboBox != null) {
-            roleComboBox.getSelectionModel().selectFirst();
-        }
-
-        if (passwordField != null) {
-            passwordField.setOnAction(event -> handleLogin());
-        }
+        if (errorLabel != null) errorLabel.setVisible(false);
+        if (roleComboBox != null) roleComboBox.getSelectionModel().selectFirst();
+        if (passwordField != null) passwordField.setOnAction(event -> handleLogin());
     }
 
     @FXML
@@ -59,45 +41,68 @@ public class LoginController {
             return;
         }
 
-        String username = usernameField.getText().trim();
+        String email = emailField.getText().trim();
         String password = passwordField.getText();
 
-        if (username.isEmpty() || password.isEmpty()) {
-            showError("Please enter both username and password");
+        if (email.isEmpty() || password.isEmpty()) {
+            showError("Please enter both email and password");
             return;
         }
 
-        User user = AuthDAO.authenticate(username, password, selectedRole);
+        try {
+            ApiClient api = ApiClient.getInstance();
+            HttpResponse<String> response = api.post("/api/v1/auth/login", new LoginRequestDto(email, password));
 
-        if (user != null) {
-            UserSession session = UserSession.getInstance();
-            session.createSession(user);
+            if (response.statusCode() == 200) {
+                AuthResponseDto auth = api.getMapper().readValue(response.body(), AuthResponseDto.class);
 
-            // IMPORTANT: compute analytics eligibility for EMPLOYEE
-            if (session.isEmployee()) {
-                Integer employeeId = EmployeeAccessDAO.getEmployeeIdByUserId(user.getUserId());
-                List<Integer> bakeryIds = EmployeeAccessDAO.getAccessibleBakeryIdsByUserId(user.getUserId());
-                session.setEmployeeAnalyticsAccess(employeeId, bakeryIds);
-
-                if (session.canAccessAnalytics()) {
-                    LogData.logAction("LOGIN", "Employee login: " + username + " (Analytics ENABLED)");
-                } else {
-                    LogData.logAction("LOGIN", "Employee login: " + username + " (Analytics DISABLED: generic/no bakery access)");
+                // Validate that the returned role matches the selected role
+                if (!auth.getRole().equalsIgnoreCase(selectedRole)) {
+                    showError("You do not have " + selectedRole + " access");
+                    LogData.logAction("LOGIN_FAILED", "Role mismatch for email: " + email
+                            + " (selected: " + selectedRole + ", actual: " + auth.getRole() + ")");
+                    return;
                 }
-            } else {
-                LogData.logAction("LOGIN", "Admin login: " + username);
-            }
 
-            try {
+                // Build a lightweight User object from the auth response
+                User user = new User();
+                user.setUsername(auth.getUsername());
+                user.setEmail(email);
+                user.setRole(auth.getRole().toUpperCase());
+
+                // Store session and JWT
+                api.setToken(auth.getToken());
+                UserSession session = UserSession.getInstance();
+                session.createSession(user, auth.getToken());
+
+                // Compute analytics eligibility for EMPLOYEE
+                if (session.isEmployee()) {
+                    Integer employeeId = EmployeeAccessDAO.getEmployeeIdByUserId(user.getUserId());
+                    List<Integer> bakeryIds = EmployeeAccessDAO.getAccessibleBakeryIdsByUserId(user.getUserId());
+                    session.setEmployeeAnalyticsAccess(employeeId, bakeryIds);
+
+                    if (session.canAccessAnalytics()) {
+                        LogData.logAction("LOGIN", "Employee login: " + auth.getUsername() + " (Analytics ENABLED)");
+                    } else {
+                        LogData.logAction("LOGIN", "Employee login: " + auth.getUsername() + " (Analytics DISABLED)");
+                    }
+                } else {
+                    LogData.logAction("LOGIN", "Admin login: " + auth.getUsername());
+                }
+
                 openMainView();
-            } catch (IOException e) {
-                showError("Error loading application: " + e.getMessage());
-                LogData.handleException("LOGIN_OPEN_MAIN", e);
+
+            } else if (response.statusCode() == 401 || response.statusCode() == 403) {
+                showError("Invalid email or password");
+                LogData.logAction("LOGIN_FAILED", "Failed login for email: " + email);
+            } else {
+                showError("Login failed (server error " + response.statusCode() + ")");
+                LogData.logAction("LOGIN_FAILED", "Server error " + response.statusCode() + " for email: " + email);
             }
 
-        } else {
-            showError("Invalid username or password");
-            LogData.logAction("LOGIN_FAILED", "Failed login attempt for username: " + username + " (Role: " + selectedRole + ")");
+        } catch (Exception e) {
+            showError("Could not connect to the server. Is the API running?");
+            LogData.handleException("LOGIN", e);
         }
     }
 
