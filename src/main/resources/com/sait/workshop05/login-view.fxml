@@ -51,9 +51,9 @@
                     </VBox>
 
                     <VBox spacing="5">
-                        <Label text="Username" styleClass="form-label"/>
-                        <TextField fx:id="usernameField"
-                                   promptText="Enter your username"
+                        <Label text="Email" styleClass="form-label"/>
+                        <TextField fx:id="emailField"
+                                   promptText="Enter your email"
                                    prefHeight="40"/>
                     </VBox>
 
