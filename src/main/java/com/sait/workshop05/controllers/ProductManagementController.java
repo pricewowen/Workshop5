@@ -1,6 +1,6 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.database.ProductDAO;
+import com.sait.workshop05.api.CatalogApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Product;
 import com.sait.workshop05.util.ErrorHandler;
@@ -14,10 +14,12 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ProductManagementController {
 
@@ -52,7 +54,6 @@ public class ProductManagementController {
     @FXML private Button btnDelete;
     @FXML private Button btnClear;
 
-    private final ProductDAO dao = new ProductDAO();
     private final ObservableList<Product> master = FXCollections.observableArrayList();
     private FilteredList<Product> filtered;
 
@@ -94,11 +95,12 @@ public class ProductManagementController {
 
     private void setupTagOptions() {
         try {
-            List<String> tags = dao.getTagOptions();
-            cboTag.setItems(FXCollections.observableArrayList(tags));
-        } catch (SQLException e) {
+            List<CatalogApi.TagResponse> tags = CatalogApi.fetchTags();
+            List<String> names = tags.stream().map(t -> t.name).collect(Collectors.toList());
+            cboTag.setItems(FXCollections.observableArrayList(names));
+        } catch (Exception e) {
             LogData.handleException("LOAD_TAG_OPTIONS", e);
-            ErrorHandler.showErrorDialog("Database Error", "Could not load tag options.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load tag options.", e.getMessage());
         }
     }
 
@@ -118,9 +120,19 @@ public class ProductManagementController {
 
     private void loadAssignedTags(int productId) {
         try {
-            List<String> tags = dao.getTagsForProduct(productId);
-            assignedTags.setAll(tags);
-        } catch (SQLException e) {
+            CatalogApi.ProductResponse p = CatalogApi.fetchProduct(productId);
+            Map<Integer, String> idToName = CatalogApi.fetchTags().stream()
+                    .collect(Collectors.toMap(t -> t.id, t -> t.name));
+            if (p.tagIds == null || p.tagIds.isEmpty()) {
+                assignedTags.clear();
+                return;
+            }
+            List<String> names = p.tagIds.stream()
+                    .map(idToName::get)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            assignedTags.setAll(names);
+        } catch (Exception e) {
             LogData.handleException("LOAD_PRODUCT_TAGS", e);
             assignedTags.clear();
         }
@@ -156,14 +168,39 @@ public class ProductManagementController {
 
     private void refreshTable() {
         try {
+            List<CatalogApi.ProductResponse> rows = CatalogApi.fetchProducts(null, null);
+            Map<Integer, String> idToName = CatalogApi.fetchTags().stream()
+                    .collect(Collectors.toMap(t -> t.id, t -> t.name));
             master.clear();
-            master.addAll(dao.getAllProducts());
+            for (CatalogApi.ProductResponse p : rows) {
+                master.add(toProduct(p, idToName));
+            }
             lblStatus.setText(master.size() + " product(s) loaded");
             LogData.logAction("READ", "Product");
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LogData.handleException("READ_PRODUCTS", e);
-            ErrorHandler.showErrorDialog("Database Error", "Could not load products.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load products.", e.getMessage());
         }
+    }
+
+    private Product toProduct(CatalogApi.ProductResponse p, Map<Integer, String> idToName) {
+        Product pr = new Product();
+        if (p.id != null) {
+            pr.setProductId(p.id);
+        }
+        pr.setProductName(p.name != null ? p.name : "");
+        pr.setProductDescription(p.description != null ? p.description : "");
+        pr.setProductBasePrice(p.basePrice != null ? p.basePrice.doubleValue() : 0);
+        if (p.tagIds != null && !p.tagIds.isEmpty()) {
+            String disp = p.tagIds.stream()
+                    .map(idToName::get)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.joining(", "));
+            pr.setTagsDisplay(disp);
+        } else {
+            pr.setTagsDisplay("");
+        }
+        return pr;
     }
 
     @FXML
@@ -257,19 +294,30 @@ public class ProductManagementController {
         Product p = buildFromForm(true);
 
         try {
-            boolean ok = dao.updateProduct(p);
-
-            // Update tags
-            dao.setTagsForProduct(p.getProductId(), new ArrayList<>(assignedTags));
+            Map<String, Integer> nameToId = CatalogApi.tagNameToIdMap();
+            List<Integer> tagIds = new ArrayList<>();
+            for (String tagName : assignedTags) {
+                Integer tid = nameToId.get(tagName);
+                if (tid != null) {
+                    tagIds.add(tid);
+                }
+            }
+            CatalogApi.updateProduct(
+                    p.getProductId(),
+                    p.getProductName(),
+                    p.getProductDescription(),
+                    p.getProductBasePrice(),
+                    tagIds,
+                    ""
+            );
 
             LogData.logAction("UPDATE", "Product");
             refreshTable();
             selectProductById(p.getProductId());
-            lblStatus.setText(ok ? "Updated product #" + p.getProductId() : "No update applied");
-        } catch (SQLException ex) {
+            lblStatus.setText("Updated product #" + p.getProductId());
+        } catch (Exception ex) {
             LogData.handleException("UPDATE_PRODUCT", ex);
-            String friendly = ErrorHandler.friendlyDbMessage(ex);
-            ErrorHandler.showErrorDialog("Update Failed", "Could not update product.", friendly);
+            ErrorHandler.showErrorDialog("Update Failed", "Could not update product.", ex.getMessage());
         }
     }
 
@@ -290,15 +338,14 @@ public class ProductManagementController {
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
         try {
-            dao.deleteProduct(selected.getProductId());
+            CatalogApi.deleteProduct(selected.getProductId());
             LogData.logAction("DELETE", "Product");
             refreshTable();
             onClear();
             lblStatus.setText("Deleted product #" + selected.getProductId());
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             LogData.handleException("DELETE_PRODUCT", ex);
-            String friendly = ErrorHandler.friendlyDbMessage(ex);
-            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete product.", friendly);
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete product.", ex.getMessage());
         }
     }
 

@@ -5,9 +5,9 @@ import javafx.beans.property.*;
 import java.time.LocalDateTime;
 
 public class Reward {
-    private final IntegerProperty rewardId = new SimpleIntegerProperty();
-    private final IntegerProperty customerId = new SimpleIntegerProperty();
-    private final IntegerProperty orderId = new SimpleIntegerProperty();
+    private final StringProperty rewardId = new SimpleStringProperty();
+    private final StringProperty customerId = new SimpleStringProperty();
+    private final StringProperty orderId = new SimpleStringProperty();
     private final IntegerProperty rewardPointsEarned = new SimpleIntegerProperty();
     private final ObjectProperty<LocalDateTime> rewardTransactionDate = new SimpleObjectProperty<>();
 
@@ -16,17 +16,17 @@ public class Reward {
 
     public Reward() { }
 
-    public int getRewardId() { return rewardId.get(); }
-    public void setRewardId(int value) { rewardId.set(value); }
-    public IntegerProperty rewardIdProperty() { return rewardId; }
+    public String getRewardId() { return rewardId.get(); }
+    public void setRewardId(String value) { rewardId.set(value); }
+    public StringProperty rewardIdProperty() { return rewardId; }
 
-    public int getCustomerId() { return customerId.get(); }
-    public void setCustomerId(int value) { customerId.set(value); }
-    public IntegerProperty customerIdProperty() { return customerId; }
+    public String getCustomerId() { return customerId.get(); }
+    public void setCustomerId(String value) { customerId.set(value); }
+    public StringProperty customerIdProperty() { return customerId; }
 
-    public int getOrderId() { return orderId.get(); }
-    public void setOrderId(int value) { orderId.set(value); }
-    public IntegerProperty orderIdProperty() { return orderId; }
+    public String getOrderId() { return orderId.get(); }
+    public void setOrderId(String value) { orderId.set(value); }
+    public StringProperty orderIdProperty() { return orderId; }
 
     public int getRewardPointsEarned() { return rewardPointsEarned.get(); }
     public void setRewardPointsEarned(int value) { rewardPointsEarned.set(value); }
