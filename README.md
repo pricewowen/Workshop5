@@ -46,8 +46,8 @@ Use accounts from your **Workshop 7** seed data (see Workshop 7 docs). Examples 
 
 | Role       | Username   | Password   |
 | ---------- | ---------- | ---------- |
-| Admin      | `admin`    | `Admin123!` |
-| Employee   | `employee2`| `Emp123!`  |
+| Admin      | `alicia.nguyen`    | `Admin123!` |
+| Employee   | `mason.clark`| `Emp123!`  |
 
 Log in with the **username** (or email if your login screen accepts it) and password validated by the API.
 
