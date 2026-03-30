@@ -7,12 +7,13 @@ import java.time.LocalDateTime;
  * Summarises a conversation between the current user and a partner.
  */
 public class ConversationSummary {
-    private final int partnerId;
+    /** Partner user id (UUID string). */
+    private final String partnerId;
     private final String partnerUsername;
     private final LocalDateTime lastMessageTime;
     private final int unreadCount;
 
-    public ConversationSummary(int partnerId, String partnerUsername,
+    public ConversationSummary(String partnerId, String partnerUsername,
                                LocalDateTime lastMessageTime, int unreadCount) {
         this.partnerId = partnerId;
         this.partnerUsername = partnerUsername;
@@ -20,7 +21,7 @@ public class ConversationSummary {
         this.unreadCount = unreadCount;
     }
 
-    public int getPartnerId() {
+    public String getPartnerId() {
         return partnerId;
     }
 

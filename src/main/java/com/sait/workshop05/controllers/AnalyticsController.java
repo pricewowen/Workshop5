@@ -3,7 +3,7 @@
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.analytics.*;
-import com.sait.workshop05.database.AnalyticsDAO;
+import com.sait.workshop05.api.AnalyticsApi;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
 import javafx.collections.FXCollections;
@@ -29,7 +29,6 @@ public class AnalyticsController {
     @FXML private StackPane chartContainer;
 
     private final UserSession session = UserSession.getInstance();
-    private final AnalyticsDAO dao = new AnalyticsDAO();
 
     private static final String ALL_BAKERIES_ADMIN = "All Bakeries";
     private static final String ALL_MY_BAKERIES = "All My Bakeries";
@@ -144,13 +143,13 @@ public class AnalyticsController {
 
         try {
             if (session.isAdmin()) {
-                List<String> bakeries = dao.getBakeryNames();
+                List<String> bakeries = AnalyticsApi.getBakeryNames();
                 bakeries.add(0, ALL_BAKERIES_ADMIN);
                 bakeryComboBox.setItems(FXCollections.observableArrayList(bakeries));
                 bakeryComboBox.setValue(ALL_BAKERIES_ADMIN);
             } else {
                 List<Integer> scopeIds = session.getAccessibleBakeryIds();
-                List<String> bakeries = dao.getBakeryNamesByIds(scopeIds);
+                List<String> bakeries = AnalyticsApi.getBakeryNamesByIds(scopeIds);
 
                 bakeries.add(0, ALL_MY_BAKERIES);
 
@@ -278,7 +277,7 @@ public class AnalyticsController {
         try {
             List<Integer> scopeBakeryIds = session.isAdmin() ? null : session.getAccessibleBakeryIds();
 
-            List<LocalDate> validDates = dao.getAvailableOrderDates(bakerySelection, scopeBakeryIds);
+            List<LocalDate> validDates = AnalyticsApi.getAvailableOrderDates(bakerySelection, scopeBakeryIds);
 
             if (validDates.isEmpty()) {
                 startDatePicker.setValue(null);
