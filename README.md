@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Peelin' Good Bakery** is a staff-facing bakery management desktop app built with **Java, JavaFX, and HTTP**. It talks to the **Workshop 7 Spring Boot API** for products, customers, orders, employees, bakeries, rewards, analytics, and messaging. There is **no local MySQL or JDBC** in this project.
+**Peelin' Good Bakery** is a staff-facing bakery management desktop app built with **Java, JavaFX, and HTTP**. It talks to the **Workshop 7 Spring Boot API** for products, customers, orders, employees, bakeries, rewards, analytics, and messaging. This project is API-only and does not use a local database layer.
 
 **Staff-only:** there is no customer login in this app. Customer records are maintained by staff against the shared API.
 
@@ -42,8 +42,6 @@ Use a different host or port if your API listens elsewhere (no trailing slash re
 
 On startup, the app checks that the API responds (`GET /api/v1/tags`). Ensure the backend is up first.
 
-## Test credentials
-
 Use accounts from your **Workshop 7** seed data (see Workshop 7 docs). Examples (adjust if your seed differs):
 
 | Role       | Username   | Password   |
@@ -74,6 +72,6 @@ Create `.env.local` in the project root with `API_URL=...` as above.
 
 Ensure the project uses JDK 23 and that JavaFX run configuration matches `module-info` exports.
 
-## Legacy note
+## Data source note
 
-Older MySQL scripts and JDBC DAOs were removed. Schema and data live in **Workshop 7** (Flyway migrations and seed SQL).
+Schema and seed data are managed in **Workshop 7** (Flyway migrations and seed SQL).
