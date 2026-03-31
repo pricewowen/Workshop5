@@ -9,10 +9,8 @@ import java.time.LocalDateTime;
  * Maps to the Customer table in the database.
  */
 public class Customer {
-    /** Customer row id (UUID string from API). */
-    private final StringProperty customerId;
-    /** Auth user id (UUID string). */
-    private final StringProperty userId;
+    private final IntegerProperty customerId;
+    private final IntegerProperty userId;
     private final IntegerProperty addressId;
     private final IntegerProperty rewardTierId;
     private final StringProperty firstName;
@@ -34,8 +32,8 @@ public class Customer {
      * Default constructor - initializes all properties
      */
     public Customer() {
-        this.customerId = new SimpleStringProperty();
-        this.userId = new SimpleStringProperty();
+        this.customerId = new SimpleIntegerProperty();
+        this.userId = new SimpleIntegerProperty();
         this.addressId = new SimpleIntegerProperty();
         this.rewardTierId = new SimpleIntegerProperty();
         this.firstName = new SimpleStringProperty();
@@ -53,28 +51,28 @@ public class Customer {
     }
 
     // Getters and Setters
-    public String getCustomerId() {
+    public int getCustomerId() {
         return customerId.get();
     }
 
-    public StringProperty customerIdProperty() {
+    public IntegerProperty customerIdProperty() {
         return customerId;
     }
 
-    public void setCustomerId(String customerId) {
-        this.customerId.set(customerId != null ? customerId : "");
+    public void setCustomerId(int customerId) {
+        this.customerId.set(customerId);
     }
 
-    public String getUserId() {
+    public int getUserId() {
         return userId.get();
     }
 
-    public StringProperty userIdProperty() {
+    public IntegerProperty userIdProperty() {
         return userId;
     }
 
-    public void setUserId(String userId) {
-        this.userId.set(userId != null ? userId : "");
+    public void setUserId(int userId) {
+        this.userId.set(userId);
     }
 
     public int getAddressId() {

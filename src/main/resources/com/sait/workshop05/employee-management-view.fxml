@@ -128,41 +128,35 @@
                                               style="-fx-font-size: 13px;"
                                               GridPane.rowIndex="4" GridPane.columnIndex="1"/>
 
-                                    <Label text="Bakery*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="5" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboBakery"
-                                              style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="5" GridPane.columnIndex="1"/>
-
                                     <Label text="Phone*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                                           GridPane.rowIndex="5" GridPane.columnIndex="0"/>
                                     <TextField fx:id="txtPhone"
+                                               style="-fx-font-size: 13px;"
+                                               GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+                                    <Label text="Business Phone:" style="-fx-font-size: 13px;"
+                                           GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                                    <TextField fx:id="txtBusinessPhone"
                                                style="-fx-font-size: 13px;"
                                                GridPane.rowIndex="6" GridPane.columnIndex="1"/>
 
-                                    <Label text="Business Phone:" style="-fx-font-size: 13px;"
+                                    <Label text="Email*:" style="-fx-font-size: 13px;"
                                            GridPane.rowIndex="7" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtBusinessPhone"
+                                    <TextField fx:id="txtEmail"
                                                style="-fx-font-size: 13px;"
                                                GridPane.rowIndex="7" GridPane.columnIndex="1"/>
 
-                                    <Label text="Email*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="8" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtEmail"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="8" GridPane.columnIndex="1"/>
-
                                     <Label text="User*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="9" GridPane.columnIndex="0"/>
+                                           GridPane.rowIndex="8" GridPane.columnIndex="0"/>
                                     <ComboBox fx:id="cboUser"
                                               style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="9" GridPane.columnIndex="1"/>
+                                              GridPane.rowIndex="8" GridPane.columnIndex="1"/>
 
                                     <Label text="Address*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="10" GridPane.columnIndex="0"/>
+                                           GridPane.rowIndex="9" GridPane.columnIndex="0"/>
                                     <ComboBox fx:id="cboAddress" promptText="Type address or select suggestion"
                                               style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="10" GridPane.columnIndex="1"/>
+                                              GridPane.rowIndex="9" GridPane.columnIndex="1"/>
                                 </GridPane>
 
                                 <Separator/>

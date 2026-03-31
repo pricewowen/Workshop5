@@ -1,7 +1,7 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.api.DashboardApi;
-import com.sait.workshop05.api.OrderApi;
+import com.sait.workshop05.database.DashboardDAO;
+import com.sait.workshop05.database.OrderDAO;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.models.Order;
@@ -13,6 +13,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -29,7 +30,7 @@ public class DashboardController {
     @FXML private Button btnNewOrder;
     @FXML private Button btnRefresh;
 
-    @FXML private TableColumn<Order, String> colOrderId;
+    @FXML private TableColumn<Order, Integer> colOrderId;
     @FXML private TableColumn<Order, String> colCustomer;
     @FXML private TableColumn<Order, String> colProducts;
     @FXML private TableColumn<Order, Double> colTotal;
@@ -45,8 +46,11 @@ public class DashboardController {
 
     @FXML private TableView<Order> tbvRecentOrders;
 
-    /** Pre-loaded product display strings keyed by order id. */
-    private final Map<String, String> orderProductsMap = new HashMap<>();
+    private final DashboardDAO dashboardDAO = new DashboardDAO();
+    private final OrderDAO orderDAO = new OrderDAO();
+
+    /** Pre-loaded product display strings keyed by orderId. */
+    private final Map<Integer, String> orderProductsMap = new HashMap<>();
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -155,12 +159,19 @@ public class DashboardController {
 
     private void loadSummaryCards() {
         try {
-            DashboardApi.SummaryResponse s = DashboardApi.fetchSummary();
-            lblTotalRevenu.setText(String.format("$%,.2f", s.totalRevenue.doubleValue()));
-            lblTotalOrders.setText(String.valueOf(s.totalOrders));
-            lblTotalCustomers.setText(String.valueOf(s.totalCustomers));
-            lblActiveProducts.setText(String.valueOf(s.totalProducts));
-        } catch (Exception e) {
+            double revenue = dashboardDAO.getTotalRevenue();
+            lblTotalRevenu.setText(String.format("$%,.2f", revenue));
+
+            int orders = dashboardDAO.getTotalOrders();
+            lblTotalOrders.setText(String.valueOf(orders));
+
+            int customers = dashboardDAO.getTotalCustomers();
+            lblTotalCustomers.setText(String.valueOf(customers));
+
+            int products = dashboardDAO.getTotalProducts();
+            lblActiveProducts.setText(String.valueOf(products));
+
+        } catch (SQLException e) {
             lblTotalRevenu.setText("$0.00");
             lblTotalOrders.setText("0");
             lblTotalCustomers.setText("0");
@@ -171,19 +182,20 @@ public class DashboardController {
 
     private void loadRecentOrders() {
         try {
-            DashboardApi.SummaryResponse s = DashboardApi.fetchSummary();
+            List<Order> recent = dashboardDAO.getRecentOrders(15);
+
+            // Pre-load products for all orders in one pass
             orderProductsMap.clear();
-            List<Order> recent = new java.util.ArrayList<>();
-            if (s.recentOrders != null) {
-                for (OrderApi.OrderJson j : s.recentOrders) {
-                    Order o = DashboardApi.toOrder(j);
-                    List<OrderItem> items = DashboardApi.itemsFromSummaryOrder(j);
+            for (Order order : recent) {
+                try {
+                    List<OrderItem> items = orderDAO.getOrderItems(order.getOrderId());
                     String products = items.stream()
                             .map(OrderItem::getProductDisplay)
                             .filter(name -> name != null && !name.isEmpty())
                             .collect(Collectors.joining(", "));
-                    orderProductsMap.put(o.getOrderId(), products.isEmpty() ? "-" : products);
-                    recent.add(o);
+                    orderProductsMap.put(order.getOrderId(), products.isEmpty() ? "-" : products);
+                } catch (SQLException ex) {
+                    orderProductsMap.put(order.getOrderId(), "-");
                 }
             }
 
@@ -191,7 +203,7 @@ public class DashboardController {
             tbvRecentOrders.setItems(data);
             lblStatus.setText(recent.size() + " recent order(s)");
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             tbvRecentOrders.setItems(FXCollections.observableArrayList());
             lblStatus.setText("Could not load orders");
             LogData.handleException("LOAD_RECENT_ORDERS", e);
@@ -233,7 +245,7 @@ public class DashboardController {
 
     private void showOrderDetails(Order order) {
         try {
-            List<OrderItem> items = OrderApi.getOrderItems(order.getOrderId());
+            List<OrderItem> items = orderDAO.getOrderItems(order.getOrderId());
 
             StringBuilder sb = new StringBuilder();
             sb.append("Order #").append(order.getOrderId()).append("\n");
@@ -277,7 +289,7 @@ public class DashboardController {
             alert.setResizable(true);
             alert.showAndWait();
 
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("VIEW_ORDER_DETAILS", e);
         }
     }

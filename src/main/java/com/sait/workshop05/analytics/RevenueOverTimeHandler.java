@@ -2,21 +2,23 @@
 
 package com.sait.workshop05.analytics;
 
-import com.sait.workshop05.api.AnalyticsApi;
+import com.sait.workshop05.database.AnalyticsDAO;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public class RevenueOverTimeHandler implements KPIHandler {
 
+    private final AnalyticsDAO dao = new AnalyticsDAO();
+
     @Override
     public double getPrimaryValue(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
-        return AnalyticsApi.getTotalRevenue(start, end, bakerySelection);
+        return dao.getTotalRevenue(start, end, bakerySelection, scopeBakeryIds);
     }
 
     @Override
     public List<DataPoint> getChartData(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
-        return AnalyticsApi.getRevenueOverTime(start, end, bakerySelection);
+        return dao.getRevenueOverTime(start, end, bakerySelection, scopeBakeryIds);
     }
 
     @Override

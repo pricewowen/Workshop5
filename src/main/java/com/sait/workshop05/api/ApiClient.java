@@ -144,22 +144,6 @@ public class ApiClient {
         return http.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    /**
-     * PATCH with JWT authorization header.
-     */
-    public HttpResponse<String> patch(String path, Object body) throws Exception {
-        String json = mapper.writeValueAsString(body);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + jwtToken)
-                .method("PATCH", HttpRequest.BodyPublishers.ofString(json))
-                .build();
-
-        return http.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
     public ObjectMapper getMapper() {
         return mapper;
     }

@@ -1,6 +1,6 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.api.BakeryApi;
+import com.sait.workshop05.database.BakeryDAO;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.*;
 import com.sait.workshop05.util.ErrorHandler;
@@ -18,6 +18,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.util.StringConverter;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Optional;
@@ -158,13 +159,14 @@ public class BakeryLocationsController {
                     txtBakeryEmail.getText()
             );
 
-            BakeryApi.create(bakery);
+            // insert into database
+            dao.insertBakery(bakery);
 
             refreshTable();
             clearTextFields();
 
             LogData.logAction("CREATE", "Bakery");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("CREATE_BAKERY", e);
             ErrorHandler.showErrorDialog("Create failed", "Could not add new bakery ", e.getMessage());
         }
@@ -175,12 +177,12 @@ public class BakeryLocationsController {
      * @return true if no duplicates are found. False otherwise
      */
     private boolean duplicateCheck() {
-        ArrayList<Bakery> bakeries;
+        ArrayList<Bakery> bakeries = new ArrayList<Bakery>();
         try {
-            bakeries = new ArrayList<>(BakeryApi.listAll());
-        } catch (Exception e) {
+            bakeries = dao.getAllBakeries();
+        } catch (SQLException e) {
             LogData.handleException("GET_BAKERIES", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not get bakeries.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not get bakeries.", e.getMessage());
             return false;
         }
 
@@ -257,7 +259,7 @@ public class BakeryLocationsController {
 
         // attempt to delete
         try {
-            BakeryApi.delete(selected.getBakeryId());
+            dao.deleteBakery(selected);
 
             refreshTable();
             LogData.logAction("DELETE", "Bakery_" + selected.getBakeryId());
@@ -270,7 +272,7 @@ public class BakeryLocationsController {
             alert.showAndWait();
 
             clearTextFields();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("DELETE_BAKER", e);
             ErrorHandler.showErrorDialog("Delete failed", "This bakery cannot be deleted as it is referenced by other records.");
         }
@@ -314,7 +316,7 @@ public class BakeryLocationsController {
                 selected.setAddress(newAddr);
             }
 
-            BakeryApi.update(selected.getBakeryId(), selected);
+            dao.updateBakery(selected);
 
             // refresh
             tblBakeryLocations.refresh();
@@ -328,7 +330,7 @@ public class BakeryLocationsController {
             alert.showAndWait();
 
             clearTextFields();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("UPDATE_BAKERY", e);
             ErrorHandler.showErrorDialog("Update failed", "Could not update bakery", e.getMessage());
         }
@@ -400,6 +402,7 @@ public class BakeryLocationsController {
         return true;
     }
 
+    private BakeryDAO dao = new BakeryDAO();
     private ObservableList<Bakery> bakeryList = FXCollections.observableArrayList();
     private FilteredList<Bakery> filtered;
 
@@ -497,10 +500,10 @@ public class BakeryLocationsController {
      */
     private void displayBakeries() {
         try {
-            bakeryList.setAll(BakeryApi.listAll());
-        } catch (Exception e) {
+            bakeryList.setAll(dao.getAllBakeries());
+        } catch (SQLException e) {
             LogData.handleException("GET_BAKERIES", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not get bakeries.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not get bakeries.", e.getMessage());
         }
     }
 
@@ -510,11 +513,11 @@ public class BakeryLocationsController {
     private void refreshTable() {
         try {
             bakeryList.clear();
-            bakeryList.addAll(BakeryApi.listAll());
+            bakeryList.addAll(dao.getAllBakeries());
             LogData.logAction("READ", "Bakeries");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("READ_BAKERIES", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load bakeries.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load bakeries.", e.getMessage());
         }
     }
 

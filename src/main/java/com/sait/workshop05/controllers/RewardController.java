@@ -1,14 +1,12 @@
 package com.sait.workshop05.controllers;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import com.sait.workshop05.api.OrderApi;
-import com.sait.workshop05.api.ReferenceApi;
-import com.sait.workshop05.api.RewardApi;
-import com.sait.workshop05.models.Order;
 import com.sait.workshop05.models.OrderOption;
+import com.sait.workshop05.database.RewardDAO;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.CustomerOption;
 import com.sait.workshop05.models.Reward;
@@ -38,7 +36,7 @@ public class RewardController {
     private static final String LOG_USER = "REWARD_VIEW";
 
     @FXML private TableView<Reward> tblRewards;
-    @FXML private TableColumn<Reward, String> colRewardId;
+    @FXML private TableColumn<Reward, Integer> colRewardId;
     @FXML private TableColumn<Reward, String> colCustomer;
     @FXML private TableColumn<Reward, String> colOrder;
     @FXML private TableColumn<Reward, Integer> colPoints;
@@ -56,6 +54,7 @@ public class RewardController {
 
     @FXML private Button btnRefresh;
 
+    private final RewardDAO dao = new RewardDAO();
     private final ObservableList<Reward> master = FXCollections.observableArrayList();
     private FilteredList<Reward> filtered;
 
@@ -133,30 +132,26 @@ public class RewardController {
 
     private void loadCombos() {
         try {
-            List<CustomerOption> customers = ReferenceApi.loadCustomers();
+            List<CustomerOption> customers = dao.getCustomerOptions();
             cboCustomer.setItems(FXCollections.observableArrayList(customers));
 
-            List<OrderOption> orders = new java.util.ArrayList<>();
-            for (Order o : OrderApi.listOrders()) {
-                orders.add(new OrderOption(o.getOrderId(),
-                        o.getOrderId() + " — " + o.getCustomerDisplay()));
-            }
+            List<OrderOption> orders = dao.getOrderOptions();
             cboOrder.setItems(FXCollections.observableArrayList(orders));
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("LOAD_REWARD_COMBOS", e);
-            showError("API Error", "Could not load Customer/Order lists.", e.getMessage());
+            showError("Database Error", "Could not load Customer/Order lists.", e.getMessage());
         }
     }
 
     private void refreshTable() {
         try {
             master.clear();
-            master.addAll(RewardApi.listAll());
+            master.addAll(dao.getAllRewards());
             lblStatus.setText(master.size() + " reward(s) loaded");
             LogData.logAction("READ", "Reward");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("READ_REWARDS", e);
-            showError("API Error", "Could not load rewards.", e.getMessage());
+            showError("Database Error", "Could not load rewards.", e.getMessage());
         }
     }
 
@@ -180,21 +175,128 @@ public class RewardController {
 
     @FXML
     private void onCreate() {
-        showWarning("Not available", "Reward creation is not exposed via the API. Points are created when orders are placed.");
+        ValidationResult vr = validateForm(false);
+        if (!vr.ok) {
+            LogData.logAction("VALIDATION_FAILED", "Reward");
+            showWarning("Validation", vr.message);
+            return;
+        }
+
+        Reward r = buildFromForm(false);
+
+        try {
+            int newId = dao.insertReward(r);
+            LogData.logAction("CREATE", "Reward");
+            refreshTable();
+
+            if (newId > 0) {
+                selectRewardById(newId);
+                lblStatus.setText("Created reward #" + newId);
+            } else {
+                lblStatus.setText("Created reward");
+            }
+
+        } catch (SQLException ex) {
+            LogData.handleException("CREATE_REWARD", ex);
+
+            String friendly = friendlyDbMessage(ex);
+            showError("Create Failed", "Could not create reward.", friendly);
+        }
     }
 
     @FXML
     private void onUpdate() {
-        showWarning("Not available", "Reward updates are not exposed via the API.");
+        if (txtRewardId.getText() == null || txtRewardId.getText().trim().isEmpty()) {
+            showWarning("Update", "Select a reward row to update.");
+            return;
+        }
+
+        ValidationResult vr = validateForm(true);
+        if (!vr.ok) {
+            LogData.logAction("VALIDATION_FAILED", "Reward");
+            showWarning("Validation", vr.message);
+            return;
+        }
+
+        Reward r = buildFromForm(true);
+
+        try {
+            boolean ok = dao.updateReward(r);
+            LogData.logAction("UPDATE", "Reward");
+            refreshTable();
+            selectRewardById(r.getRewardId());
+            lblStatus.setText(ok ? "Updated reward #" + r.getRewardId() : "No update applied");
+        } catch (SQLException ex) {
+            LogData.handleException("UPDATE_REWARD", ex);
+
+            String friendly = friendlyDbMessage(ex);
+            showError("Update Failed", "Could not update reward.", friendly);
+        }
     }
 
     @FXML
     private void onDelete() {
-        showWarning("Not available", "Reward deletion is not exposed via the API.");
+        Reward selected = tblRewards.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showWarning("Delete", "Select a reward row to delete.");
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirm Delete");
+        confirm.setHeaderText("Delete reward #" + selected.getRewardId() + "?");
+        confirm.setContentText("This cannot be undone.");
+
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) return;
+
+        try {
+            dao.deleteReward(selected.getRewardId());
+            LogData.logAction("DELETE", "Reward");
+            refreshTable();
+            onClear();
+            lblStatus.setText("Deleted reward #" + selected.getRewardId());
+        } catch (SQLException ex) {
+            LogData.handleException("DELETE_REWARD", ex);
+
+            String friendly = friendlyDbMessage(ex);
+            showError("Delete Failed", "Could not delete reward.", friendly);
+        }
     }
 
     private Reward buildFromForm(boolean includeId) {
-        return new Reward();
+        Reward r = new Reward();
+
+        if (includeId) {
+            r.setRewardId(Integer.parseInt(txtRewardId.getText().trim()));
+        }
+
+        r.setRewardPointsEarned(Integer.parseInt(txtPoints.getText().trim()));
+
+        // Build LocalDateTime from date picker and time field
+        if (dtpTransactionDate.getValue() != null) {
+            String timeStr = txtTransactionTime.getText().trim();
+            if (timeStr.isEmpty()) {
+                timeStr = "00:00";
+            }
+            String[] timeParts = timeStr.split(":");
+            int hour = timeParts.length > 0 ? Integer.parseInt(timeParts[0]) : 0;
+            int minute = timeParts.length > 1 ? Integer.parseInt(timeParts[1]) : 0;
+
+            LocalDateTime transactionDateTime = dtpTransactionDate.getValue()
+                    .atTime(hour, minute);
+            r.setRewardTransactionDate(transactionDateTime);
+        } else {
+            r.setRewardTransactionDate(LocalDateTime.now());
+        }
+
+        CustomerOption cust = cboCustomer.getValue();
+        OrderOption ord = cboOrder.getValue();
+
+        r.setCustomerId(cust.getCustomerId());
+        r.setOrderId(ord.getOrderId());
+
+        return r;
     }
 
     private ValidationResult validateForm(boolean isUpdate) {
@@ -205,6 +307,11 @@ public class RewardController {
         if (isUpdate) {
             String id = safe(txtRewardId.getText());
             if (id.isBlank()) return ValidationResult.fail("Reward ID is missing (select a row first).");
+            try {
+                Integer.parseInt(id);
+            } catch (NumberFormatException ex) {
+                return ValidationResult.fail("Reward ID is invalid.");
+            }
         }
 
         if (points.isBlank()) return ValidationResult.fail("Points earned is required.");
@@ -230,9 +337,29 @@ public class RewardController {
         return ValidationResult.ok();
     }
 
-    private void selectRewardById(String id) {
+    private String friendlyDbMessage(SQLException ex) {
+        String sqlState = ex.getSQLState();
+        String msg = (ex.getMessage() == null) ? "" : ex.getMessage();
+
+        if (sqlState != null && sqlState.startsWith("23")) {
+            if (msg.toLowerCase().contains("foreign key constraint")) {
+                if (msg.toLowerCase().contains("fk_reward_customer")) {
+                    return "The selected customer does not exist.";
+                }
+                if (msg.toLowerCase().contains("fk_reward_order")) {
+                    return "The selected order does not exist.";
+                }
+                return "Foreign key constraint violation.";
+            }
+            return "This operation violates a database constraint.";
+        }
+
+        return msg.isBlank() ? "Unknown database error." : msg;
+    }
+
+    private void selectRewardById(int id) {
         for (Reward r : master) {
-            if (r.getRewardId() != null && r.getRewardId().equals(id)) {
+            if (r.getRewardId() == id) {
                 tblRewards.getSelectionModel().select(r);
                 tblRewards.scrollTo(r);
                 return;
@@ -240,10 +367,10 @@ public class RewardController {
         }
     }
 
-    private void selectCustomerById(String customerId) {
+    private void selectCustomerById(int customerId) {
         if (cboCustomer.getItems() == null) return;
         for (CustomerOption c : cboCustomer.getItems()) {
-            if (c.getCustomerId().equals(customerId)) {
+            if (c.getCustomerId() == customerId) {
                 cboCustomer.getSelectionModel().select(c);
                 return;
             }
@@ -251,10 +378,10 @@ public class RewardController {
         cboCustomer.getSelectionModel().clearSelection();
     }
 
-    private void selectOrderById(String orderId) {
+    private void selectOrderById(int orderId) {
         if (cboOrder.getItems() == null) return;
         for (OrderOption o : cboOrder.getItems()) {
-            if (o.getOrderId().equals(orderId)) {
+            if (o.getOrderId() == orderId) {
                 cboOrder.getSelectionModel().select(o);
                 return;
             }
