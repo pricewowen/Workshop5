@@ -2,21 +2,23 @@
 
 package com.sait.workshop05.analytics;
 
-import com.sait.workshop05.api.AnalyticsApi;
+import com.sait.workshop05.database.AnalyticsDAO;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public class CompletionRateHandler implements KPIHandler {
 
+    private final AnalyticsDAO dao = new AnalyticsDAO();
+
     @Override
     public double getPrimaryValue(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
-        return AnalyticsApi.getCompletionRate(start, end, bakerySelection);
+        return dao.getCompletionRate(start, end, bakerySelection, scopeBakeryIds);
     }
 
     @Override
     public List<DataPoint> getChartData(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
-        return AnalyticsApi.getCompletionRateOverTime(start, end, bakerySelection);
+        return dao.getCompletionRateOverTime(start, end, bakerySelection, scopeBakeryIds);
     }
 
     @Override

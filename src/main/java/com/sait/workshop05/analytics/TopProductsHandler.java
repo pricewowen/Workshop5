@@ -2,12 +2,14 @@
 
 package com.sait.workshop05.analytics;
 
-import com.sait.workshop05.api.AnalyticsApi;
+import com.sait.workshop05.database.AnalyticsDAO;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public class TopProductsHandler implements KPIHandler {
+
+    private final AnalyticsDAO dao = new AnalyticsDAO();
 
     @Override
     public double getPrimaryValue(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
@@ -21,7 +23,7 @@ public class TopProductsHandler implements KPIHandler {
 
     @Override
     public List<DataPoint> getChartData(LocalDate start, LocalDate end, String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
-        return AnalyticsApi.getTopProducts(start, end, bakerySelection);
+        return dao.getTopProducts(start, end, bakerySelection, scopeBakeryIds);
     }
 
     @Override

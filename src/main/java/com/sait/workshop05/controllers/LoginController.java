@@ -3,7 +3,7 @@ package com.sait.workshop05.controllers;
 import com.sait.workshop05.api.ApiClient;
 import com.sait.workshop05.api.dto.AuthResponseDto;
 import com.sait.workshop05.api.dto.LoginRequestDto;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.sait.workshop05.database.EmployeeAccessDAO;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.User;
 import com.sait.workshop05.session.UserSession;
@@ -16,7 +16,6 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.http.HttpResponse;
-import java.util.Collections;
 import java.util.List;
 
 public class LoginController {
@@ -75,26 +74,12 @@ public class LoginController {
                 api.setToken(auth.getToken());
                 UserSession session = UserSession.getInstance();
                 session.createSession(user, auth.getToken());
-                if (auth.getUserId() != null && !auth.getUserId().isBlank()) {
-                    session.setApiUserId(auth.getUserId());
-                }
 
-                // Compute analytics eligibility for EMPLOYEE (API: profile + bakery scope)
+                // Compute analytics eligibility for EMPLOYEE
                 if (session.isEmployee()) {
-                    try {
-                        HttpResponse<String> meRes = api.get("/api/v1/employee/me");
-                        HttpResponse<String> brRes = api.get("/api/v1/employee/me/bakeries");
-                        if (meRes.statusCode() == 200 && brRes.statusCode() == 200) {
-                            var meNode = api.getMapper().readTree(meRes.body());
-                            String empId = meNode.has("id") ? meNode.get("id").asText() : null;
-                            List<Integer> bakeryIds = api.getMapper().readValue(brRes.body(), new TypeReference<List<Integer>>() {});
-                            session.setEmployeeAnalyticsAccess(empId, bakeryIds != null ? bakeryIds : Collections.emptyList());
-                        } else {
-                            session.setEmployeeAnalyticsAccess(null, Collections.emptyList());
-                        }
-                    } catch (Exception ex) {
-                        session.setEmployeeAnalyticsAccess(null, Collections.emptyList());
-                    }
+                    Integer employeeId = EmployeeAccessDAO.getEmployeeIdByUserId(user.getUserId());
+                    List<Integer> bakeryIds = EmployeeAccessDAO.getAccessibleBakeryIdsByUserId(user.getUserId());
+                    session.setEmployeeAnalyticsAccess(employeeId, bakeryIds);
 
                     if (session.canAccessAnalytics()) {
                         LogData.logAction("LOGIN", "Employee login: " + auth.getUsername() + " (Analytics ENABLED)");

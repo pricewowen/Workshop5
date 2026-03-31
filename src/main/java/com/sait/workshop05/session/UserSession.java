@@ -21,11 +21,8 @@ public class UserSession {
     private LocalDateTime loginTime;
     private String jwtToken;
 
-    /** Logged-in user's UUID from {@code AuthResponse.userId} (API principal). */
-    private String apiUserId;
-
-    // Analytics gating for EMPLOYEE (employee profile id from API; bakery scope for charts)
-    private String employeeProfileId;
+    // Analytics gating for EMPLOYEE
+    private Integer employeeId;                 // null if not a real Employee row
     private List<Integer> accessibleBakeryIds;  // empty means no scope
 
     private UserSession() {
@@ -47,10 +44,9 @@ public class UserSession {
         this.userRole = user.getRole();
         this.isAuthenticated = true;
         this.loginTime = LocalDateTime.now();
-        this.apiUserId = null;
 
         // Reset employee analytics info on new login
-        this.employeeProfileId = null;
+        this.employeeId = null;
         this.accessibleBakeryIds = new ArrayList<>();
     }
 
@@ -62,20 +58,12 @@ public class UserSession {
         this.isAuthenticated = false;
         this.loginTime = null;
 
-        this.employeeProfileId = null;
+        this.employeeId = null;
         this.accessibleBakeryIds = new ArrayList<>();
     }
 
     public String getJwtToken() {
         return jwtToken;
-    }
-
-    public void setApiUserId(String apiUserId) {
-        this.apiUserId = apiUserId;
-    }
-
-    public String getApiUserId() {
-        return apiUserId;
     }
 
     public boolean isAuthenticated() {
@@ -104,15 +92,15 @@ public class UserSession {
 
     /**
      * Called at login for EMPLOYEE accounts.
-     * If employeeProfileId is null or bakeryIds is empty, analytics should be disabled.
+     * If employeeId is null or bakeryIds is empty, analytics should be disabled.
      */
-    public void setEmployeeAnalyticsAccess(String employeeProfileId, List<Integer> bakeryIds) {
-        this.employeeProfileId = employeeProfileId;
+    public void setEmployeeAnalyticsAccess(Integer employeeId, List<Integer> bakeryIds) {
+        this.employeeId = employeeId;
         this.accessibleBakeryIds = (bakeryIds == null) ? new ArrayList<>() : new ArrayList<>(bakeryIds);
     }
 
-    public String getEmployeeProfileId() {
-        return employeeProfileId;
+    public Integer getEmployeeId() {
+        return employeeId;
     }
 
     public List<Integer> getAccessibleBakeryIds() {
@@ -128,6 +116,6 @@ public class UserSession {
         if (isAdmin()) return true;
         if (!isEmployee()) return false;
 
-        return employeeProfileId != null && !accessibleBakeryIds.isEmpty();
+        return employeeId != null && !accessibleBakeryIds.isEmpty();
     }
 }

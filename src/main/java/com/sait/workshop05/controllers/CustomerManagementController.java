@@ -1,9 +1,6 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.api.CustomerApi;
-import com.sait.workshop05.api.OrderApi;
-import com.sait.workshop05.api.ReferenceApi;
-import com.sait.workshop05.api.RewardTierApi;
+import com.sait.workshop05.database.*;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.*;
 import com.sait.workshop05.util.ErrorHandler;
@@ -23,6 +20,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -32,7 +30,7 @@ public class CustomerManagementController {
 
     // ── Table ──────────────────────────────────────────────────
     @FXML private TableView<Customer> tblCustomers;
-    @FXML private TableColumn<Customer, String> colCustomerId;
+    @FXML private TableColumn<Customer, Integer> colCustomerId;
     @FXML private TableColumn<Customer, String> colFirstName;
     @FXML private TableColumn<Customer, String> colMiddleInitial;
     @FXML private TableColumn<Customer, String> colLastName;
@@ -69,6 +67,8 @@ public class CustomerManagementController {
     @FXML private Button btnOrderHistory;
     @FXML private Button btnAdjustPoints;
 
+    private final CustomerDAO dao = new CustomerDAO();
+    private final OrderDAO orderDao = new OrderDAO();
     private final ObservableList<Customer> master = FXCollections.observableArrayList();
     private FilteredList<Customer> filtered;
 
@@ -85,14 +85,6 @@ public class CustomerManagementController {
         AddressInputHelper.configureEditableAddressCombo(cboAddress);
         setupSelectionBinding();
         setupSearchFiltering();
-        if (btnCreate != null) {
-            btnCreate.setDisable(true);
-            btnCreate.setTooltip(new Tooltip("Customers are created via customer registration (API)."));
-        }
-        if (btnDelete != null) {
-            btnDelete.setDisable(true);
-            btnDelete.setTooltip(new Tooltip("Deleting customers is not exposed on the API."));
-        }
         loadCombos();
         refreshTable();
     }
@@ -172,21 +164,17 @@ public class CustomerManagementController {
 
     private void loadCombos() {
         try {
-            List<RewardTierOption> tiers = FXCollections.observableArrayList();
-            for (RewardTierApi.RewardTierJson t : RewardTierApi.list()) {
-                if (t.id != null && t.name != null) {
-                    tiers.add(new RewardTierOption(t.id, t.name));
-                }
-            }
+            List<RewardTierOption> tiers = dao.getRewardTierOptions();
             cboRewardTier.setItems(FXCollections.observableArrayList(tiers));
 
-            cboUser.setItems(FXCollections.observableArrayList(ReferenceApi.loadAdminUsers()));
+            List<UserOption> users = dao.getUserOptions();
+            cboUser.setItems(FXCollections.observableArrayList(users));
 
-            List<AddressOption> addresses = ReferenceApi.loadAddresses();
+            List<AddressOption> addresses = dao.getAddressOptions();
             AddressInputHelper.setAddressItems(cboAddress, addresses);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("LOAD_CUSTOMER_COMBOS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load dropdown lists.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load dropdown lists.", e.getMessage());
         }
     }
 
@@ -196,52 +184,14 @@ public class CustomerManagementController {
 
     private void refreshTable() {
         try {
-            java.util.Map<Integer, String> tierNames = new java.util.HashMap<>();
-            for (RewardTierApi.RewardTierJson t : RewardTierApi.list()) {
-                if (t.id != null) {
-                    tierNames.put(t.id, t.name != null ? t.name : "");
-                }
-            }
-            java.util.Map<Integer, String> addrDisp = new java.util.HashMap<>();
-            for (AddressOption a : ReferenceApi.loadAddresses()) {
-                addrDisp.put(a.getAddressId(), a.getLine1() + ", " + a.getCity());
-            }
-
             master.clear();
-            for (CustomerApi.CustomerRow row : CustomerApi.list()) {
-                master.add(fromCustomerRow(row, tierNames, addrDisp));
-            }
+            master.addAll(dao.getAllCustomers());
             lblStatus.setText(master.size() + " customer(s) loaded");
             LogData.logAction("READ", "Customer");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("READ_CUSTOMERS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load customers.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load customers.", e.getMessage());
         }
-    }
-
-    private Customer fromCustomerRow(CustomerApi.CustomerRow row,
-                                     java.util.Map<Integer, String> tierNames,
-                                     java.util.Map<Integer, String> addrDisp) {
-        Customer c = new Customer();
-        c.setCustomerId(row.id != null ? row.id : "");
-        c.setUserId(row.userId != null ? row.userId : "");
-        c.setAddressId(row.addressId != null ? row.addressId : 0);
-        c.setRewardTierId(row.rewardTierId != null ? row.rewardTierId : 0);
-        c.setFirstName(row.firstName != null ? row.firstName : "");
-        c.setMiddleInitial(row.middleInitial);
-        c.setLastName(row.lastName != null ? row.lastName : "");
-        c.setRole("Regular");
-        c.setPhone(row.phone != null ? row.phone : "");
-        c.setBusinessPhone("");
-        c.setEmail(row.email != null ? row.email : "");
-        c.setRewardBalance(row.rewardBalance);
-        c.setTierAssignedDate(LocalDateTime.now());
-        c.setUserDisplay(row.userId != null ? row.userId : "");
-        String ad = row.addressId != null ? addrDisp.get(row.addressId) : null;
-        c.setAddressDisplay(ad != null ? ad : "");
-        String tn = row.rewardTierId != null ? tierNames.get(row.rewardTierId) : null;
-        c.setRewardTierDisplay(tn != null ? tn : "");
-        return c;
     }
 
     @FXML
@@ -274,7 +224,41 @@ public class CustomerManagementController {
 
     @FXML
     private void onCreate() {
-        ErrorHandler.showInfo("Not available", "New customers are created through the public registration flow (API), not this screen.");
+        ValidationResult vr = validateForm(false);
+        if (!vr.isOk()) {
+            LogData.logAction("VALIDATION_FAILED", "Customer");
+            ErrorHandler.showWarning("Validation", vr.getMessage());
+            return;
+        }
+
+        Customer c;
+        try {
+            c = buildFromForm(false);
+        } catch (IllegalArgumentException ex) {
+            ErrorHandler.showWarning("Validation", ex.getMessage());
+            return;
+        } catch (SQLException ex) {
+            LogData.handleException("CREATE_CUSTOMER_ADDRESS", ex);
+            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
+            return;
+        }
+
+        try {
+            int newId = dao.insertCustomer(c);
+            LogData.logAction("CREATE", "Customer");
+            refreshTable();
+
+            if (newId > 0) {
+                selectCustomerById(newId);
+                lblStatus.setText("Created customer #" + newId);
+            } else {
+                lblStatus.setText("Created customer");
+            }
+        } catch (SQLException ex) {
+            LogData.handleException("CREATE_CUSTOMER", ex);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Create Failed", "Could not create customer.", friendly);
+        }
     }
 
     @FXML
@@ -291,34 +275,59 @@ public class CustomerManagementController {
             return;
         }
 
+        Customer c;
         try {
-            Customer c = buildFromForm(true);
-            java.util.Map<String, Object> body = CustomerApi.patchBodyForProfile(
-                    c.getFirstName(),
-                    c.getMiddleInitial(),
-                    c.getLastName(),
-                    c.getPhone(),
-                    c.getBusinessPhone(),
-                    c.getEmail(),
-                    c.getAddressId() > 0 ? c.getAddressId() : null,
-                    c.getRewardTierId() > 0 ? c.getRewardTierId() : null
-            );
-            CustomerApi.patch(c.getCustomerId(), body);
+            c = buildFromForm(true);
+        } catch (IllegalArgumentException ex) {
+            ErrorHandler.showWarning("Validation", ex.getMessage());
+            return;
+        } catch (SQLException ex) {
+            LogData.handleException("UPDATE_CUSTOMER_ADDRESS", ex);
+            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
+            return;
+        }
+
+        try {
+            boolean ok = dao.updateCustomer(c);
             LogData.logAction("UPDATE", "Customer");
             refreshTable();
             selectCustomerById(c.getCustomerId());
-            lblStatus.setText("Updated customer " + c.getCustomerId());
-        } catch (IllegalArgumentException ex) {
-            ErrorHandler.showWarning("Validation", ex.getMessage());
-        } catch (Exception ex) {
+            lblStatus.setText(ok ? "Updated customer #" + c.getCustomerId() : "No update applied");
+        } catch (SQLException ex) {
             LogData.handleException("UPDATE_CUSTOMER", ex);
-            ErrorHandler.showErrorDialog("Update Failed", "Could not update customer.", ex.getMessage());
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Update Failed", "Could not update customer.", friendly);
         }
     }
 
     @FXML
     private void onDelete() {
-        ErrorHandler.showInfo("Not available", "Deleting customers is not supported through the API from this app.");
+        Customer selected = tblCustomers.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            ErrorHandler.showWarning("Delete", "Select a customer row to delete.");
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirm Delete");
+        confirm.setHeaderText("Delete customer #" + selected.getCustomerId()
+                + " (" + selected.getFullName() + ")?");
+        confirm.setContentText("This cannot be undone. Orders linked to this customer may also be affected.");
+
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) return;
+
+        try {
+            dao.deleteCustomer(selected.getCustomerId());
+            LogData.logAction("DELETE", "Customer");
+            refreshTable();
+            onClear();
+            lblStatus.setText("Deleted customer #" + selected.getCustomerId());
+        } catch (SQLException ex) {
+            LogData.handleException("DELETE_CUSTOMER", ex);
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete customer.", friendly);
+        }
     }
 
     // ────────────────────────────────────────────────────────────
@@ -334,13 +343,13 @@ public class CustomerManagementController {
         }
 
         try {
-            List<Order> orders = OrderApi.listOrdersForCustomer(selected.getCustomerId());
-            LogData.logAction("VIEW_ORDER_HISTORY", "Customer " + selected.getCustomerId());
+            List<Order> orders = orderDao.getOrdersByCustomerId(selected.getCustomerId());
+            LogData.logAction("VIEW_ORDER_HISTORY", "Customer #" + selected.getCustomerId());
 
             showOrderHistoryDialog(selected, orders);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("VIEW_ORDER_HISTORY", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load order history.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load order history.", e.getMessage());
         }
     }
 
@@ -356,7 +365,7 @@ public class CustomerManagementController {
         tblOrders.setPrefHeight(250);
         tblOrders.setStyle("-fx-font-size: 13px;");
 
-        TableColumn<Order, String> colOrdId = new TableColumn<>("Order ID");
+        TableColumn<Order, Integer> colOrdId = new TableColumn<>("Order ID");
         colOrdId.setCellValueFactory(new PropertyValueFactory<>("orderId"));
         colOrdId.setPrefWidth(70);
 
@@ -481,11 +490,11 @@ public class CustomerManagementController {
                 return;
             }
             try {
-                List<OrderItem> items = OrderApi.getOrderItems(selOrder.getOrderId());
+                List<OrderItem> items = orderDao.getOrderItems(selOrder.getOrderId());
                 tblItems.setItems(FXCollections.observableArrayList(items));
                 lblItems.setText("Order #" + selOrder.getOrderId() + " \u2014 "
                         + items.size() + " item(s)");
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 LogData.handleException("LOAD_ORDER_ITEMS", e);
                 tblItems.getItems().clear();
             }
@@ -596,16 +605,16 @@ public class CustomerManagementController {
             }
 
             try {
-                CustomerApi.patch(selected.getCustomerId(), CustomerApi.patchRewardBalance(newBalance));
+                dao.updateRewardBalance(selected.getCustomerId(), newBalance);
                 LogData.logAction("ADJUST_POINTS",
-                        "Customer " + selected.getCustomerId()
+                        "Customer #" + selected.getCustomerId()
                                 + " adjusted by " + adjustment
                                 + " (new balance: " + newBalance + ")");
                 refreshTable();
                 selectCustomerById(selected.getCustomerId());
                 lblStatus.setText("Adjusted points for " + selected.getFullName()
                         + " by " + adjustment + " -> " + newBalance);
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 LogData.handleException("ADJUST_POINTS", e);
                 ErrorHandler.showErrorDialog("Error", "Could not update reward balance.", e.getMessage());
             }
@@ -616,11 +625,11 @@ public class CustomerManagementController {
     // Helpers
     // ────────────────────────────────────────────────────────────
 
-    private Customer buildFromForm(boolean includeId) throws Exception {
+    private Customer buildFromForm(boolean includeId) throws SQLException {
         Customer c = new Customer();
 
         if (includeId) {
-            c.setCustomerId(txtCustomerId.getText().trim());
+            c.setCustomerId(Integer.parseInt(txtCustomerId.getText().trim()));
         }
 
         c.setFirstName(txtFirstName.getText().trim());
@@ -635,7 +644,7 @@ public class CustomerManagementController {
         c.setAddressId(addr.getAddressId());
 
         UserOption user = cboUser.getValue();
-        c.setUserId(user != null ? user.getUserId() : "");
+        c.setUserId(user != null ? user.getUserId() : 0);
 
         RewardTierOption tier = cboRewardTier.getValue();
         c.setRewardTierId(tier.getRewardTierId());
@@ -662,8 +671,8 @@ public class CustomerManagementController {
             String id = StringUtil.safe(txtCustomerId.getText());
             if (id.isBlank()) return ValidationResult.fail("Customer ID is missing (select a row first).");
             try {
-                java.util.UUID.fromString(id);
-            } catch (IllegalArgumentException ex) {
+                Integer.parseInt(id);
+            } catch (NumberFormatException ex) {
                 return ValidationResult.fail("Customer ID is invalid.");
             }
         }
@@ -704,9 +713,9 @@ public class CustomerManagementController {
         return ValidationResult.ok();
     }
 
-    private void selectCustomerById(String id) {
+    private void selectCustomerById(int id) {
         for (Customer c : master) {
-            if (c.getCustomerId().equals(id)) {
+            if (c.getCustomerId() == id) {
                 tblCustomers.getSelectionModel().select(c);
                 tblCustomers.scrollTo(c);
                 return;
@@ -714,7 +723,7 @@ public class CustomerManagementController {
         }
     }
 
-    private AddressOption resolveAddressSelection(boolean required) throws Exception {
+    private AddressOption resolveAddressSelection(boolean required) throws SQLException {
         AddressOption selected = cboAddress.getValue();
         if (selected != null) return selected;
 
@@ -724,20 +733,20 @@ public class CustomerManagementController {
             return null;
         }
 
-        AddressOption resolved = ReferenceApi.createAddressFromTyped(typed);
+        AddressOption resolved = SharedDAO.findOrCreateAddressFromInput(typed);
         loadCombos();
         AddressInputHelper.selectAddressById(cboAddress, resolved.getAddressId());
         return resolved;
     }
 
-    private void selectUserById(String userId) {
+    private void selectUserById(int userId) {
         if (cboUser.getItems() == null) return;
-        if (userId == null || userId.isBlank()) {
+        if (userId <= 0) {
             cboUser.getSelectionModel().clearSelection();
             return;
         }
         for (UserOption u : cboUser.getItems()) {
-            if (u.getUserId().equals(userId)) {
+            if (u.getUserId() == userId) {
                 cboUser.getSelectionModel().select(u);
                 return;
             }

@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
  * Maps to the Order table in the database.
  */
 public class Order {
-    private final StringProperty orderId;
-    private final StringProperty customerId;
+    private final IntegerProperty orderId;
+    private final IntegerProperty customerId;
     private final IntegerProperty bakeryId;
     private final IntegerProperty addressId;
     private final ObjectProperty<LocalDateTime> orderPlacedDateTime;
@@ -31,8 +31,8 @@ public class Order {
      * Default constructor - initializes all properties
      */
     public Order() {
-        this.orderId = new SimpleStringProperty();
-        this.customerId = new SimpleStringProperty();
+        this.orderId = new SimpleIntegerProperty();
+        this.customerId = new SimpleIntegerProperty();
         this.bakeryId = new SimpleIntegerProperty();
         this.addressId = new SimpleIntegerProperty();
         this.orderPlacedDateTime = new SimpleObjectProperty<>();
@@ -49,27 +49,27 @@ public class Order {
     }
 
     // Getters and Setters
-    public String getOrderId() {
+    public int getOrderId() {
         return orderId.get();
     }
 
-    public StringProperty orderIdProperty() {
+    public IntegerProperty orderIdProperty() {
         return orderId;
     }
 
-    public void setOrderId(String orderId) {
+    public void setOrderId(int orderId) {
         this.orderId.set(orderId);
     }
 
-    public String getCustomerId() {
+    public int getCustomerId() {
         return customerId.get();
     }
 
-    public StringProperty customerIdProperty() {
+    public IntegerProperty customerIdProperty() {
         return customerId;
     }
 
-    public void setCustomerId(String customerId) {
+    public void setCustomerId(int customerId) {
         this.customerId.set(customerId);
     }
 

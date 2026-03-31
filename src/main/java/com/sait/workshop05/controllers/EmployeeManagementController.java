@@ -1,9 +1,8 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.api.EmployeeApi;
-import com.sait.workshop05.api.ReferenceApi;
 import com.sait.workshop05.models.AddressOption;
-import com.sait.workshop05.models.BakeryOption;
+import com.sait.workshop05.database.EmployeeDAO;
+import com.sait.workshop05.database.SharedDAO;
 import com.sait.workshop05.models.UserOption;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Employee;
@@ -19,15 +18,14 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
-import java.util.HashMap;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public class EmployeeManagementController {
 
     @FXML private TableView<Employee> tblEmployees;
-    @FXML private TableColumn<Employee, String> colEmployeeId;
+    @FXML private TableColumn<Employee, Integer> colEmployeeId;
     @FXML private TableColumn<Employee, String> colFirstName;
     @FXML private TableColumn<Employee, String> colMiddleInitial;
     @FXML private TableColumn<Employee, String> colLastName;
@@ -46,7 +44,6 @@ public class EmployeeManagementController {
     @FXML private TextField txtMiddleInitial;
     @FXML private TextField txtLastName;
     @FXML private ComboBox<String> cboRole;
-    @FXML private ComboBox<BakeryOption> cboBakery;
     @FXML private TextField txtPhone;
     @FXML private TextField txtBusinessPhone;
     @FXML private TextField txtEmail;
@@ -55,6 +52,7 @@ public class EmployeeManagementController {
 
     @FXML private Button btnRefresh;
 
+    private final EmployeeDAO dao = new EmployeeDAO();
     private final ObservableList<Employee> master = FXCollections.observableArrayList();
     private FilteredList<Employee> filtered;
 
@@ -109,7 +107,6 @@ public class EmployeeManagementController {
             txtBusinessPhone.setText(StringUtil.nz(selected.getEmployeeBusinessPhone()));
             txtEmail.setText(StringUtil.nz(selected.getEmployeeEmail()));
 
-            selectBakeryById(selected.getBakeryId());
             selectUserById(selected.getUserId());
             AddressInputHelper.selectAddressById(cboAddress, selected.getAddressId());
         });
@@ -148,62 +145,27 @@ public class EmployeeManagementController {
 
     private void loadCombos() {
         try {
-            cboUser.setItems(FXCollections.observableArrayList(ReferenceApi.loadAdminUsers()));
-            cboBakery.setItems(FXCollections.observableArrayList(ReferenceApi.loadBakeries()));
-            List<AddressOption> addresses = ReferenceApi.loadAddresses();
+            List<UserOption> users = dao.getUserOptions();
+            cboUser.setItems(FXCollections.observableArrayList(users));
+
+            List<AddressOption> addresses = dao.getAddressOptions();
             AddressInputHelper.setAddressItems(cboAddress, addresses);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("LOAD_EMPLOYEE_COMBOS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load User/Address lists.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load User/Address lists.", e.getMessage());
         }
     }
 
     private void refreshTable() {
         try {
-            Map<Integer, String> addrDisp = new HashMap<>();
-            for (AddressOption a : ReferenceApi.loadAddresses()) {
-                addrDisp.put(a.getAddressId(), a.getLine1() + ", " + a.getCity());
-            }
             master.clear();
-            for (EmployeeApi.EmployeeRow row : EmployeeApi.listStaff()) {
-                master.add(fromEmployeeRow(row, addrDisp));
-            }
+            master.addAll(dao.getAllEmployees());
             lblStatus.setText(master.size() + " employee(s) loaded");
             LogData.logAction("READ", "Employee");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             LogData.handleException("READ_EMPLOYEES", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load employees.", e.getMessage());
+            ErrorHandler.showErrorDialog("Database Error", "Could not load employees.", e.getMessage());
         }
-    }
-
-    private Employee fromEmployeeRow(EmployeeApi.EmployeeRow row, Map<Integer, String> addrDisp) {
-        Employee e = new Employee();
-        e.setEmployeeId(row.id != null ? row.id : "");
-        e.setUserId(row.userId != null ? row.userId : "");
-        e.setBakeryId(row.bakeryId != null ? row.bakeryId : 0);
-        e.setAddressId(row.addressId != null ? row.addressId : 0);
-        e.setEmployeeFirstName(row.firstName != null ? row.firstName : "");
-        e.setEmployeeMiddleInitial(row.middleInitial);
-        e.setEmployeeLastName(row.lastName != null ? row.lastName : "");
-        e.setEmployeeRole(row.position != null ? row.position : "");
-        e.setEmployeePhone(row.phone != null ? row.phone : "");
-        e.setEmployeeBusinessPhone("");
-        e.setEmployeeEmail(row.workEmail != null ? row.workEmail : "");
-        e.setUserDisplay(row.userId != null ? row.userId : "");
-        String ad = row.addressId != null ? addrDisp.get(row.addressId) : null;
-        e.setAddressDisplay(ad != null ? ad : "");
-        return e;
-    }
-
-    private void selectBakeryById(int bakeryId) {
-        if (cboBakery.getItems() == null) return;
-        for (BakeryOption b : cboBakery.getItems()) {
-            if (b.getBakeryId() == bakeryId) {
-                cboBakery.getSelectionModel().select(b);
-                return;
-            }
-        }
-        cboBakery.getSelectionModel().clearSelection();
     }
 
     @FXML
@@ -224,9 +186,6 @@ public class EmployeeManagementController {
         txtBusinessPhone.clear();
         txtEmail.clear();
         cboUser.getSelectionModel().clearSelection();
-        if (cboBakery != null) {
-            cboBakery.getSelectionModel().clearSelection();
-        }
         AddressInputHelper.clearAddressField(cboAddress);
         lblStatus.setText("Cleared");
     }
@@ -240,30 +199,35 @@ public class EmployeeManagementController {
             return;
         }
 
+        Employee e;
         try {
-            Employee e = buildFromForm(false);
-            UserOption u = cboUser.getValue();
-            BakeryOption bk = cboBakery.getValue();
-            EmployeeApi.create(
-                    u.getUserId(),
-                    bk.getBakeryId(),
-                    e.getAddressId(),
-                    e.getEmployeeFirstName(),
-                    e.getEmployeeMiddleInitial(),
-                    e.getEmployeeLastName(),
-                    e.getEmployeeRole(),
-                    e.getEmployeePhone(),
-                    e.getEmployeeBusinessPhone(),
-                    e.getEmployeeEmail()
-            );
-            LogData.logAction("CREATE", "Employee");
-            refreshTable();
-            lblStatus.setText("Created employee");
+            e = buildFromForm(false);
         } catch (IllegalArgumentException ex) {
             ErrorHandler.showWarning("Validation", ex.getMessage());
-        } catch (Exception ex) {
+            return;
+        } catch (SQLException ex) {
+            LogData.handleException("CREATE_EMPLOYEE_ADDRESS", ex);
+            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
+            return;
+        }
+
+        try {
+            int newId = dao.insertEmployee(e);
+            LogData.logAction("CREATE", "Employee");
+            refreshTable();
+
+            if (newId > 0) {
+                selectEmployeeById(newId);
+                lblStatus.setText("Created employee #" + newId);
+            } else {
+                lblStatus.setText("Created employee");
+            }
+
+        } catch (SQLException ex) {
             LogData.handleException("CREATE_EMPLOYEE", ex);
-            ErrorHandler.showErrorDialog("Create Failed", "Could not create employee.", ex.getMessage());
+
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Create Failed", "Could not create employee.", friendly);
         }
     }
 
@@ -281,32 +245,29 @@ public class EmployeeManagementController {
             return;
         }
 
+        Employee e;
         try {
-            Employee e = buildFromForm(true);
-            UserOption u = cboUser.getValue();
-            BakeryOption bk = cboBakery.getValue();
-            EmployeeApi.update(
-                    e.getEmployeeId(),
-                    u.getUserId(),
-                    bk.getBakeryId(),
-                    e.getAddressId(),
-                    e.getEmployeeFirstName(),
-                    e.getEmployeeMiddleInitial(),
-                    e.getEmployeeLastName(),
-                    e.getEmployeeRole(),
-                    e.getEmployeePhone(),
-                    e.getEmployeeBusinessPhone(),
-                    e.getEmployeeEmail()
-            );
+            e = buildFromForm(true);
+        } catch (IllegalArgumentException ex) {
+            ErrorHandler.showWarning("Validation", ex.getMessage());
+            return;
+        } catch (SQLException ex) {
+            LogData.handleException("UPDATE_EMPLOYEE_ADDRESS", ex);
+            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
+            return;
+        }
+
+        try {
+            boolean ok = dao.updateEmployee(e);
             LogData.logAction("UPDATE", "Employee");
             refreshTable();
             selectEmployeeById(e.getEmployeeId());
-            lblStatus.setText("Updated employee " + e.getEmployeeId());
-        } catch (IllegalArgumentException ex) {
-            ErrorHandler.showWarning("Validation", ex.getMessage());
-        } catch (Exception ex) {
+            lblStatus.setText(ok ? "Updated employee #" + e.getEmployeeId() : "No update applied");
+        } catch (SQLException ex) {
             LogData.handleException("UPDATE_EMPLOYEE", ex);
-            ErrorHandler.showErrorDialog("Update Failed", "Could not update employee.", ex.getMessage());
+
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Update Failed", "Could not update employee.", friendly);
         }
     }
 
@@ -320,29 +281,31 @@ public class EmployeeManagementController {
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirm Delete");
-        confirm.setHeaderText("Delete employee " + selected.getEmployeeId() + "?");
+        confirm.setHeaderText("Delete employee #" + selected.getEmployeeId() + "?");
         confirm.setContentText("This cannot be undone.");
 
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
         try {
-            EmployeeApi.delete(selected.getEmployeeId());
+            dao.deleteEmployee(selected.getEmployeeId());
             LogData.logAction("DELETE", "Employee");
             refreshTable();
             onClear();
-            lblStatus.setText("Deleted employee " + selected.getEmployeeId());
-        } catch (Exception ex) {
+            lblStatus.setText("Deleted employee #" + selected.getEmployeeId());
+        } catch (SQLException ex) {
             LogData.handleException("DELETE_EMPLOYEE", ex);
-            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete employee.", ex.getMessage());
+
+            String friendly = ErrorHandler.friendlyDbMessage(ex);
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete employee.", friendly);
         }
     }
 
-    private Employee buildFromForm(boolean includeId) throws Exception {
+    private Employee buildFromForm(boolean includeId) throws SQLException {
         Employee e = new Employee();
 
         if (includeId) {
-            e.setEmployeeId(txtEmployeeId.getText().trim());
+            e.setEmployeeId(Integer.parseInt(txtEmployeeId.getText().trim()));
         }
 
         e.setEmployeeFirstName(txtFirstName.getText().trim());
@@ -354,11 +317,9 @@ public class EmployeeManagementController {
         e.setEmployeeEmail(txtEmail.getText().trim());
 
         UserOption u = cboUser.getValue();
-        BakeryOption bk = cboBakery.getValue();
         AddressOption a = resolveAddressSelection(true);
 
-        e.setUserId(u != null ? u.getUserId() : "");
-        e.setBakeryId(bk != null ? bk.getBakeryId() : 0);
+        e.setUserId(u.getUserId());
         e.setAddressId(a.getAddressId());
 
         return e;
@@ -372,7 +333,6 @@ public class EmployeeManagementController {
         String email = StringUtil.safe(txtEmail.getText());
         String mi = StringUtil.safe(txtMiddleInitial.getText());
         UserOption user = cboUser.getValue();
-        BakeryOption bakery = cboBakery.getValue();
         AddressOption addr = cboAddress.getValue();
         String typedAddress = AddressInputHelper.getTypedText(cboAddress);
 
@@ -380,15 +340,15 @@ public class EmployeeManagementController {
             String id = StringUtil.safe(txtEmployeeId.getText());
             if (id.isBlank()) return ValidationResult.fail("Employee ID is missing (select a row first).");
             try {
-                java.util.UUID.fromString(id);
-            } catch (IllegalArgumentException ex) {
+                Integer.parseInt(id);
+            } catch (NumberFormatException ex) {
                 return ValidationResult.fail("Employee ID is invalid.");
             }
         }
 
         if (first.isBlank()) return ValidationResult.fail("First name is required.");
         if (last.isBlank()) return ValidationResult.fail("Last name is required.");
-        if (role == null || role.isBlank()) return ValidationResult.fail("Position / role is required.");
+        if (role == null || role.isBlank()) return ValidationResult.fail("Role is required.");
         if (phone.isBlank()) return ValidationResult.fail("Phone is required.");
         if (!StringUtil.PHONE_RX.matcher(phone).matches()) return ValidationResult.fail("Phone format looks invalid.");
 
@@ -398,9 +358,9 @@ public class EmployeeManagementController {
         if (!mi.isBlank() && mi.trim().length() > 2) return ValidationResult.fail("Middle initial must be 1\u20132 characters.");
 
         if (user == null) return ValidationResult.fail("User is required (select a User).");
-        if (bakery == null) return ValidationResult.fail("Bakery is required.");
         if (addr == null && typedAddress.isBlank()) return ValidationResult.fail("Address is required.");
 
+        // matches SQL limits
         if (first.length() > 50) return ValidationResult.fail("First name must be 50 characters or less.");
         if (last.length() > 50) return ValidationResult.fail("Last name must be 50 characters or less.");
         if (role.length() > 40) return ValidationResult.fail("Role must be 40 characters or less.");
@@ -412,9 +372,9 @@ public class EmployeeManagementController {
         return ValidationResult.ok();
     }
 
-    private void selectEmployeeById(String id) {
+    private void selectEmployeeById(int id) {
         for (Employee e : master) {
-            if (e.getEmployeeId().equals(id)) {
+            if (e.getEmployeeId() == id) {
                 tblEmployees.getSelectionModel().select(e);
                 tblEmployees.scrollTo(e);
                 return;
@@ -422,14 +382,10 @@ public class EmployeeManagementController {
         }
     }
 
-    private void selectUserById(String userId) {
+    private void selectUserById(int userId) {
         if (cboUser.getItems() == null) return;
-        if (userId == null || userId.isBlank()) {
-            cboUser.getSelectionModel().clearSelection();
-            return;
-        }
         for (UserOption u : cboUser.getItems()) {
-            if (u.getUserId().equals(userId)) {
+            if (u.getUserId() == userId) {
                 cboUser.getSelectionModel().select(u);
                 return;
             }
@@ -437,7 +393,7 @@ public class EmployeeManagementController {
         cboUser.getSelectionModel().clearSelection();
     }
 
-    private AddressOption resolveAddressSelection(boolean required) throws Exception {
+    private AddressOption resolveAddressSelection(boolean required) throws SQLException {
         AddressOption selected = cboAddress.getValue();
         if (selected != null) return selected;
 
@@ -447,7 +403,7 @@ public class EmployeeManagementController {
             return null;
         }
 
-        AddressOption resolved = ReferenceApi.createAddressFromTyped(typed);
+        AddressOption resolved = SharedDAO.findOrCreateAddressFromInput(typed);
         loadCombos();
         AddressInputHelper.selectAddressById(cboAddress, resolved.getAddressId());
         return resolved;
