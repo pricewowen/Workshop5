@@ -253,27 +253,33 @@ public class ProductManagementController {
         Product p = buildFromForm(false);
 
         try {
-            int newId = dao.insertProduct(p);
-
-            // Save tags
-            if (newId > 0) {
-                dao.setTagsForProduct(newId, new ArrayList<>(assignedTags));
+            Map<String, Integer> nameToId = CatalogApi.tagNameToIdMap();
+            List<Integer> tagIds = new ArrayList<>();
+            for (String tagName : assignedTags) {
+                Integer tid = nameToId.get(tagName);
+                if (tid != null) tagIds.add(tid);
             }
+            CatalogApi.ProductResponse created = CatalogApi.createProduct(
+                    p.getProductName(),
+                    p.getProductDescription(),
+                    p.getProductBasePrice(),
+                    tagIds,
+                    ""
+            );
 
             LogData.logAction("CREATE", "Product");
             refreshTable();
 
-            if (newId > 0) {
-                selectProductById(newId);
-                lblStatus.setText("Created product #" + newId);
+            if (created.id != null) {
+                selectProductById(created.id);
+                lblStatus.setText("Created product #" + created.id);
             } else {
                 lblStatus.setText("Created product");
             }
 
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             LogData.handleException("CREATE_PRODUCT", ex);
-            String friendly = ErrorHandler.friendlyDbMessage(ex);
-            ErrorHandler.showErrorDialog("Create Failed", "Could not create product.", friendly);
+            ErrorHandler.showErrorDialog("Create Failed", "Could not create product.", ex.getMessage());
         }
     }
 

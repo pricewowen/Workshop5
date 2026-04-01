@@ -3,6 +3,7 @@ module com.sait.workshop05 {
     requires javafx.fxml;
     requires java.net.http;
     requires com.fasterxml.jackson.databind;
+    requires java.sql;
 
     opens com.sait.workshop05 to javafx.fxml;
     opens com.sait.workshop05.models to javafx.base;
