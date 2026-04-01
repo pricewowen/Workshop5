@@ -14,6 +14,7 @@ public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
 
+        /*
         // Test DB connection on startup
         try (Connection conn = DBUtil.getConnection()) {
             // Connection successful
@@ -21,6 +22,7 @@ public class MainApplication extends Application {
             e.printStackTrace();
             System.exit(1);
         }
+        */
 
         // Load login view (staff-only: Admin / Employee)
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("login-view.fxml"));

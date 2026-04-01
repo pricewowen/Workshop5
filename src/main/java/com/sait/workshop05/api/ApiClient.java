@@ -73,14 +73,29 @@ public class ApiClient {
      */
     public HttpResponse<String> post(String path, Object body) throws Exception {
         String json = mapper.writeValueAsString(body);
+        String url = baseUrl + path;
+
+        System.out.println("[DEBUG_LOG] API POST Request: " + url);
+        // System.out.println("[DEBUG_LOG] Request Body: " + json);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
+                .uri(URI.create(url))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
-        return http.send(request, HttpResponse.BodyHandlers.ofString());
+        try {
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("[DEBUG_LOG] API POST Response Status: " + response.statusCode());
+            if (response.statusCode() >= 400) {
+                System.err.println("[DEBUG_LOG] API Error Response Body: " + response.body());
+            }
+            return response;
+        } catch (Exception e) {
+            System.err.println("[DEBUG_LOG] API Request Failed: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**
@@ -88,23 +103,40 @@ public class ApiClient {
      */
     public HttpResponse<String> postAuthenticated(String path, Object body) throws Exception {
         String json = mapper.writeValueAsString(body);
+        String url = baseUrl + path;
+
+        System.out.println("[DEBUG_LOG] API POST Authenticated: " + url);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
+                .uri(URI.create(url))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + jwtToken)
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
-        return http.send(request, HttpResponse.BodyHandlers.ofString());
+        try {
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("[DEBUG_LOG] API POST Authenticated Response Status: " + response.statusCode());
+            if (response.statusCode() >= 400) {
+                System.err.println("[DEBUG_LOG] API Error Response Body: " + response.body());
+            }
+            return response;
+        } catch (Exception e) {
+            System.err.println("[DEBUG_LOG] API Request Failed: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**
      * GET with JWT authorization header.
      */
     public HttpResponse<String> get(String path) throws Exception {
+        String url = baseUrl + path;
+        System.out.println("[DEBUG_LOG] API GET Request: " + url);
+
         HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
+                .uri(URI.create(url))
                 .header("Accept", "application/json")
                 .GET();
 
@@ -112,7 +144,18 @@ public class ApiClient {
             builder.header("Authorization", "Bearer " + jwtToken);
         }
 
-        return http.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        try {
+            HttpResponse<String> response = http.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            System.out.println("[DEBUG_LOG] API GET Response Status: " + response.statusCode());
+            if (response.statusCode() >= 400) {
+                System.err.println("[DEBUG_LOG] API Error Response Body: " + response.body());
+            }
+            return response;
+        } catch (Exception e) {
+            System.err.println("[DEBUG_LOG] API Request Failed: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**
@@ -120,28 +163,56 @@ public class ApiClient {
      */
     public HttpResponse<String> put(String path, Object body) throws Exception {
         String json = mapper.writeValueAsString(body);
+        String url = baseUrl + path;
+
+        System.out.println("[DEBUG_LOG] API PUT Request: " + url);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
+                .uri(URI.create(url))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + jwtToken)
                 .PUT(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
-        return http.send(request, HttpResponse.BodyHandlers.ofString());
+        try {
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("[DEBUG_LOG] API PUT Response Status: " + response.statusCode());
+            if (response.statusCode() >= 400) {
+                System.err.println("[DEBUG_LOG] API Error Response Body: " + response.body());
+            }
+            return response;
+        } catch (Exception e) {
+            System.err.println("[DEBUG_LOG] API Request Failed: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**
      * DELETE with JWT authorization header.
      */
     public HttpResponse<String> delete(String path) throws Exception {
+        String url = baseUrl + path;
+        System.out.println("[DEBUG_LOG] API DELETE Request: " + url);
+
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
+                .uri(URI.create(url))
                 .header("Authorization", "Bearer " + jwtToken)
                 .DELETE()
                 .build();
 
-        return http.send(request, HttpResponse.BodyHandlers.ofString());
+        try {
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("[DEBUG_LOG] API DELETE Response Status: " + response.statusCode());
+            if (response.statusCode() >= 400) {
+                System.err.println("[DEBUG_LOG] API Error Response Body: " + response.body());
+            }
+            return response;
+        } catch (Exception e) {
+            System.err.println("[DEBUG_LOG] API Request Failed: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     public ObjectMapper getMapper() {

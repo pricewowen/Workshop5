@@ -46,9 +46,9 @@ public class Log {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z");
 
-        this.user = user.toUpperCase();
-        this.action = action.toUpperCase();
-        this.target = description.toUpperCase();
+        this.user = (user != null) ? user.toUpperCase() : DEFAULT_USER;
+        this.action = (action != null) ? action.toUpperCase() : "UNKNOWN_ACTION";
+        this.target = (description != null) ? description.toUpperCase() : "NO DESCRIPTION";
         this.currentDate = localTime.format(formatter);
     }
 
