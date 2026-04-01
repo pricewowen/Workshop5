@@ -54,7 +54,11 @@ public class LogData {
      * @param e error message returned
      */
     public static void handleException(String action, Exception e) {
-        logError(new Log(action, e.getMessage()));
+        String message = e.getMessage();
+        if (message == null || message.trim().isEmpty()) {
+            message = e.toString();
+        }
+        logError(new Log(action, message));
     }
 
     /**
