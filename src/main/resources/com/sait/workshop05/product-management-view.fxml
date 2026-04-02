@@ -123,6 +123,17 @@
                                     <ComboBox fx:id="cboTag" promptText="Select a tag"
                                               style="-fx-font-size: 13px;"
                                               GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                                    <Label text="Image:" style="-fx-font-size: 13px;"
+                                           GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                                    <HBox spacing="8" alignment="CENTER_LEFT"
+                                          GridPane.rowIndex="5" GridPane.columnIndex="1">
+                                        <Label fx:id="lblImageFile" text="No file selected"
+                                               style="-fx-font-size: 12px; -fx-text-fill: #666;"
+                                               HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
+                                        <Button text="Browse..." onAction="#onBrowseImage"
+                                                styleClass="btn-muted" prefHeight="26"/>
+                                    </HBox>
                                 </GridPane>
 
                                 <!-- Multi-tag selection area -->

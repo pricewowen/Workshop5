@@ -1,6 +1,7 @@
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.CatalogApi;
+import com.sait.workshop05.api.ImageUploadApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Product;
 import com.sait.workshop05.util.ErrorHandler;
@@ -13,7 +14,9 @@ import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +46,9 @@ public class ProductManagementController {
     @FXML private TextField txtBasePrice;
     @FXML private ComboBox<String> cboTag;
 
+    // ── Image picker ───────────────────────────────────────────
+    @FXML private Label lblImageFile;
+
     // ── Tag assignment ─────────────────────────────────────────
     @FXML private ListView<String> lstAssignedTags;
     @FXML private Button btnAddTag;
@@ -59,6 +65,9 @@ public class ProductManagementController {
 
     // Tags currently assigned in the form
     private final ObservableList<String> assignedTags = FXCollections.observableArrayList();
+
+    // Image file selected via the file picker (null = no file chosen)
+    private File selectedImageFile;
 
     // ────────────────────────────────────────────────────────────
     // Initialization
@@ -210,6 +219,23 @@ public class ProductManagementController {
     }
 
     // ────────────────────────────────────────────────────────────
+    // Image picker
+    // ────────────────────────────────────────────────────────────
+
+    @FXML
+    private void onBrowseImage() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Select Product Image");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Image files (JPG, PNG)", "*.jpg", "*.jpeg", "*.png"));
+        File file = chooser.showOpenDialog(lblImageFile.getScene().getWindow());
+        if (file != null) {
+            selectedImageFile = file;
+            lblImageFile.setText(file.getName());
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────
     // Tag management (Add / Remove in form)
     // ────────────────────────────────────────────────────────────
 
@@ -268,6 +294,18 @@ public class ProductManagementController {
             );
 
             LogData.logAction("CREATE", "Product");
+
+            // Upload image if one was selected
+            if (selectedImageFile != null && created.id != null) {
+                try {
+                    ImageUploadApi.uploadProductImage(created.id, selectedImageFile);
+                    LogData.logAction("UPLOAD_IMAGE", "Product #" + created.id);
+                } catch (Exception uploadEx) {
+                    LogData.handleException("UPLOAD_PRODUCT_IMAGE", uploadEx);
+                    ErrorHandler.showErrorDialog("Upload Failed", "Product created but image upload failed.", uploadEx.getMessage());
+                }
+            }
+
             refreshTable();
 
             if (created.id != null) {
@@ -318,6 +356,18 @@ public class ProductManagementController {
             );
 
             LogData.logAction("UPDATE", "Product");
+
+            // Upload image if one was selected
+            if (selectedImageFile != null) {
+                try {
+                    ImageUploadApi.uploadProductImage(p.getProductId(), selectedImageFile);
+                    LogData.logAction("UPLOAD_IMAGE", "Product #" + p.getProductId());
+                } catch (Exception uploadEx) {
+                    LogData.handleException("UPLOAD_PRODUCT_IMAGE", uploadEx);
+                    ErrorHandler.showErrorDialog("Upload Failed", "Product updated but image upload failed.", uploadEx.getMessage());
+                }
+            }
+
             refreshTable();
             selectProductById(p.getProductId());
             lblStatus.setText("Updated product #" + p.getProductId());
@@ -364,6 +414,8 @@ public class ProductManagementController {
         txtBasePrice.clear();
         cboTag.setValue(null);
         assignedTags.clear();
+        selectedImageFile = null;
+        lblImageFile.setText("No file selected");
         lblStatus.setText("Cleared");
     }
 
