@@ -3,11 +3,14 @@ package com.sait.workshop05.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -142,6 +145,68 @@ public class ApiClient {
                 .build();
 
         return http.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * PATCH with JWT authorization header.
+     */
+    public HttpResponse<String> patch(String path, Object body) throws Exception {
+        String json = mapper.writeValueAsString(body);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + path))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + jwtToken)
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        return http.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * POST a single file as multipart/form-data with JWT authorization header.
+     *
+     * @param path      API path (e.g. {@code /api/v1/products/1/image})
+     * @param fieldName multipart field name expected by the server
+     * @param file      file to upload (JPG or PNG)
+     * @return raw HTTP response
+     */
+    public HttpResponse<String> postMultipart(String path, String fieldName, File file) throws Exception {
+        String boundary = "----JavaFXBoundary" + Long.toHexString(System.currentTimeMillis());
+        String contentType = probeContentType(file.getName());
+
+        byte[] fileBytes = Files.readAllBytes(file.toPath());
+
+        // Build the multipart body: opening part header, file bytes, and closing boundary
+        String partHeader = "--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"" + fieldName
+                + "\"; filename=\"" + file.getName() + "\"\r\n"
+                + "Content-Type: " + contentType + "\r\n\r\n";
+        String closing = "\r\n--" + boundary + "--\r\n";
+
+        byte[] headerBytes = partHeader.getBytes(StandardCharsets.UTF_8);
+        byte[] closingBytes = closing.getBytes(StandardCharsets.UTF_8);
+
+        byte[] body = new byte[headerBytes.length + fileBytes.length + closingBytes.length];
+        System.arraycopy(headerBytes, 0, body, 0, headerBytes.length);
+        System.arraycopy(fileBytes, 0, body, headerBytes.length, fileBytes.length);
+        System.arraycopy(closingBytes, 0, body, headerBytes.length + fileBytes.length, closingBytes.length);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + path))
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .header("Authorization", "Bearer " + jwtToken)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                .build();
+
+        return http.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private String probeContentType(String fileName) {
+        String lower = fileName.toLowerCase();
+        if (lower.endsWith(".png")) return "image/png";
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+        return "application/octet-stream";
     }
 
     public ObjectMapper getMapper() {
