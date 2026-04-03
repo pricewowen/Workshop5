@@ -1,9 +1,13 @@
 package com.sait.workshop05.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AuthResponseDto {
     private String token;
     private String username;
     private String role;
+    private String userId;
 
     public AuthResponseDto() {}
 
@@ -15,4 +19,7 @@ public class AuthResponseDto {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 }

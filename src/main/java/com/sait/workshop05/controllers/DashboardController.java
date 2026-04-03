@@ -103,12 +103,25 @@ public class DashboardController {
                 } else {
                     setText(item);
                     switch (item) {
-                        case OrderStatus.PENDING -> setStyle("-fx-text-fill: #C48A1A; -fx-font-weight: bold;");
-                        case OrderStatus.PROCESSING -> setStyle("-fx-text-fill: #4A6B8E; -fx-font-weight: bold;");
-                        case OrderStatus.READY -> setStyle("-fx-text-fill: #6B8E9E; -fx-font-weight: bold;");
-                        case OrderStatus.OUT_FOR_DELIVERY -> setStyle("-fx-text-fill: #D4A04A; -fx-font-weight: bold;");
-                        case OrderStatus.COMPLETED, OrderStatus.DELIVERED -> setStyle("-fx-text-fill: #5A9E6F; -fx-font-weight: bold;");
-                        case OrderStatus.CANCELLED -> setStyle("-fx-text-fill: #C75B52; -fx-font-weight: bold;");
+
+                        // 🟡 IN PROGRESS GROUP (same as Pending)
+                        case OrderStatus.PENDING,
+                             OrderStatus.PROCESSING,
+                             OrderStatus.READY,
+                             OrderStatus.OUT_FOR_DELIVERY,
+                             "Scheduled",
+                             "Placed" ->
+                                setStyle("-fx-text-fill: #C48A1A; -fx-font-weight: bold;");
+
+                        // 🟢 RECOGNIZED GROUP (same as Completed)
+                        case OrderStatus.COMPLETED,
+                             OrderStatus.DELIVERED ->
+                                setStyle("-fx-text-fill: #5A9E6F; -fx-font-weight: bold;");
+
+                        // 🔴 CANCELLED stays distinct
+                        case OrderStatus.CANCELLED ->
+                                setStyle("-fx-text-fill: #C75B52; -fx-font-weight: bold;");
+
                         default -> setStyle("");
                     }
                 }

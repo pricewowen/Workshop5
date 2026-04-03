@@ -13,9 +13,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class AnalyticsController {
 
@@ -26,6 +24,8 @@ public class AnalyticsController {
     @FXML private ComboBox<String> chartTypeComboBox;
     @FXML private Label kpiValueLabel;
     @FXML private Label kpiTitleLabel;
+    @FXML private Label secondaryValueLabel;
+    @FXML private Label secondaryTitleLabel;
     @FXML private StackPane chartContainer;
 
     private final UserSession session = UserSession.getInstance();
@@ -77,12 +77,15 @@ public class AnalyticsController {
             onRefresh();
         });
 
+        chartTypeComboBox.setOnAction(e -> onRefresh());
+
         startDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (endDatePicker.getValue() != null &&
                     newVal != null &&
                     newVal.isAfter(endDatePicker.getValue())) {
                 endDatePicker.setValue(newVal);
             }
+            onRefresh();
         });
 
         endDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -91,6 +94,7 @@ public class AnalyticsController {
                     newVal.isBefore(startDatePicker.getValue())) {
                 startDatePicker.setValue(newVal);
             }
+            onRefresh();
         });
 
         onRefresh();
@@ -105,6 +109,8 @@ public class AnalyticsController {
 
         if (kpiValueLabel != null) kpiValueLabel.setText("N/A");
         if (kpiTitleLabel != null) kpiTitleLabel.setText("Not Authorized");
+        if (secondaryValueLabel != null) secondaryValueLabel.setText("N/A");
+        if (secondaryTitleLabel != null) secondaryTitleLabel.setText("Not Authorized");
         if (chartContainer != null) chartContainer.getChildren().clear();
     }
 
@@ -179,6 +185,8 @@ public class AnalyticsController {
             if (start != null && end != null && start.isAfter(end)) {
                 kpiValueLabel.setText("Invalid Date Range");
                 kpiTitleLabel.setText("");
+                secondaryValueLabel.setText("Invalid Date Range");
+                secondaryTitleLabel.setText("");
                 chartContainer.getChildren().clear();
                 return;
             }
@@ -186,91 +194,314 @@ public class AnalyticsController {
             List<Integer> scopeBakeryIds = session.isAdmin() ? null : session.getAccessibleBakeryIds();
 
             double primaryValue = handler.getPrimaryValue(start, end, bakerySelection, scopeBakeryIds);
+            double secondaryValue = getSecondaryValue(type, start, end, bakerySelection, scopeBakeryIds);
 
-            switch (type) {
-                case TOP_PRODUCTS ->
-                        kpiValueLabel.setText(String.format("%.0f Units", primaryValue));
-                case COMPLETION_RATE ->
-                        kpiValueLabel.setText(String.format("%.2f%%", primaryValue));
-                case REVENUE_OVER_TIME,
-                     REVENUE_BY_BAKERY,
-                     AVERAGE_ORDER_VALUE,
-                     SALES_BY_EMPLOYEE ->
-                        kpiValueLabel.setText(String.format("$%.2f", primaryValue));
-            }
+            kpiValueLabel.setText(formatValueForType(type, primaryValue));
+            kpiTitleLabel.setText(handler.getTitle() + " (Recognized)");
 
-            kpiTitleLabel.setText(handler.getTitle());
+            secondaryValueLabel.setText(formatValueForType(type, secondaryValue));
+            secondaryTitleLabel.setText(getSecondaryTitle(type));
 
             ChartType chartType = ChartType.fromDisplayName(chartTypeComboBox.getValue());
 
             renderChart(
                     handler.getChartData(start, end, bakerySelection, scopeBakeryIds),
-                    chartType
+                    getSecondaryChartData(type, start, end, bakerySelection, scopeBakeryIds),
+                    type,
+                    chartType,
+                    primaryValue,
+                    secondaryValue
             );
 
         } catch (Exception e) {
             e.printStackTrace();
             kpiValueLabel.setText("Error");
             kpiTitleLabel.setText("Failed to load KPI");
+            secondaryValueLabel.setText("Error");
+            secondaryTitleLabel.setText("Failed to load KPI");
             chartContainer.getChildren().clear();
         }
     }
 
-    private void renderChart(List<DataPoint> data, ChartType type) {
+    private double getSecondaryValue(KPIType type,
+                                     LocalDate start,
+                                     LocalDate end,
+                                     String bakerySelection,
+                                     List<Integer> scopeBakeryIds) throws Exception {
+
+        return switch (type) {
+            case REVENUE_OVER_TIME, REVENUE_BY_BAKERY ->
+                    dao.getInProgressRevenue(start, end,
+                            type == KPIType.REVENUE_BY_BAKERY ? ALL_BAKERIES_ADMIN : bakerySelection,
+                            scopeBakeryIds);
+
+            case AVERAGE_ORDER_VALUE ->
+                    dao.getInProgressAverageOrderValue(start, end, bakerySelection, scopeBakeryIds);
+
+            case COMPLETION_RATE ->
+                    dao.getInProgressRate(start, end, bakerySelection, scopeBakeryIds);
+
+            case TOP_PRODUCTS -> {
+                double sum = 0;
+                for (DataPoint dp : dao.getInProgressTopProducts(start, end, bakerySelection, scopeBakeryIds)) {
+                    sum += dp.getValue();
+                }
+                yield sum;
+            }
+
+            case SALES_BY_EMPLOYEE ->
+                    dao.getInProgressTotalSalesByEmployee(start, end, bakerySelection, scopeBakeryIds);
+        };
+    }
+
+    private List<DataPoint> getSecondaryChartData(KPIType type,
+                                                  LocalDate start,
+                                                  LocalDate end,
+                                                  String bakerySelection,
+                                                  List<Integer> scopeBakeryIds) throws Exception {
+
+        return switch (type) {
+            case REVENUE_OVER_TIME ->
+                    dao.getInProgressRevenueOverTime(start, end, bakerySelection, scopeBakeryIds);
+
+            case REVENUE_BY_BAKERY ->
+                    dao.getInProgressRevenueByBakery(start, end, scopeBakeryIds);
+
+            case AVERAGE_ORDER_VALUE ->
+                    dao.getInProgressAverageOrderValueOverTime(start, end, bakerySelection, scopeBakeryIds);
+
+            case COMPLETION_RATE ->
+                    dao.getInProgressRateOverTime(start, end, bakerySelection, scopeBakeryIds);
+
+            case TOP_PRODUCTS ->
+                    dao.getInProgressTopProducts(start, end, bakerySelection, scopeBakeryIds);
+
+            case SALES_BY_EMPLOYEE ->
+                    dao.getInProgressSalesByEmployee(start, end, bakerySelection, scopeBakeryIds);
+        };
+    }
+
+    private String getSecondaryTitle(KPIType type) {
+        return switch (type) {
+            case REVENUE_OVER_TIME, REVENUE_BY_BAKERY -> "Revenue (In Progress)";
+            case AVERAGE_ORDER_VALUE -> "Avg Order Value (In Progress)";
+            case COMPLETION_RATE -> "In Progress Rate";
+            case TOP_PRODUCTS -> "Units (In Progress)";
+            case SALES_BY_EMPLOYEE -> "Sales (In Progress)";
+        };
+    }
+
+    private String formatValueForType(KPIType type, double value) {
+        return switch (type) {
+            case TOP_PRODUCTS -> String.format("%.0f Units", value);
+            case COMPLETION_RATE -> String.format("%.2f%%", value);
+            case REVENUE_OVER_TIME,
+                 REVENUE_BY_BAKERY,
+                 AVERAGE_ORDER_VALUE,
+                 SALES_BY_EMPLOYEE -> String.format("$%.2f", value);
+        };
+    }
+
+    private void renderChart(List<DataPoint> primaryData,
+                             List<DataPoint> secondaryData,
+                             KPIType kpiType,
+                             ChartType chartType,
+                             double primaryValue,
+                             double secondaryValue) {
+
         chartContainer.getChildren().clear();
 
-        switch (type) {
-            case LINE -> renderLineChart(data);
-            case BAR -> renderBarChart(data);
-            case PIE -> renderPieChart(data);
+        switch (chartType) {
+            case LINE -> renderLineChart(primaryData, secondaryData);
+            case BAR -> renderBarChart(primaryData, secondaryData);
+            case PIE -> renderPieChart(primaryData, secondaryData, kpiType, primaryValue, secondaryValue);
         }
     }
 
-    private void renderLineChart(List<DataPoint> data) {
+    private void renderLineChart(List<DataPoint> primaryData, List<DataPoint> secondaryData) {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         LineChart<String, Number> chart = new LineChart<>(xAxis, yAxis);
 
-        chart.setLegendVisible(false);
+        XYChart.Series<String, Number> recognizedSeries = new XYChart.Series<>();
+        recognizedSeries.setName("Recognized");
 
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
-
-        for (DataPoint dp : data) {
-            series.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+        for (DataPoint dp : primaryData) {
+            recognizedSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
         }
 
-        chart.getData().add(series);
+        chart.getData().add(recognizedSeries);
+
+        if (secondaryData != null && !secondaryData.isEmpty()) {
+            XYChart.Series<String, Number> inProgressSeries = new XYChart.Series<>();
+            inProgressSeries.setName("In Progress");
+
+            for (DataPoint dp : secondaryData) {
+                inProgressSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+            }
+
+            chart.getData().add(inProgressSeries);
+            chart.setLegendVisible(true);
+        } else {
+            chart.setLegendVisible(false);
+        }
+
         chartContainer.getChildren().add(chart);
     }
 
-    private void renderBarChart(List<DataPoint> data) {
+    private void renderBarChart(List<DataPoint> primaryData, List<DataPoint> secondaryData) {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
 
-        chart.setLegendVisible(false);
+        XYChart.Series<String, Number> recognizedSeries = new XYChart.Series<>();
+        recognizedSeries.setName("Recognized");
 
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
-
-        for (DataPoint dp : data) {
-            series.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+        for (DataPoint dp : primaryData) {
+            recognizedSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
         }
 
-        chart.getData().add(series);
+        chart.getData().add(recognizedSeries);
+
+        if (secondaryData != null && !secondaryData.isEmpty()) {
+            XYChart.Series<String, Number> inProgressSeries = new XYChart.Series<>();
+            inProgressSeries.setName("In Progress");
+
+            for (DataPoint dp : secondaryData) {
+                inProgressSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+            }
+
+            chart.getData().add(inProgressSeries);
+            chart.setLegendVisible(true);
+        } else {
+            chart.setLegendVisible(false);
+        }
+
         chartContainer.getChildren().add(chart);
     }
 
-    private void renderPieChart(List<DataPoint> data) {
+    private void renderPieChart(List<DataPoint> primaryData,
+                                List<DataPoint> secondaryData,
+                                KPIType kpiType,
+                                double primaryValue,
+                                double secondaryValue) {
 
         PieChart chart = new PieChart();
+        chart.setLegendVisible(true);
 
-        for (DataPoint dp : data) {
-            chart.getData().add(new PieChart.Data(dp.getLabel(), dp.getValue()));
+        switch (kpiType) {
+
+            case REVENUE_OVER_TIME, AVERAGE_ORDER_VALUE -> {
+                double recognizedTotal = sumValues(primaryData);
+                double inProgressTotal = sumValues(secondaryData);
+                double grandTotal = recognizedTotal + inProgressTotal;
+
+                if (recognizedTotal > 0) {
+                    chart.getData().add(new PieChart.Data(
+                            formatPieLabel("Recognized", recognizedTotal, grandTotal),
+                            recognizedTotal
+                    ));
+                }
+                if (inProgressTotal > 0) {
+                    chart.getData().add(new PieChart.Data(
+                            formatPieLabel("In Progress", inProgressTotal, grandTotal),
+                            inProgressTotal
+                    ));
+                }
+            }
+
+            case COMPLETION_RATE -> {
+                double recognizedRate = primaryValue;
+                double inProgressRate = secondaryValue;
+                double grandTotal = recognizedRate + inProgressRate;
+
+                if (recognizedRate > 0) {
+                    chart.getData().add(new PieChart.Data(
+                            formatPieLabel("Recognized", recognizedRate, grandTotal),
+                            recognizedRate
+                    ));
+                }
+                if (inProgressRate > 0) {
+                    chart.getData().add(new PieChart.Data(
+                            formatPieLabel("In Progress", inProgressRate, grandTotal),
+                            inProgressRate
+                    ));
+                }
+            }
+
+            case REVENUE_BY_BAKERY, TOP_PRODUCTS, SALES_BY_EMPLOYEE -> {
+                Map<String, Double> merged = mergeByLabel(primaryData, secondaryData);
+                double grandTotal = sumMapValues(merged);
+
+                for (Map.Entry<String, Double> entry : merged.entrySet()) {
+                    if (entry.getValue() > 0) {
+                        chart.getData().add(new PieChart.Data(
+                                formatPieLabel(entry.getKey(), entry.getValue(), grandTotal),
+                                entry.getValue()
+                        ));
+                    }
+                }
+            }
         }
 
         chartContainer.getChildren().add(chart);
+    }
+
+    private String formatPieLabel(String label, double value, double total) {
+        if (total <= 0) {
+            return label;
+        }
+        double percentage = (value / total) * 100.0;
+        return String.format("%s (%.1f%%)", label, percentage);
+    }
+
+    private double sumValues(List<DataPoint> data) {
+        double sum = 0.0;
+        if (data != null) {
+            for (DataPoint dp : data) {
+                sum += dp.getValue();
+            }
+        }
+        return sum;
+    }
+
+    private double sumMapValues(Map<String, Double> data) {
+        double sum = 0.0;
+        for (double value : data.values()) {
+            sum += value;
+        }
+        return sum;
+    }
+
+    private Map<String, Double> mergeByLabel(List<DataPoint> primaryData, List<DataPoint> secondaryData) {
+        Map<String, Double> merged = new LinkedHashMap<>();
+
+        if (primaryData != null) {
+            for (DataPoint dp : primaryData) {
+                merged.merge(dp.getLabel(), dp.getValue(), Double::sum);
+            }
+        }
+
+        if (secondaryData != null) {
+            for (DataPoint dp : secondaryData) {
+                merged.merge(dp.getLabel(), dp.getValue(), Double::sum);
+            }
+        }
+
+        return sortDescendingByValue(merged);
+    }
+
+    private Map<String, Double> sortDescendingByValue(Map<String, Double> input) {
+        List<Map.Entry<String, Double>> entries = new ArrayList<>(input.entrySet());
+        entries.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+
+        Map<String, Double> sorted = new LinkedHashMap<>();
+        for (Map.Entry<String, Double> entry : entries) {
+            sorted.put(entry.getKey(), entry.getValue());
+        }
+        return sorted;
     }
 
     private void configureDatePickers(String bakerySelection) {
@@ -291,8 +522,12 @@ public class AnalyticsController {
             LocalDate first = validDates.get(0);
             LocalDate last  = validDates.get(validDates.size() - 1);
 
-            startDatePicker.setValue(first);
-            endDatePicker.setValue(last);
+            if (startDatePicker.getValue() == null) {
+                startDatePicker.setValue(first);
+            }
+            if (endDatePicker.getValue() == null) {
+                endDatePicker.setValue(last);
+            }
 
             Set<LocalDate> validSet = new HashSet<>(validDates);
 
