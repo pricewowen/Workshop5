@@ -7,6 +7,7 @@ import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StageIconHelper;
+import io.sentry.Sentry;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -213,6 +214,7 @@ public class MainController {
         String username = session.getCurrentUser() != null ? session.getCurrentUser().getUsername() : "unknown";
 
         LogData.logAction("LOGOUT", "User logged out: " + username);
+        Sentry.setUser(null);
         session.clearSession();
 
         try {

@@ -8,6 +8,7 @@ import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.User;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.StageIconHelper;
+import io.sentry.Sentry;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -61,6 +62,11 @@ public class LoginController {
                     showError("You do not have " + selectedRole + " access");
                     LogData.logAction("LOGIN_FAILED", "Role mismatch for email: " + email
                             + " (selected: " + selectedRole + ", actual: " + auth.getRole() + ")");
+                    Sentry.withScope(scope -> {
+                        scope.setTag("action", "LOGIN_FAILED");
+                        scope.setTag("reason", "role_mismatch");
+                        Sentry.captureMessage("Login failed: role mismatch for " + email, io.sentry.SentryLevel.WARNING);
+                    });
                     return;
                 }
 
@@ -74,6 +80,13 @@ public class LoginController {
                 api.setToken(auth.getToken());
                 UserSession session = UserSession.getInstance();
                 session.createSession(user, auth.getToken());
+
+                // Attach user identity to Sentry for all subsequent events
+                io.sentry.protocol.User sentryUser = new io.sentry.protocol.User();
+                sentryUser.setUsername(auth.getUsername());
+                sentryUser.setEmail(email);
+                Sentry.setUser(sentryUser);
+                Sentry.setTag("role", auth.getRole().toLowerCase());
 
                 // Compute analytics eligibility for EMPLOYEE
                 if (session.isEmployee()) {
@@ -95,9 +108,20 @@ public class LoginController {
             } else if (response.statusCode() == 401 || response.statusCode() == 403) {
                 showError("Invalid email or password");
                 LogData.logAction("LOGIN_FAILED", "Failed login for email: " + email);
+                Sentry.withScope(scope -> {
+                    scope.setTag("action", "LOGIN_FAILED");
+                    scope.setTag("reason", "invalid_credentials");
+                    Sentry.captureMessage("Login failed: invalid credentials for " + email, io.sentry.SentryLevel.WARNING);
+                });
             } else {
                 showError("Login failed (server error " + response.statusCode() + ")");
                 LogData.logAction("LOGIN_FAILED", "Server error " + response.statusCode() + " for email: " + email);
+                Sentry.withScope(scope -> {
+                    scope.setTag("action", "LOGIN_FAILED");
+                    scope.setTag("reason", "server_error");
+                    scope.setTag("status_code", String.valueOf(response.statusCode()));
+                    Sentry.captureMessage("Login failed: server error " + response.statusCode() + " for " + email, io.sentry.SentryLevel.ERROR);
+                });
             }
 
         } catch (Exception e) {

@@ -7,6 +7,8 @@ import com.sait.workshop05.models.Product;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
 import com.sait.workshop05.util.ValidationResult;
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -396,6 +398,11 @@ public class ProductManagementController {
         try {
             CatalogApi.deleteProduct(selected.getProductId());
             LogData.logAction("DELETE", "Product");
+            Sentry.withScope(scope -> {
+                scope.setTag("action", "DELETE");
+                scope.setTag("entity", "product");
+                Sentry.captureMessage("Deleted product #" + selected.getProductId() + " (" + selected.getProductName() + ")", SentryLevel.WARNING);
+            });
             refreshTable();
             onClear();
             lblStatus.setText("Deleted product #" + selected.getProductId());
