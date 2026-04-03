@@ -11,13 +11,10 @@
       styleClass="page-root"
       style="-fx-padding: 20;">
 
-    <!-- Title -->
     <Label text="Analytics Overview"
            styleClass="page-title" />
 
-    <!-- Filters -->
     <HBox spacing="15">
-
         <DatePicker fx:id="startDatePicker" promptText="Start Date" />
         <DatePicker fx:id="endDatePicker" promptText="End Date" />
 
@@ -26,17 +23,10 @@
         <ComboBox fx:id="kpiComboBox" promptText="Select KPI" />
 
         <ComboBox fx:id="chartTypeComboBox" promptText="Chart Type" />
-
-        <Button text="Refresh"
-                fx:id="refreshButton"
-                styleClass="btn-accent"
-                onAction="#onRefresh" />
     </HBox>
 
-    <!-- KPI Card -->
-    <HBox>
+    <HBox spacing="15">
         <VBox styleClass="analytics-card" spacing="5">
-
             <Label fx:id="kpiValueLabel"
                    text="0.00"
                    styleClass="kpi-value" />
@@ -44,11 +34,18 @@
                    text="KPI Name"
                    styleClass="hint-label" />
         </VBox>
+
+        <VBox styleClass="analytics-card" spacing="5">
+            <Label fx:id="secondaryValueLabel"
+                   text="0.00"
+                   styleClass="kpi-value" />
+            <Label fx:id="secondaryTitleLabel"
+                   text="Pending / In Progress"
+                   styleClass="hint-label" />
+        </VBox>
     </HBox>
 
-    <!-- Chart Container -->
     <StackPane fx:id="chartContainer"
-           prefHeight="400"
-           styleClass="analytics-chart-container"/>
-
+               prefHeight="400"
+               styleClass="analytics-chart-container"/>
 </VBox>
