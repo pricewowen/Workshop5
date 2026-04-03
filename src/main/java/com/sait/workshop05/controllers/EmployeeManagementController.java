@@ -10,6 +10,8 @@ import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
 import com.sait.workshop05.util.ValidationResult;
 import com.sait.workshop05.util.AddressInputHelper;
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -290,6 +292,12 @@ public class EmployeeManagementController {
         try {
             dao.deleteEmployee(selected.getEmployeeId());
             LogData.logAction("DELETE", "Employee");
+            Sentry.withScope(scope -> {
+                scope.setTag("action", "DELETE");
+                scope.setTag("entity", "employee");
+                Sentry.captureMessage("Deleted employee #" + selected.getEmployeeId()
+                        + " (" + selected.getEmployeeFirstName() + " " + selected.getEmployeeLastName() + ")", SentryLevel.WARNING);
+            });
             refreshTable();
             onClear();
             lblStatus.setText("Deleted employee #" + selected.getEmployeeId());

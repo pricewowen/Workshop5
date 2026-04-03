@@ -8,6 +8,8 @@ import com.sait.workshop05.util.OrderStatus;
 import com.sait.workshop05.util.StringUtil;
 import com.sait.workshop05.util.ValidationResult;
 import com.sait.workshop05.util.AddressInputHelper;
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -320,6 +322,11 @@ public class CustomerManagementController {
         try {
             dao.deleteCustomer(selected.getCustomerId());
             LogData.logAction("DELETE", "Customer");
+            Sentry.withScope(scope -> {
+                scope.setTag("action", "DELETE");
+                scope.setTag("entity", "customer");
+                Sentry.captureMessage("Deleted customer #" + selected.getCustomerId() + " (" + selected.getFullName() + ")", SentryLevel.WARNING);
+            });
             refreshTable();
             onClear();
             lblStatus.setText("Deleted customer #" + selected.getCustomerId());

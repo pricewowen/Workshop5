@@ -2,6 +2,8 @@ package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.database.BakeryDAO;
 import com.sait.workshop05.logging.LogData;
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import com.sait.workshop05.models.*;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
@@ -261,8 +263,13 @@ public class BakeryLocationsController {
         try {
             dao.deleteBakery(selected);
 
+            LogData.logAction("DELETE", "Bakery");
+            Sentry.withScope(scope -> {
+                scope.setTag("action", "DELETE");
+                scope.setTag("entity", "bakery");
+                Sentry.captureMessage("Deleted bakery #" + selected.getBakeryId() + " (" + selected.getBakeryName() + ")", SentryLevel.WARNING);
+            });
             refreshTable();
-            LogData.logAction("DELETE", "Bakery_" + selected.getBakeryId());
 
             // show alert
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -320,7 +327,7 @@ public class BakeryLocationsController {
 
             // refresh
             tblBakeryLocations.refresh();
-            LogData.logAction("UPDATE", "Bakery_" + selected.getBakeryId());
+            LogData.logAction("UPDATE", "Bakery");
 
             // show alert
             Alert alert = new Alert(Alert.AlertType.INFORMATION);

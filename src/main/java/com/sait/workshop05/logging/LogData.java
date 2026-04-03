@@ -1,6 +1,8 @@
 package com.sait.workshop05.logging;
 
 import com.sait.workshop05.models.Log;
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -43,6 +45,11 @@ public class LogData {
                 System.err.println(log.getCurrentDate() + " | USER=" + log.getUser() + " | ACTION=" + log.getAction()
                         + "_FAILED | TARGET=" + log.getTarget());
                 e.printStackTrace();
+                Sentry.withScope(scope -> {
+                    scope.setLevel(SentryLevel.ERROR);
+                    scope.setTag("action", log.getAction());
+                    Sentry.captureException(e);
+                });
             }
         }
     }
@@ -54,7 +61,12 @@ public class LogData {
      * @param e error message returned
      */
     public static void handleException(String action, Exception e) {
-        logError(new Log(action, e.getMessage()));
+        Sentry.withScope(scope -> {
+            scope.setLevel(SentryLevel.ERROR);
+            scope.setTag("action", action);
+            Sentry.captureException(e);
+        });
+        logError(new Log(action, e.getMessage() != null ? e.getMessage() : "no detail"));
     }
 
     /**
