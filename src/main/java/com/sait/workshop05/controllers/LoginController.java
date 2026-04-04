@@ -3,6 +3,7 @@ package com.sait.workshop05.controllers;
 import com.sait.workshop05.api.ApiClient;
 import com.sait.workshop05.api.dto.AuthResponseDto;
 import com.sait.workshop05.api.dto.LoginRequestDto;
+import com.sait.workshop05.database.AuthDAO;
 import com.sait.workshop05.database.EmployeeAccessDAO;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.User;
@@ -30,7 +31,11 @@ public class LoginController {
     @FXML
     private void initialize() {
         if (errorLabel != null) errorLabel.setVisible(false);
-        if (roleComboBox != null) roleComboBox.getSelectionModel().selectFirst();
+        if (roleComboBox != null) {
+            roleComboBox.getItems().clear();
+            roleComboBox.getItems().addAll("ADMIN", "EMPLOYEE");
+            roleComboBox.getSelectionModel().selectFirst();
+        }
         if (passwordField != null) passwordField.setOnAction(event -> handleLogin());
     }
 
@@ -51,11 +56,13 @@ public class LoginController {
         }
 
         try {
-            ApiClient api = ApiClient.getInstance();
-            HttpResponse<String> response = api.post("/api/v1/auth/login", new LoginRequestDto(email, password));
+            // Porting to API authentication
+            ApiClient client = ApiClient.getInstance();
+            LoginRequestDto loginRequest = new LoginRequestDto(email, password);
+            HttpResponse<String> response = client.post("/auth/login", loginRequest);
 
             if (response.statusCode() == 200) {
-                AuthResponseDto auth = api.getMapper().readValue(response.body(), AuthResponseDto.class);
+                AuthResponseDto auth = client.getMapper().readValue(response.body(), AuthResponseDto.class);
 
                 // Validate that the returned role matches the selected role
                 if (!auth.getRole().equalsIgnoreCase(selectedRole)) {
@@ -70,14 +77,15 @@ public class LoginController {
                     return;
                 }
 
-                // Build a lightweight User object from the auth response
+                client.setToken(auth.getToken());
+
+                // Create a User object from response to maintain compatibility with existing session
                 User user = new User();
                 user.setUsername(auth.getUsername());
                 user.setEmail(email);
-                user.setRole(auth.getRole().toUpperCase());
+                user.setRole(auth.getRole());
 
-                // Store session and JWT
-                api.setToken(auth.getToken());
+                // Store session
                 UserSession session = UserSession.getInstance();
                 session.createSession(user, auth.getToken());
 
@@ -95,12 +103,12 @@ public class LoginController {
                     session.setEmployeeAnalyticsAccess(employeeId, bakeryIds);
 
                     if (session.canAccessAnalytics()) {
-                        LogData.logAction("LOGIN", "Employee login: " + auth.getUsername() + " (Analytics ENABLED)");
+                        LogData.logAction("LOGIN", "Employee login: " + user.getUsername() + " (Analytics ENABLED)");
                     } else {
-                        LogData.logAction("LOGIN", "Employee login: " + auth.getUsername() + " (Analytics DISABLED)");
+                        LogData.logAction("LOGIN", "Employee login: " + user.getUsername() + " (Analytics DISABLED)");
                     }
                 } else {
-                    LogData.logAction("LOGIN", "Admin login: " + auth.getUsername());
+                    LogData.logAction("LOGIN", selectedRole + " login via API: " + user.getUsername());
                 }
 
                 openMainView();
@@ -125,7 +133,10 @@ public class LoginController {
             }
 
         } catch (Exception e) {
-            showError("Could not connect to the server. Is the API running?");
+            String errorMsg = "Authentication exception: " + e.getClass().getSimpleName() + " - " + e.getMessage();
+            showError("Authentication error: " + e.getMessage());
+            System.err.println("[DEBUG_LOG] " + errorMsg);
+            e.printStackTrace();
             LogData.handleException("LOGIN", e);
         }
     }

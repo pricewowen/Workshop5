@@ -12,6 +12,54 @@ import java.time.LocalDateTime;
 public class AuthDAO {
 
     /**
+     * Authenticate a user with email and password
+     * @param email The email address
+     * @param password The plain text password
+     * @param role The role to authenticate as (EMPLOYEE or ADMIN)
+     * @return User object if authentication successful, null otherwise
+     */
+    public static User authenticateByEmail(String email, String password, String role) {
+        String sql = "SELECT userId, userUsername, userEmail, userPasswordHash, userRole, userCreatedAt " +
+                    "FROM User WHERE userEmail = ? AND userRole = ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, email);
+            stmt.setString(2, role.toUpperCase());
+
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                String storedHash = rs.getString("userPasswordHash");
+
+                // Verify password using BCrypt
+                if (BCrypt.checkpw(password, storedHash)) {
+                    User user = new User();
+                    user.setUserId(rs.getInt("userId"));
+                    user.setUsername(rs.getString("userUsername"));
+                    user.setEmail(rs.getString("userEmail"));
+                    user.setPasswordHash(storedHash);
+                    user.setRole(rs.getString("userRole"));
+
+                    Timestamp timestamp = rs.getTimestamp("userCreatedAt");
+                    if (timestamp != null) {
+                        user.setCreatedAt(timestamp.toLocalDateTime());
+                    }
+
+                    return user;
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error authenticating user by email: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /**
      * Authenticate a user with username and password
      * @param username The username
      * @param password The plain text password
