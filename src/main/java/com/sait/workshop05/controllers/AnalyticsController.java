@@ -204,9 +204,23 @@ public class AnalyticsController {
 
             ChartType chartType = ChartType.fromDisplayName(chartTypeComboBox.getValue());
 
+            List<DataPoint> primaryData =
+                    handler.getChartData(start, end, bakerySelection, scopeBakeryIds);
+
+            List<DataPoint> secondaryData =
+                    getSecondaryChartData(type, start, end, bakerySelection, scopeBakeryIds);
+
+            if (usesDateLabels(type)) {
+                Comparator<DataPoint> byDate =
+                        Comparator.comparing(dp -> LocalDate.parse(dp.getLabel()));
+
+                primaryData.sort(byDate);
+                secondaryData.sort(byDate);
+            }
+
             renderChart(
-                    handler.getChartData(start, end, bakerySelection, scopeBakeryIds),
-                    getSecondaryChartData(type, start, end, bakerySelection, scopeBakeryIds),
+                    primaryData,
+                    secondaryData,
                     type,
                     chartType,
                     primaryValue,
@@ -221,6 +235,12 @@ public class AnalyticsController {
             secondaryTitleLabel.setText("Failed to load KPI");
             chartContainer.getChildren().clear();
         }
+    }
+
+    private boolean usesDateLabels(KPIType type) {
+        return type == KPIType.REVENUE_OVER_TIME
+                || type == KPIType.AVERAGE_ORDER_VALUE
+                || type == KPIType.COMPLETION_RATE;
     }
 
     private double getSecondaryValue(KPIType type,
@@ -312,13 +332,15 @@ public class AnalyticsController {
         chartContainer.getChildren().clear();
 
         switch (chartType) {
-            case LINE -> renderLineChart(primaryData, secondaryData);
-            case BAR -> renderBarChart(primaryData, secondaryData);
+            case LINE -> renderLineChart(primaryData, secondaryData, kpiType);
+            case BAR -> renderBarChart(primaryData, secondaryData, kpiType);
             case PIE -> renderPieChart(primaryData, secondaryData, kpiType, primaryValue, secondaryValue);
         }
     }
 
-    private void renderLineChart(List<DataPoint> primaryData, List<DataPoint> secondaryData) {
+    private void renderLineChart(List<DataPoint> primaryData,
+                                 List<DataPoint> secondaryData,
+                                 KPIType kpiType) {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
@@ -327,20 +349,46 @@ public class AnalyticsController {
         XYChart.Series<String, Number> recognizedSeries = new XYChart.Series<>();
         recognizedSeries.setName("Recognized");
 
-        for (DataPoint dp : primaryData) {
-            recognizedSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+        XYChart.Series<String, Number> inProgressSeries = new XYChart.Series<>();
+        inProgressSeries.setName("In Progress");
+
+        if (usesDateLabels(kpiType)) {
+            xAxis.setAutoRanging(false);
+
+            List<String> orderedCategories = buildOrderedDateCategories(primaryData, secondaryData);
+            xAxis.setCategories(FXCollections.observableArrayList(orderedCategories));
+
+            Map<String, Double> primaryMap = toValueMap(primaryData);
+            Map<String, Double> secondaryMap = toValueMap(secondaryData);
+
+            for (String category : orderedCategories) {
+                Double recognizedValue = primaryMap.get(category);
+                if (recognizedValue != null) {
+                    recognizedSeries.getData().add(new XYChart.Data<>(category, recognizedValue));
+                }
+
+                if (secondaryData != null && !secondaryData.isEmpty()) {
+                    Double inProgressValue = secondaryMap.get(category);
+                    if (inProgressValue != null) {
+                        inProgressSeries.getData().add(new XYChart.Data<>(category, inProgressValue));
+                    }
+                }
+            }
+        } else {
+            for (DataPoint dp : primaryData) {
+                recognizedSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+            }
+
+            if (secondaryData != null && !secondaryData.isEmpty()) {
+                for (DataPoint dp : secondaryData) {
+                    inProgressSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+                }
+            }
         }
 
         chart.getData().add(recognizedSeries);
 
         if (secondaryData != null && !secondaryData.isEmpty()) {
-            XYChart.Series<String, Number> inProgressSeries = new XYChart.Series<>();
-            inProgressSeries.setName("In Progress");
-
-            for (DataPoint dp : secondaryData) {
-                inProgressSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
-            }
-
             chart.getData().add(inProgressSeries);
             chart.setLegendVisible(true);
         } else {
@@ -350,7 +398,9 @@ public class AnalyticsController {
         chartContainer.getChildren().add(chart);
     }
 
-    private void renderBarChart(List<DataPoint> primaryData, List<DataPoint> secondaryData) {
+    private void renderBarChart(List<DataPoint> primaryData,
+                                List<DataPoint> secondaryData,
+                                KPIType kpiType) {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
@@ -359,20 +409,44 @@ public class AnalyticsController {
         XYChart.Series<String, Number> recognizedSeries = new XYChart.Series<>();
         recognizedSeries.setName("Recognized");
 
-        for (DataPoint dp : primaryData) {
-            recognizedSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+        XYChart.Series<String, Number> inProgressSeries = new XYChart.Series<>();
+        inProgressSeries.setName("In Progress");
+
+        if (usesDateLabels(kpiType)) {
+            xAxis.setAutoRanging(false);
+
+            List<String> orderedCategories = buildOrderedDateCategories(primaryData, secondaryData);
+            xAxis.setCategories(FXCollections.observableArrayList(orderedCategories));
+
+            Map<String, Double> primaryMap = toValueMap(primaryData);
+            Map<String, Double> secondaryMap = toValueMap(secondaryData);
+
+            for (String category : orderedCategories) {
+                recognizedSeries.getData().add(
+                        new XYChart.Data<>(category, primaryMap.getOrDefault(category, 0.0))
+                );
+
+                if (secondaryData != null && !secondaryData.isEmpty()) {
+                    inProgressSeries.getData().add(
+                            new XYChart.Data<>(category, secondaryMap.getOrDefault(category, 0.0))
+                    );
+                }
+            }
+        } else {
+            for (DataPoint dp : primaryData) {
+                recognizedSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+            }
+
+            if (secondaryData != null && !secondaryData.isEmpty()) {
+                for (DataPoint dp : secondaryData) {
+                    inProgressSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+                }
+            }
         }
 
         chart.getData().add(recognizedSeries);
 
         if (secondaryData != null && !secondaryData.isEmpty()) {
-            XYChart.Series<String, Number> inProgressSeries = new XYChart.Series<>();
-            inProgressSeries.setName("In Progress");
-
-            for (DataPoint dp : secondaryData) {
-                inProgressSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
-            }
-
             chart.getData().add(inProgressSeries);
             chart.setLegendVisible(true);
         } else {
@@ -380,6 +454,43 @@ public class AnalyticsController {
         }
 
         chartContainer.getChildren().add(chart);
+    }
+
+    private List<String> buildOrderedDateCategories(List<DataPoint> primaryData,
+                                                    List<DataPoint> secondaryData) {
+
+        Set<LocalDate> dates = new TreeSet<>();
+
+        if (primaryData != null) {
+            for (DataPoint dp : primaryData) {
+                dates.add(LocalDate.parse(dp.getLabel()));
+            }
+        }
+
+        if (secondaryData != null) {
+            for (DataPoint dp : secondaryData) {
+                dates.add(LocalDate.parse(dp.getLabel()));
+            }
+        }
+
+        List<String> ordered = new ArrayList<>();
+        for (LocalDate date : dates) {
+            ordered.add(date.toString());
+        }
+
+        return ordered;
+    }
+
+    private Map<String, Double> toValueMap(List<DataPoint> data) {
+        Map<String, Double> map = new HashMap<>();
+
+        if (data != null) {
+            for (DataPoint dp : data) {
+                map.put(dp.getLabel(), dp.getValue());
+            }
+        }
+
+        return map;
     }
 
     private void renderPieChart(List<DataPoint> primaryData,
