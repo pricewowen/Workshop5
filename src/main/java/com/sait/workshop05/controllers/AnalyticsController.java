@@ -250,26 +250,25 @@ public class AnalyticsController {
 
         return switch (type) {
             case REVENUE_OVER_TIME, REVENUE_BY_BAKERY ->
-                    dao.getInProgressRevenue(start, end,
-                            type == KPIType.REVENUE_BY_BAKERY ? ALL_BAKERIES_ADMIN : bakerySelection,
-                            scopeBakeryIds);
+                    AnalyticsApi.getInProgressRevenue(start, end,
+                            type == KPIType.REVENUE_BY_BAKERY ? ALL_BAKERIES_ADMIN : bakerySelection);
 
             case AVERAGE_ORDER_VALUE ->
-                    dao.getInProgressAverageOrderValue(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressAverageOrderValue(start, end, bakerySelection);
 
             case COMPLETION_RATE ->
-                    dao.getInProgressRate(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressRate(start, end, bakerySelection);
 
             case TOP_PRODUCTS -> {
                 double sum = 0;
-                for (DataPoint dp : dao.getInProgressTopProducts(start, end, bakerySelection, scopeBakeryIds)) {
+                for (DataPoint dp : AnalyticsApi.getInProgressTopProducts(start, end, bakerySelection)) {
                     sum += dp.getValue();
                 }
                 yield sum;
             }
 
             case SALES_BY_EMPLOYEE ->
-                    dao.getInProgressTotalSalesByEmployee(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressTotalSalesByEmployee(start, end, bakerySelection);
         };
     }
 
@@ -281,22 +280,22 @@ public class AnalyticsController {
 
         return switch (type) {
             case REVENUE_OVER_TIME ->
-                    dao.getInProgressRevenueOverTime(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressRevenueOverTime(start, end, bakerySelection);
 
             case REVENUE_BY_BAKERY ->
-                    dao.getInProgressRevenueByBakery(start, end, scopeBakeryIds);
+                    AnalyticsApi.getInProgressRevenueByBakery(start, end);
 
             case AVERAGE_ORDER_VALUE ->
-                    dao.getInProgressAverageOrderValueOverTime(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressAverageOrderValueOverTime(start, end, bakerySelection);
 
             case COMPLETION_RATE ->
-                    dao.getInProgressRateOverTime(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressRateOverTime(start, end, bakerySelection);
 
             case TOP_PRODUCTS ->
-                    dao.getInProgressTopProducts(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressTopProducts(start, end, bakerySelection);
 
             case SALES_BY_EMPLOYEE ->
-                    dao.getInProgressSalesByEmployee(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressSalesByEmployee(start, end, bakerySelection);
         };
     }
 
