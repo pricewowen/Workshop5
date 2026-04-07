@@ -13,7 +13,10 @@ import io.sentry.Sentry;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -22,33 +25,50 @@ import java.util.List;
 
 public class LoginController {
 
-    @FXML private ComboBox<String> roleComboBox;
     @FXML private TextField emailField;
     @FXML private PasswordField passwordField;
+    @FXML private TextField passwordVisible;
+    @FXML private Button togglePasswordBtn;
     @FXML private Button loginButton;
     @FXML private Label errorLabel;
+
+    private boolean passwordShown = false;
 
     @FXML
     private void initialize() {
         if (errorLabel != null) errorLabel.setVisible(false);
-        if (roleComboBox != null) {
-            roleComboBox.getItems().clear();
-            roleComboBox.getItems().addAll("ADMIN", "EMPLOYEE");
-            roleComboBox.getSelectionModel().selectFirst();
-        }
         if (passwordField != null) passwordField.setOnAction(event -> handleLogin());
+        if (passwordVisible != null) passwordVisible.setOnAction(event -> handleLogin());
+    }
+
+    @FXML
+    private void handleTogglePassword() {
+        passwordShown = !passwordShown;
+        if (passwordShown) {
+            passwordVisible.setText(passwordField.getText());
+            passwordVisible.setVisible(true);
+            passwordVisible.setManaged(true);
+            passwordField.setVisible(false);
+            passwordField.setManaged(false);
+            togglePasswordBtn.setText("Hide");
+        } else {
+            passwordField.setText(passwordVisible.getText());
+            passwordField.setVisible(true);
+            passwordField.setManaged(true);
+            passwordVisible.setVisible(false);
+            passwordVisible.setManaged(false);
+            togglePasswordBtn.setText("Show");
+        }
+    }
+
+    private String getCurrentPassword() {
+        return passwordShown ? passwordVisible.getText() : passwordField.getText();
     }
 
     @FXML
     private void handleLogin() {
-        String selectedRole = roleComboBox.getValue();
-        if (selectedRole == null || selectedRole.isEmpty()) {
-            showError("Please select a role");
-            return;
-        }
-
         String email = emailField.getText().trim();
-        String password = passwordField.getText();
+        String password = getCurrentPassword();
 
         if (email.isEmpty() || password.isEmpty()) {
             showError("Please enter both email and password");
@@ -59,20 +79,21 @@ public class LoginController {
             // Porting to API authentication
             ApiClient client = ApiClient.getInstance();
             LoginRequestDto loginRequest = new LoginRequestDto(email, password);
-            HttpResponse<String> response = client.post("/auth/login", loginRequest);
+            HttpResponse<String> response = client.post("/api/v1/auth/login", loginRequest);
 
             if (response.statusCode() == 200) {
                 AuthResponseDto auth = client.getMapper().readValue(response.body(), AuthResponseDto.class);
 
-                // Validate that the returned role matches the selected role
-                if (!auth.getRole().equalsIgnoreCase(selectedRole)) {
-                    showError("You do not have " + selectedRole + " access");
-                    LogData.logAction("LOGIN_FAILED", "Role mismatch for email: " + email
-                            + " (selected: " + selectedRole + ", actual: " + auth.getRole() + ")");
+                // Only ADMIN and EMPLOYEE accounts may access the management system
+                String role = auth.getRole();
+                if (!role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("EMPLOYEE")) {
+                    showError("This account does not have management access");
+                    LogData.logAction("LOGIN_FAILED", "Non-staff login attempt for email: " + email
+                            + " (role: " + role + ")");
                     Sentry.withScope(scope -> {
                         scope.setTag("action", "LOGIN_FAILED");
-                        scope.setTag("reason", "role_mismatch");
-                        Sentry.captureMessage("Login failed: role mismatch for " + email, io.sentry.SentryLevel.WARNING);
+                        scope.setTag("reason", "insufficient_role");
+                        Sentry.captureMessage("Login failed: non-staff role for " + email, io.sentry.SentryLevel.WARNING);
                     });
                     return;
                 }
@@ -108,7 +129,7 @@ public class LoginController {
                         LogData.logAction("LOGIN", "Employee login: " + user.getUsername() + " (Analytics DISABLED)");
                     }
                 } else {
-                    LogData.logAction("LOGIN", selectedRole + " login via API: " + user.getUsername());
+                    LogData.logAction("LOGIN", role + " login via API: " + user.getUsername());
                 }
 
                 openMainView();

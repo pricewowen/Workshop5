@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.collections.FXCollections?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
-<?import java.lang.String?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
@@ -37,20 +35,6 @@
 
                 <VBox spacing="15" prefWidth="320">
                     <VBox spacing="5">
-                        <Label text="Role" styleClass="form-label"/>
-                        <ComboBox fx:id="roleComboBox"
-                                  promptText="Select your role"
-                                  prefWidth="320" prefHeight="40">
-                            <items>
-                                <FXCollections fx:factory="observableArrayList">
-                                    <String fx:value="ADMIN"/>
-                                    <String fx:value="EMPLOYEE"/>
-                                </FXCollections>
-                            </items>
-                        </ComboBox>
-                    </VBox>
-
-                    <VBox spacing="5">
                         <Label text="Email" styleClass="form-label"/>
                         <TextField fx:id="emailField"
                                    promptText="Enter your email"
@@ -59,9 +43,26 @@
 
                     <VBox spacing="5">
                         <Label text="Password" styleClass="form-label"/>
-                        <PasswordField fx:id="passwordField"
-                                       promptText="Enter your password"
-                                       prefHeight="40"/>
+                        <HBox spacing="0" prefHeight="40">
+                            <StackPane HBox.hgrow="ALWAYS">
+                                <PasswordField fx:id="passwordField"
+                                              promptText="Enter your password"
+                                              prefHeight="40"
+                                              style="-fx-background-radius: 4 0 0 4;"/>
+                                <TextField fx:id="passwordVisible"
+                                           promptText="Enter your password"
+                                           prefHeight="40"
+                                           visible="false"
+                                           managed="false"
+                                           style="-fx-background-radius: 4 0 0 4;"/>
+                            </StackPane>
+                            <Button fx:id="togglePasswordBtn"
+                                    text="Show"
+                                    onAction="#handleTogglePassword"
+                                    prefHeight="40" prefWidth="60"
+                                    styleClass="toggle-password-btn"
+                                    style="-fx-background-radius: 0 4 4 0;"/>
+                        </HBox>
                     </VBox>
 
                     <Label fx:id="errorLabel"
