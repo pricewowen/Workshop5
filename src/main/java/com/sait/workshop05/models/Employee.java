@@ -4,8 +4,9 @@ import javafx.beans.property.*;
 
 public class Employee {
 
-    private final IntegerProperty employeeId = new SimpleIntegerProperty();
-    private final IntegerProperty userId = new SimpleIntegerProperty();
+    private final StringProperty employeeId = new SimpleStringProperty();
+    private final StringProperty userId = new SimpleStringProperty();
+    private final IntegerProperty bakeryId = new SimpleIntegerProperty();
     private final IntegerProperty addressId = new SimpleIntegerProperty();
 
     private final StringProperty employeeFirstName = new SimpleStringProperty();
@@ -21,13 +22,17 @@ public class Employee {
 
     public Employee() { }
 
-    public int getEmployeeId() { return employeeId.get(); }
-    public void setEmployeeId(int value) { employeeId.set(value); }
-    public IntegerProperty employeeIdProperty() { return employeeId; }
+    public String getEmployeeId() { return employeeId.get(); }
+    public void setEmployeeId(String value) { employeeId.set(value != null ? value : ""); }
+    public StringProperty employeeIdProperty() { return employeeId; }
 
-    public int getUserId() { return userId.get(); }
-    public void setUserId(int value) { userId.set(value); }
-    public IntegerProperty userIdProperty() { return userId; }
+    public String getUserId() { return userId.get(); }
+    public void setUserId(String value) { userId.set(value != null ? value : ""); }
+    public StringProperty userIdProperty() { return userId; }
+
+    public int getBakeryId() { return bakeryId.get(); }
+    public void setBakeryId(int value) { bakeryId.set(value); }
+    public IntegerProperty bakeryIdProperty() { return bakeryId; }
 
     public int getAddressId() { return addressId.get(); }
     public void setAddressId(int value) { addressId.set(value); }

@@ -1,15 +1,15 @@
 package com.sait.workshop05.models;
 
 public class OrderOption {
-    private final int orderId;
+    private final String orderId;
     private final String orderInfo;
 
-    public OrderOption(int orderId, String orderInfo) {
+    public OrderOption(String orderId, String orderInfo) {
         this.orderId = orderId;
         this.orderInfo = orderInfo;
     }
 
-    public int getOrderId() { return orderId; }
+    public String getOrderId() { return orderId; }
     public String getOrderInfo() { return orderInfo; }
 
     @Override

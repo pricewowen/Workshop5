@@ -1,6 +1,7 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.database.*;
+import com.sait.workshop05.api.OrderApi;
+import com.sait.workshop05.api.ReferenceApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.*;
 import com.sait.workshop05.util.ErrorHandler;
@@ -14,7 +15,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -37,7 +37,7 @@ public class OrderManagementController {
     @FXML private TabPane tabPane;
 
     @FXML private TableView<Order> tblOrders;
-    @FXML private TableColumn<Order, Integer> colOrderId;
+    @FXML private TableColumn<Order, String> colOrderId;
     @FXML private TableColumn<Order, String> colOrderCustomer;
     @FXML private TableColumn<Order, String> colOrderBakery;
     @FXML private TableColumn<Order, LocalDateTime> colOrderPlaced;
@@ -103,9 +103,6 @@ public class OrderManagementController {
     // ════════════════════════════════════════════════════════════
     // State
     // ════════════════════════════════════════════════════════════
-
-    private final OrderDAO orderDao = new OrderDAO();
-    private final ProductDAO productDao = new ProductDAO();
 
     // Tab 1
     private final ObservableList<Order> orderMaster = FXCollections.observableArrayList();
@@ -195,9 +192,9 @@ public class OrderManagementController {
             cboNewStatus.setValue(selected.getOrderStatus());
 
             try {
-                List<OrderItem> items = orderDao.getOrderItems(selected.getOrderId());
+                List<OrderItem> items = OrderApi.getOrderItems(selected.getOrderId());
                 tblOrderItems.setItems(FXCollections.observableArrayList(items));
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 LogData.handleException("LOAD_ORDER_ITEMS", e);
                 tblOrderItems.getItems().clear();
             }
@@ -292,22 +289,22 @@ public class OrderManagementController {
 
     private void loadTab2Combos() {
         try {
-            cboNewCustomer.setItems(FXCollections.observableArrayList(orderDao.getCustomerOptions()));
-            cboNewBakery.setItems(FXCollections.observableArrayList(orderDao.getBakeryOptions()));
-            AddressInputHelper.setAddressItems(cboNewAddress, orderDao.getAddressOptions());
-        } catch (SQLException e) {
+            cboNewCustomer.setItems(FXCollections.observableArrayList(ReferenceApi.loadCustomers()));
+            cboNewBakery.setItems(FXCollections.observableArrayList(ReferenceApi.loadBakeries()));
+            AddressInputHelper.setAddressItems(cboNewAddress, ReferenceApi.loadAddresses());
+        } catch (Exception e) {
             LogData.handleException("LOAD_ORDER_COMBOS", e);
-            ErrorHandler.showErrorDialog("Database Error", "Could not load dropdown lists.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load dropdown lists.", e.getMessage());
         }
     }
 
     private void loadCatalog() {
         try {
             catalogMaster.clear();
-            catalogMaster.addAll(productDao.getAllProducts());
-        } catch (SQLException e) {
+            catalogMaster.addAll(ReferenceApi.loadProducts());
+        } catch (Exception e) {
             LogData.handleException("LOAD_PRODUCT_CATALOG", e);
-            ErrorHandler.showErrorDialog("Database Error", "Could not load product catalog.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load product catalog.", e.getMessage());
         }
     }
 
@@ -318,12 +315,12 @@ public class OrderManagementController {
     private void loadOrderData() {
         try {
             orderMaster.clear();
-            orderMaster.addAll(orderDao.getAllOrders());
+            orderMaster.addAll(OrderApi.listOrders());
             lblOrderStatus.setText(orderMaster.size() + " order(s) loaded");
             LogData.logAction("READ", "Order");
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LogData.handleException("READ_ORDERS", e);
-            ErrorHandler.showErrorDialog("Database Error", "Could not load orders.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load orders.", e.getMessage());
         }
     }
 
@@ -358,12 +355,12 @@ public class OrderManagementController {
         }
 
         try {
-            orderDao.updateOrderStatus(selected.getOrderId(), newStatus);
+            OrderApi.updateOrderStatus(selected.getOrderId(), newStatus);
             LogData.logAction("UPDATE_STATUS",
                     "Order #" + selected.getOrderId() + ": " + currentStatus + " -> " + newStatus);
             loadOrderData();
             lblOrderStatus.setText("Updated order #" + selected.getOrderId() + " to " + newStatus);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LogData.handleException("UPDATE_ORDER_STATUS", e);
             ErrorHandler.showErrorDialog("Update Failed", "Could not update order status.", e.getMessage());
         }
@@ -537,29 +534,14 @@ public class OrderManagementController {
         } catch (IllegalArgumentException ex) {
             ErrorHandler.showWarning("Validation", ex.getMessage());
             return;
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             LogData.handleException("CREATE_ORDER_ADDRESS", ex);
-            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not resolve address.", ex.getMessage());
             return;
         }
 
-        // Build Order
-        Order order = new Order();
-        order.setCustomerId(customer.getCustomerId());
-        order.setBakeryId(bakery.getBakeryId());
-        order.setAddressId(address != null ? address.getAddressId() : 0);
-        order.setOrderPlacedDateTime(LocalDateTime.now());
-        order.setOrderScheduledDateTime(scheduledDateTime);
-        order.setOrderMethod(method);
-        order.setOrderComment(txtNewComment.getText() != null ? txtNewComment.getText().trim() : null);
-        order.setOrderTotal(total);
-        order.setOrderDiscount(discount);
-        order.setOrderStatus(OrderStatus.PENDING);
-
-        // Build items list
         List<OrderItem> items = new ArrayList<>(cartItems);
 
-        // Confirm
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirm Order");
         confirm.setHeaderText("Place order for " + customer.getFullName() + "?");
@@ -569,19 +551,26 @@ public class OrderManagementController {
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
         try {
-            int newOrderId = orderDao.createOrderWithItems(order, items);
+            String newOrderId = OrderApi.placeStaffOrder(
+                    customer.getCustomerId(),
+                    bakery.getBakeryId(),
+                    method,
+                    address != null ? address.getAddressId() : null,
+                    txtNewComment.getText() != null ? txtNewComment.getText().trim() : null,
+                    scheduledDateTime,
+                    discount,
+                    items
+            );
             LogData.logAction("CREATE_ORDER",
                     "Order #" + newOrderId + " for " + customer.getFullName()
-                    + " ($" + String.format("%.2f", total) + ")");
+                            + " ($" + String.format("%.2f", total) + ")");
 
-            // Clear the form
             clearNewOrderForm();
             lblNewOrderStatus.setText("Order #" + newOrderId + " placed successfully!");
 
-            // Refresh orders tab
             loadOrderData();
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LogData.handleException("CREATE_ORDER", e);
             ErrorHandler.showErrorDialog("Order Failed", "Could not place order.", e.getMessage());
         }
@@ -634,7 +623,7 @@ public class OrderManagementController {
         }
     }
 
-    private AddressOption resolveAddressSelection(boolean required) throws SQLException {
+    private AddressOption resolveAddressSelection(boolean required) throws Exception {
         AddressOption selected = cboNewAddress.getValue();
         if (selected != null) return selected;
 
@@ -644,7 +633,7 @@ public class OrderManagementController {
             return null;
         }
 
-        AddressOption resolved = SharedDAO.findOrCreateAddressFromInput(typed);
+        AddressOption resolved = ReferenceApi.createAddressFromTyped(typed);
         loadTab2Combos();
         AddressInputHelper.selectAddressById(cboNewAddress, resolved.getAddressId());
         return resolved;
