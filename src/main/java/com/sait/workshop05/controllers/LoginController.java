@@ -59,7 +59,7 @@ public class LoginController {
             // Porting to API authentication
             ApiClient client = ApiClient.getInstance();
             LoginRequestDto loginRequest = new LoginRequestDto(email, password);
-            HttpResponse<String> response = client.post("/auth/login", loginRequest);
+            HttpResponse<String> response = client.post("/api/v1/auth/login", loginRequest);
 
             if (response.statusCode() == 200) {
                 AuthResponseDto auth = client.getMapper().readValue(response.body(), AuthResponseDto.class);
