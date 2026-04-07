@@ -1,9 +1,10 @@
 package com.sait.workshop05.controllers;
 
-import com.sait.workshop05.database.EmployeeDAO;
-import com.sait.workshop05.database.SharedDAO;
+import com.sait.workshop05.api.EmployeeApi;
+import com.sait.workshop05.api.ReferenceApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.AddressOption;
+import com.sait.workshop05.models.BakeryOption;
 import com.sait.workshop05.models.Employee;
 import com.sait.workshop05.models.UserOption;
 import com.sait.workshop05.util.AddressInputHelper;
@@ -25,16 +26,17 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class EmployeeManagementController {
 
     // ── Table ──────────────────────────────────────────────────
     @FXML private TableView<Employee> tblEmployees;
-    @FXML private TableColumn<Employee, Integer> colEmployeeId;
+    @FXML private TableColumn<Employee, String> colEmployeeId;
     @FXML private TableColumn<Employee, String> colFirstName;
     @FXML private TableColumn<Employee, String> colLastName;
     @FXML private TableColumn<Employee, String> colRole;
@@ -49,12 +51,11 @@ public class EmployeeManagementController {
     @FXML private Button btnRefresh;
     @FXML private Button btnNewEmployee;
 
-    private final EmployeeDAO dao = new EmployeeDAO();
     private final ObservableList<Employee> master = FXCollections.observableArrayList();
     private FilteredList<Employee> filtered;
 
-    // Cached options for dialogs
     private List<UserOption> userOptions = new ArrayList<>();
+    private List<BakeryOption> bakeryOptions = new ArrayList<>();
     private List<AddressOption> addressOptions = new ArrayList<>();
 
     // ────────────────────────────────────────────────────────────
@@ -110,24 +111,20 @@ public class EmployeeManagementController {
 
     private void setupSearchFiltering() {
         filtered = new FilteredList<>(master, e -> true);
-
         txtSearch.textProperty().addListener((obs, oldText, newText) -> {
             String q = (newText == null) ? "" : newText.trim().toLowerCase();
             filtered.setPredicate(emp -> {
                 if (q.isEmpty()) return true;
                 return StringUtil.containsIgnoreCase(emp.getEmployeeFirstName(), q)
-                        || StringUtil.containsIgnoreCase(emp.getEmployeeMiddleInitial(), q)
                         || StringUtil.containsIgnoreCase(emp.getEmployeeLastName(), q)
                         || StringUtil.containsIgnoreCase(emp.getEmployeeRole(), q)
                         || StringUtil.containsIgnoreCase(emp.getEmployeePhone(), q)
-                        || StringUtil.containsIgnoreCase(emp.getEmployeeBusinessPhone(), q)
                         || StringUtil.containsIgnoreCase(emp.getEmployeeEmail(), q)
                         || StringUtil.containsIgnoreCase(emp.getAddressDisplay(), q)
-                        || String.valueOf(emp.getEmployeeId()).contains(q);
+                        || StringUtil.containsIgnoreCase(emp.getEmployeeId(), q);
             });
             lblStatus.setText(filtered.size() + " employee(s) shown");
         });
-
         SortedList<Employee> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblEmployees.comparatorProperty());
         tblEmployees.setItems(sorted);
@@ -135,11 +132,12 @@ public class EmployeeManagementController {
 
     private void loadCombos() {
         try {
-            userOptions = dao.getUserOptions();
-            addressOptions = dao.getAddressOptions();
-        } catch (SQLException e) {
+            userOptions = ReferenceApi.loadAdminUsers();
+            bakeryOptions = ReferenceApi.loadBakeries();
+            addressOptions = ReferenceApi.loadAddresses();
+        } catch (Exception e) {
             LogData.handleException("LOAD_EMPLOYEE_COMBOS", e);
-            ErrorHandler.showErrorDialog("Database Error", "Could not load User/Address lists.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load dropdown lists.", e.getMessage());
         }
     }
 
@@ -149,14 +147,37 @@ public class EmployeeManagementController {
 
     private void refreshTable() {
         try {
+            Map<Integer, String> addrMap = new HashMap<>();
+            for (AddressOption a : ReferenceApi.loadAddresses()) {
+                addrMap.put(a.getAddressId(), a.getLine1() + ", " + a.getCity());
+            }
             master.clear();
-            master.addAll(dao.getAllEmployees());
+            for (EmployeeApi.EmployeeRow row : EmployeeApi.listStaff()) {
+                master.add(fromRow(row, addrMap));
+            }
             lblStatus.setText(master.size() + " employee(s) loaded");
             LogData.logAction("READ", "Employee");
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LogData.handleException("READ_EMPLOYEES", e);
-            ErrorHandler.showErrorDialog("Database Error", "Could not load employees.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load employees.", e.getMessage());
         }
+    }
+
+    private Employee fromRow(EmployeeApi.EmployeeRow row, Map<Integer, String> addrMap) {
+        Employee e = new Employee();
+        e.setEmployeeId(row.id != null ? row.id : "");
+        e.setUserId(row.userId != null ? row.userId : "");
+        e.setBakeryId(row.bakeryId != null ? row.bakeryId : 0);
+        e.setAddressId(row.addressId != null ? row.addressId : 0);
+        e.setEmployeeFirstName(row.firstName != null ? row.firstName : "");
+        e.setEmployeeMiddleInitial(row.middleInitial);
+        e.setEmployeeLastName(row.lastName != null ? row.lastName : "");
+        e.setEmployeeRole(row.position != null ? row.position : "");
+        e.setEmployeePhone(row.phone != null ? row.phone : "");
+        e.setEmployeeEmail(row.workEmail != null ? row.workEmail : "");
+        String ad = row.addressId != null ? addrMap.get(row.addressId) : null;
+        e.setAddressDisplay(ad != null ? ad : "");
+        return e;
     }
 
     @FXML
@@ -191,9 +212,16 @@ public class EmployeeManagementController {
 
         ComboBox<UserOption> cbUser = new ComboBox<>(FXCollections.observableArrayList(userOptions));
         cbUser.setMaxWidth(Double.MAX_VALUE);
-        if (!isNew && existing.getUserId() > 0) {
-            userOptions.stream().filter(u -> u.getUserId() == existing.getUserId())
+        if (!isNew && existing.getUserId() != null && !existing.getUserId().isBlank()) {
+            userOptions.stream().filter(u -> existing.getUserId().equals(u.getUserId()))
                     .findFirst().ifPresent(cbUser::setValue);
+        }
+
+        ComboBox<BakeryOption> cbBakery = new ComboBox<>(FXCollections.observableArrayList(bakeryOptions));
+        cbBakery.setMaxWidth(Double.MAX_VALUE);
+        if (!isNew && existing.getBakeryId() > 0) {
+            bakeryOptions.stream().filter(b -> b.getBakeryId() == existing.getBakeryId())
+                    .findFirst().ifPresent(cbBakery::setValue);
         }
 
         ComboBox<AddressOption> cbAddress = new ComboBox<>();
@@ -219,6 +247,7 @@ public class EmployeeManagementController {
         addRow(grid, row++, "Phone *", tfPhone);
         addRow(grid, row++, "Business Phone", tfBusinessPhone);
         addRow(grid, row++, "User Account *", cbUser);
+        addRow(grid, row++, "Bakery *", cbBakery);
         addRow(grid, row, "Address *", cbAddress);
 
         VBox content = new VBox(12, grid, lblError);
@@ -237,70 +266,48 @@ public class EmployeeManagementController {
 
         Button saveBtn = (Button) dialog.getDialogPane().lookupButton(saveType);
         saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
-            String err = validateDialog(tfFirstName, tfLastName, tfPhone, tfEmail,
-                    tfMiddleInitial, cbRole, cbUser, cbAddress);
-            if (err != null) {
-                lblError.setText(err);
-                lblError.setVisible(true);
-                lblError.setManaged(true);
-                event.consume();
-            }
+            if (StringUtil.safe(tfFirstName.getText()).isBlank()) { showErr(lblError, "First name is required."); event.consume(); return; }
+            if (StringUtil.safe(tfLastName.getText()).isBlank()) { showErr(lblError, "Last name is required."); event.consume(); return; }
+            if (cbRole.getValue() == null) { showErr(lblError, "Role is required."); event.consume(); return; }
+            if (StringUtil.safe(tfPhone.getText()).isBlank()) { showErr(lblError, "Phone is required."); event.consume(); return; }
+            if (StringUtil.safe(tfEmail.getText()).isBlank()) { showErr(lblError, "Email is required."); event.consume(); return; }
+            if (cbUser.getValue() == null) { showErr(lblError, "User account is required."); event.consume(); return; }
+            if (cbBakery.getValue() == null) { showErr(lblError, "Bakery is required."); event.consume(); return; }
+            String addr = AddressInputHelper.getTypedText(cbAddress);
+            if (cbAddress.getValue() == null && addr.isBlank()) { showErr(lblError, "Address is required."); event.consume(); }
         });
 
         dialog.showAndWait().ifPresent(result -> {
             if (result.getButtonData() != ButtonBar.ButtonData.OK_DONE) return;
-
-            Employee e = isNew ? new Employee() : existing;
-            e.setEmployeeFirstName(tfFirstName.getText().trim());
-            e.setEmployeeMiddleInitial(StringUtil.trimToNull(tfMiddleInitial.getText()));
-            e.setEmployeeLastName(tfLastName.getText().trim());
-            e.setEmployeeRole(cbRole.getValue());
-            e.setEmployeePhone(tfPhone.getText().trim());
-            e.setEmployeeBusinessPhone(StringUtil.trimToNull(tfBusinessPhone.getText()));
-            e.setEmployeeEmail(tfEmail.getText().trim());
-            if (cbUser.getValue() != null) e.setUserId(cbUser.getValue().getUserId());
-
             try {
                 AddressOption addr = resolveAddress(cbAddress);
-                if (addr != null) e.setAddressId(addr.getAddressId());
+                int addressId = addr != null ? addr.getAddressId() : (isNew ? 0 : existing.getAddressId());
+                String userId = cbUser.getValue().getUserId();
+                int bakeryId = cbBakery.getValue().getBakeryId();
+                String mi = tfMiddleInitial.getText().trim().isEmpty() ? null : tfMiddleInitial.getText().trim();
+                String biz = tfBusinessPhone.getText().trim().isEmpty() ? null : tfBusinessPhone.getText().trim();
 
                 if (isNew) {
-                    int newId = dao.insertEmployee(e);
+                    EmployeeApi.create(userId, bakeryId, addressId,
+                            tfFirstName.getText().trim(), mi, tfLastName.getText().trim(),
+                            cbRole.getValue(), tfPhone.getText().trim(), biz, tfEmail.getText().trim());
                     LogData.logAction("CREATE", "Employee");
-                    refreshTable();
-                    if (newId > 0) { selectEmployeeById(newId); lblStatus.setText("Created employee #" + newId); }
+                    lblStatus.setText("Employee created.");
                 } else {
-                    dao.updateEmployee(e);
+                    EmployeeApi.update(existing.getEmployeeId(), userId, bakeryId, addressId,
+                            tfFirstName.getText().trim(), mi, tfLastName.getText().trim(),
+                            cbRole.getValue(), tfPhone.getText().trim(), biz, tfEmail.getText().trim());
                     LogData.logAction("UPDATE", "Employee");
-                    refreshTable();
-                    selectEmployeeById(e.getEmployeeId());
-                    lblStatus.setText("Updated employee #" + e.getEmployeeId());
+                    lblStatus.setText("Employee updated.");
                 }
-            } catch (SQLException ex) {
+                loadCombos();
+                refreshTable();
+            } catch (Exception ex) {
                 LogData.handleException(isNew ? "CREATE_EMPLOYEE" : "UPDATE_EMPLOYEE", ex);
                 ErrorHandler.showErrorDialog(isNew ? "Create Failed" : "Update Failed",
-                        "Could not save employee.", ErrorHandler.friendlyDbMessage(ex));
+                        "Could not save employee.", ex.getMessage());
             }
         });
-    }
-
-    private String validateDialog(TextField tfFirst, TextField tfLast, TextField tfPhone,
-                                   TextField tfEmail, TextField tfMI,
-                                   ComboBox<String> cbRole, ComboBox<UserOption> cbUser,
-                                   ComboBox<AddressOption> cbAddress) {
-        if (StringUtil.safe(tfFirst.getText()).isBlank()) return "First name is required.";
-        if (StringUtil.safe(tfLast.getText()).isBlank()) return "Last name is required.";
-        if (cbRole.getValue() == null) return "Role is required.";
-        if (StringUtil.safe(tfPhone.getText()).isBlank()) return "Phone is required.";
-        if (!StringUtil.PHONE_RX.matcher(StringUtil.safe(tfPhone.getText())).matches()) return "Phone format looks invalid.";
-        if (StringUtil.safe(tfEmail.getText()).isBlank()) return "Email is required.";
-        if (!StringUtil.EMAIL_RX.matcher(StringUtil.safe(tfEmail.getText())).matches()) return "Email format looks invalid.";
-        String mi = StringUtil.safe(tfMI.getText());
-        if (!mi.isBlank() && mi.trim().length() > 2) return "Middle initial must be 1-2 characters.";
-        if (cbUser.getValue() == null) return "User account is required.";
-        String addr = AddressInputHelper.getTypedText(cbAddress);
-        if (cbAddress.getValue() == null && addr.isBlank()) return "Address is required.";
-        return null;
     }
 
     // ────────────────────────────────────────────────────────────
@@ -310,7 +317,7 @@ public class EmployeeManagementController {
     private void handleDeleteEmployee(Employee emp) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirm Delete");
-        confirm.setHeaderText("Delete employee #" + emp.getEmployeeId() + "?");
+        confirm.setHeaderText("Delete " + emp.getEmployeeFirstName() + " " + emp.getEmployeeLastName() + "?");
         confirm.setContentText("This cannot be undone.");
         confirm.getDialogPane().getStylesheets().add(
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
@@ -319,19 +326,19 @@ public class EmployeeManagementController {
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
         try {
-            dao.deleteEmployee(emp.getEmployeeId());
+            EmployeeApi.delete(emp.getEmployeeId());
             LogData.logAction("DELETE", "Employee");
             Sentry.withScope(scope -> {
                 scope.setTag("action", "DELETE");
                 scope.setTag("entity", "employee");
-                Sentry.captureMessage("Deleted employee #" + emp.getEmployeeId()
+                Sentry.captureMessage("Deleted employee " + emp.getEmployeeId()
                         + " (" + emp.getEmployeeFirstName() + " " + emp.getEmployeeLastName() + ")", SentryLevel.WARNING);
             });
             refreshTable();
-            lblStatus.setText("Deleted employee #" + emp.getEmployeeId());
-        } catch (SQLException ex) {
+            lblStatus.setText("Employee deleted.");
+        } catch (Exception ex) {
             LogData.handleException("DELETE_EMPLOYEE", ex);
-            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete employee.", ErrorHandler.friendlyDbMessage(ex));
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete employee.", ex.getMessage());
         }
     }
 
@@ -361,23 +368,17 @@ public class EmployeeManagementController {
         grid.add(control, 1, row);
     }
 
-    private AddressOption resolveAddress(ComboBox<AddressOption> cbAddress) throws SQLException {
+    private void showErr(Label lbl, String msg) {
+        lbl.setText(msg);
+        lbl.setVisible(true);
+        lbl.setManaged(true);
+    }
+
+    private AddressOption resolveAddress(ComboBox<AddressOption> cbAddress) throws Exception {
         AddressOption selected = cbAddress.getValue();
         if (selected != null) return selected;
         String typed = AddressInputHelper.getTypedText(cbAddress);
         if (typed.isBlank()) return null;
-        AddressOption resolved = SharedDAO.findOrCreateAddressFromInput(typed);
-        loadCombos();
-        return resolved;
-    }
-
-    private void selectEmployeeById(int id) {
-        for (Employee e : master) {
-            if (e.getEmployeeId() == id) {
-                tblEmployees.getSelectionModel().select(e);
-                tblEmployees.scrollTo(e);
-                return;
-            }
-        }
+        return ReferenceApi.createAddressFromTyped(typed);
     }
 }

@@ -8,7 +8,7 @@ import javafx.beans.property.*;
  */
 public class OrderItem {
     private final IntegerProperty orderItemId;
-    private final IntegerProperty orderId;
+    private final StringProperty orderId;
     private final IntegerProperty productId;
     private final IntegerProperty batchId;
     private final IntegerProperty orderItemQuantity;
@@ -24,7 +24,7 @@ public class OrderItem {
      */
     public OrderItem() {
         this.orderItemId = new SimpleIntegerProperty();
-        this.orderId = new SimpleIntegerProperty();
+        this.orderId = new SimpleStringProperty();
         this.productId = new SimpleIntegerProperty();
         this.batchId = new SimpleIntegerProperty();
         this.orderItemQuantity = new SimpleIntegerProperty();
@@ -47,15 +47,15 @@ public class OrderItem {
         this.orderItemId.set(orderItemId);
     }
 
-    public int getOrderId() {
+    public String getOrderId() {
         return orderId.get();
     }
 
-    public IntegerProperty orderIdProperty() {
+    public StringProperty orderIdProperty() {
         return orderId;
     }
 
-    public void setOrderId(int orderId) {
+    public void setOrderId(String orderId) {
         this.orderId.set(orderId);
     }
 
