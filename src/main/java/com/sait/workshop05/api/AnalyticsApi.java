@@ -139,85 +139,75 @@ public final class AnalyticsApi {
 
     // ── In-progress equivalents ──────────────────────────────────────────────
     // These hit /in-progress-* endpoints on the API; gracefully return 0 / empty
-    // if the server returns 404 (endpoint not yet implemented).
+    // if the server returns anything other than 200 (endpoint not yet implemented).
 
     public static double getInProgressRevenue(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
         String path = "/api/v1/admin/analytics/metrics/in-progress-revenue" + baseQuery(start, end, bakerySelection);
         var res = ApiClient.getInstance().get(path);
-        if (res.statusCode() == 404) return 0.0;
-        if (res.statusCode() >= 400) throw new RuntimeException("in-progress-revenue failed: " + res.statusCode() + " " + res.body());
+        if (res.statusCode() != 200) return 0.0;
         return readBigDecimalNumber(res.body(), ApiClient.getInstance().getMapper());
     }
 
     public static double getInProgressAverageOrderValue(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
         String path = "/api/v1/admin/analytics/metrics/in-progress-average-order-value" + baseQuery(start, end, bakerySelection);
         var res = ApiClient.getInstance().get(path);
-        if (res.statusCode() == 404) return 0.0;
-        if (res.statusCode() >= 400) throw new RuntimeException("in-progress-average-order-value failed: " + res.statusCode() + " " + res.body());
+        if (res.statusCode() != 200) return 0.0;
         return readBigDecimalNumber(res.body(), ApiClient.getInstance().getMapper());
     }
 
     public static double getInProgressRate(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
         String path = "/api/v1/admin/analytics/metrics/in-progress-rate" + baseQuery(start, end, bakerySelection);
         var res = ApiClient.getInstance().get(path);
-        if (res.statusCode() == 404) return 0.0;
-        if (res.statusCode() >= 400) throw new RuntimeException("in-progress-rate failed: " + res.statusCode() + " " + res.body());
+        if (res.statusCode() != 200) return 0.0;
         return readBigDecimalNumber(res.body(), ApiClient.getInstance().getMapper());
     }
 
     public static double getInProgressTotalSalesByEmployee(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
         String path = "/api/v1/admin/analytics/metrics/in-progress-sales-by-employee-total" + baseQuery(start, end, bakerySelection);
         var res = ApiClient.getInstance().get(path);
-        if (res.statusCode() == 404) return 0.0;
-        if (res.statusCode() >= 400) throw new RuntimeException("in-progress-sales-by-employee-total failed: " + res.statusCode() + " " + res.body());
+        if (res.statusCode() != 200) return 0.0;
         return readBigDecimalNumber(res.body(), ApiClient.getInstance().getMapper());
     }
 
     public static List<DataPoint> getInProgressRevenueOverTime(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
         String path = "/api/v1/admin/analytics/series/in-progress-revenue-over-time" + baseQuery(start, end, bakerySelection);
         var res = ApiClient.getInstance().get(path);
-        if (res.statusCode() == 404) return new ArrayList<>();
-        if (res.statusCode() >= 400) throw new RuntimeException("in-progress-revenue-over-time failed: " + res.statusCode() + " " + res.body());
+        if (res.statusCode() != 200) return new ArrayList<>();
         return parseDataPointSeries(res.body());
     }
 
     public static List<DataPoint> getInProgressRevenueByBakery(LocalDate start, LocalDate end) throws Exception {
         String path = "/api/v1/admin/analytics/series/in-progress-revenue-by-bakery?start=" + start + "&end=" + end;
         var res = ApiClient.getInstance().get(path);
-        if (res.statusCode() == 404) return new ArrayList<>();
-        if (res.statusCode() >= 400) throw new RuntimeException("in-progress-revenue-by-bakery failed: " + res.statusCode() + " " + res.body());
+        if (res.statusCode() != 200) return new ArrayList<>();
         return parseDataPointSeries(res.body());
     }
 
     public static List<DataPoint> getInProgressAverageOrderValueOverTime(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
         String path = "/api/v1/admin/analytics/series/in-progress-average-order-value-over-time" + baseQuery(start, end, bakerySelection);
         var res = ApiClient.getInstance().get(path);
-        if (res.statusCode() == 404) return new ArrayList<>();
-        if (res.statusCode() >= 400) throw new RuntimeException("in-progress-aov-over-time failed: " + res.statusCode() + " " + res.body());
+        if (res.statusCode() != 200) return new ArrayList<>();
         return parseDataPointSeries(res.body());
     }
 
     public static List<DataPoint> getInProgressRateOverTime(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
         String path = "/api/v1/admin/analytics/series/in-progress-rate-over-time" + baseQuery(start, end, bakerySelection);
         var res = ApiClient.getInstance().get(path);
-        if (res.statusCode() == 404) return new ArrayList<>();
-        if (res.statusCode() >= 400) throw new RuntimeException("in-progress-rate-over-time failed: " + res.statusCode() + " " + res.body());
+        if (res.statusCode() != 200) return new ArrayList<>();
         return parseDataPointSeries(res.body());
     }
 
     public static List<DataPoint> getInProgressTopProducts(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
         String path = "/api/v1/admin/analytics/series/in-progress-top-products" + baseQuery(start, end, bakerySelection);
         var res = ApiClient.getInstance().get(path);
-        if (res.statusCode() == 404) return new ArrayList<>();
-        if (res.statusCode() >= 400) throw new RuntimeException("in-progress-top-products failed: " + res.statusCode() + " " + res.body());
+        if (res.statusCode() != 200) return new ArrayList<>();
         return parseDataPointSeries(res.body());
     }
 
     public static List<DataPoint> getInProgressSalesByEmployee(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
         String path = "/api/v1/admin/analytics/series/in-progress-sales-by-employee" + baseQuery(start, end, bakerySelection);
         var res = ApiClient.getInstance().get(path);
-        if (res.statusCode() == 404) return new ArrayList<>();
-        if (res.statusCode() >= 400) throw new RuntimeException("in-progress-sales-by-employee failed: " + res.statusCode() + " " + res.body());
+        if (res.statusCode() != 200) return new ArrayList<>();
         return parseDataPointSeries(res.body());
     }
 
