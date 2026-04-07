@@ -124,6 +124,7 @@ public final class CatalogApi {
         public List<Integer> tagIds;
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class BakeryResponse {
         public Integer id;
         public String name;
@@ -135,6 +136,7 @@ public final class CatalogApi {
         public AddressResponse address;
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class AddressResponse {
         public Integer id;
         public String line1;
@@ -144,6 +146,7 @@ public final class CatalogApi {
         public String postalCode;
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class TagResponse {
         public Integer id;
         public String name;

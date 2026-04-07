@@ -1,6 +1,6 @@
 package com.sait.workshop05;
 
-import com.sait.workshop05.database.DBUtil;
+import com.sait.workshop05.api.ApiClient;
 import com.sait.workshop05.util.StageIconHelper;
 import io.sentry.Sentry;
 import javafx.application.Application;
@@ -9,8 +9,6 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.sql.Connection;
-
 public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
@@ -26,19 +24,20 @@ public class MainApplication extends Application {
                 })
         );
 
-        /*
-        // Test DB connection on startup
-        try (Connection conn = DBUtil.getConnection()) {
-            // Connection successful
+        try {
+            var ping = ApiClient.getInstance().get("/api/v1/tags");
+            if (ping.statusCode() >= 500) {
+                throw new RuntimeException("API error " + ping.statusCode());
+            }
         } catch (Exception e) {
             Sentry.withScope(scope -> {
                 scope.setLevel(io.sentry.SentryLevel.FATAL);
                 Sentry.captureException(e);
             });
             e.printStackTrace();
+            System.err.println("Cannot reach API (check API_URL in .env.local and that Workshop 7 is running).");
             System.exit(1);
         }
-        */
 
         // Load login view (staff-only: Admin / Employee)
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("login-view.fxml"));

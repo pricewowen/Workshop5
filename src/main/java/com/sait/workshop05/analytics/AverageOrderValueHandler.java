@@ -2,15 +2,12 @@
 
 package com.sait.workshop05.analytics;
 
-import com.sait.workshop05.database.AnalyticsDAO;
+import com.sait.workshop05.api.AnalyticsApi;
 
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 
 public class AverageOrderValueHandler implements KPIHandler {
-
-    private final AnalyticsDAO dao = new AnalyticsDAO();
 
     @Override
     public String getTitle() {
@@ -21,15 +18,15 @@ public class AverageOrderValueHandler implements KPIHandler {
     public double getPrimaryValue(LocalDate start,
                                   LocalDate end,
                                   String bakerySelection,
-                                  List<Integer> scopeBakeryIds) throws SQLException {
-        return dao.getAverageOrderValue(start, end, bakerySelection, scopeBakeryIds);
+                                  List<Integer> scopeBakeryIds) throws Exception {
+        return AnalyticsApi.getAverageOrderValue(start, end, bakerySelection);
     }
 
     @Override
     public List<DataPoint> getChartData(LocalDate start,
                                         LocalDate end,
                                         String bakerySelection,
-                                        List<Integer> scopeBakeryIds) throws SQLException {
-        return dao.getAverageOrderValueOverTime(start, end, bakerySelection, scopeBakeryIds);
+                                        List<Integer> scopeBakeryIds) throws Exception {
+        return AnalyticsApi.getAverageOrderValueOverTime(start, end, bakerySelection);
     }
 }

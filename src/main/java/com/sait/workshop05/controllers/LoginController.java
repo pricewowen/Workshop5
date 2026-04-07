@@ -3,8 +3,7 @@ package com.sait.workshop05.controllers;
 import com.sait.workshop05.api.ApiClient;
 import com.sait.workshop05.api.dto.AuthResponseDto;
 import com.sait.workshop05.api.dto.LoginRequestDto;
-import com.sait.workshop05.database.AuthDAO;
-import com.sait.workshop05.database.EmployeeAccessDAO;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.User;
 import com.sait.workshop05.session.UserSession;
@@ -21,6 +20,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.http.HttpResponse;
+import java.util.Collections;
 import java.util.List;
 
 public class LoginController {
@@ -76,13 +76,12 @@ public class LoginController {
         }
 
         try {
-            // Porting to API authentication
-            ApiClient client = ApiClient.getInstance();
+            ApiClient api = ApiClient.getInstance();
             LoginRequestDto loginRequest = new LoginRequestDto(email, password);
-            HttpResponse<String> response = client.post("/api/v1/auth/login", loginRequest);
+            HttpResponse<String> response = api.post("/api/v1/auth/login", loginRequest);
 
             if (response.statusCode() == 200) {
-                AuthResponseDto auth = client.getMapper().readValue(response.body(), AuthResponseDto.class);
+                AuthResponseDto auth = api.getMapper().readValue(response.body(), AuthResponseDto.class);
 
                 // Only ADMIN and EMPLOYEE accounts may access the management system
                 String role = auth.getRole();
@@ -98,7 +97,7 @@ public class LoginController {
                     return;
                 }
 
-                client.setToken(auth.getToken());
+                api.setToken(auth.getToken());
 
                 // Create a User object from response to maintain compatibility with existing session
                 User user = new User();
@@ -109,6 +108,9 @@ public class LoginController {
                 // Store session
                 UserSession session = UserSession.getInstance();
                 session.createSession(user, auth.getToken());
+                if (auth.getUserId() != null && !auth.getUserId().isBlank()) {
+                    session.setApiUserId(auth.getUserId());
+                }
 
                 // Attach user identity to Sentry for all subsequent events
                 io.sentry.protocol.User sentryUser = new io.sentry.protocol.User();
@@ -117,11 +119,22 @@ public class LoginController {
                 Sentry.setUser(sentryUser);
                 Sentry.setTag("role", auth.getRole().toLowerCase());
 
-                // Compute analytics eligibility for EMPLOYEE
+                // Compute analytics eligibility for EMPLOYEE (API: profile + bakery scope)
                 if (session.isEmployee()) {
-                    Integer employeeId = EmployeeAccessDAO.getEmployeeIdByUserId(user.getUserId());
-                    List<Integer> bakeryIds = EmployeeAccessDAO.getAccessibleBakeryIdsByUserId(user.getUserId());
-                    session.setEmployeeAnalyticsAccess(employeeId, bakeryIds);
+                    try {
+                        HttpResponse<String> meRes = api.get("/api/v1/employee/me");
+                        HttpResponse<String> brRes = api.get("/api/v1/employee/me/bakeries");
+                        if (meRes.statusCode() == 200 && brRes.statusCode() == 200) {
+                            var meNode = api.getMapper().readTree(meRes.body());
+                            String empId = meNode.has("id") ? meNode.get("id").asText() : null;
+                            List<Integer> bakeryIds = api.getMapper().readValue(brRes.body(), new TypeReference<List<Integer>>() {});
+                            session.setEmployeeAnalyticsAccess(empId, bakeryIds != null ? bakeryIds : Collections.emptyList());
+                        } else {
+                            session.setEmployeeAnalyticsAccess(null, Collections.emptyList());
+                        }
+                    } catch (Exception ex) {
+                        session.setEmployeeAnalyticsAccess(null, Collections.emptyList());
+                    }
 
                     if (session.canAccessAnalytics()) {
                         LogData.logAction("LOGIN", "Employee login: " + user.getUsername() + " (Analytics ENABLED)");
