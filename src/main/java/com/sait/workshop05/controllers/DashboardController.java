@@ -60,7 +60,7 @@ public class DashboardController {
         loadSummaryCards();
         loadRecentOrders();
 
-        btnNewOrder.setOnAction(e -> onNewOrder());
+        if (btnNewOrder != null) btnNewOrder.setOnAction(e -> onNewOrder());
     }
 
     // ───────────────────────────────────────────────

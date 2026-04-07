@@ -6,7 +6,6 @@ import com.sait.workshop05.models.*;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.OrderStatus;
 import com.sait.workshop05.util.StringUtil;
-import com.sait.workshop05.util.ValidationResult;
 import com.sait.workshop05.util.AddressInputHelper;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
@@ -19,12 +18,14 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,38 +35,19 @@ public class CustomerManagementController {
     @FXML private TableView<Customer> tblCustomers;
     @FXML private TableColumn<Customer, Integer> colCustomerId;
     @FXML private TableColumn<Customer, String> colFirstName;
-    @FXML private TableColumn<Customer, String> colMiddleInitial;
     @FXML private TableColumn<Customer, String> colLastName;
     @FXML private TableColumn<Customer, String> colEmail;
     @FXML private TableColumn<Customer, String> colPhone;
     @FXML private TableColumn<Customer, String> colRewardTier;
     @FXML private TableColumn<Customer, Integer> colRewardBalance;
     @FXML private TableColumn<Customer, String> colAddress;
+    @FXML private TableColumn<Customer, Void> colActions;
 
-    // ── Search & status ────────────────────────────────────────
+    // ── Toolbar ────────────────────────────────────────────────
     @FXML private TextField txtSearch;
     @FXML private Label lblStatus;
     @FXML private Button btnRefresh;
-
-    // ── Form fields ────────────────────────────────────────────
-    @FXML private TextField txtCustomerId;
-    @FXML private TextField txtFirstName;
-    @FXML private TextField txtMiddleInitial;
-    @FXML private TextField txtLastName;
-    @FXML private ComboBox<String> cboRole;
-    @FXML private TextField txtPhone;
-    @FXML private TextField txtBusinessPhone;
-    @FXML private TextField txtEmail;
-    @FXML private ComboBox<AddressOption> cboAddress;
-    @FXML private ComboBox<UserOption> cboUser;
-    @FXML private ComboBox<RewardTierOption> cboRewardTier;
-    @FXML private TextField txtRewardBalance;
-
-    // ── CRUD + extra buttons ───────────────────────────────────
-    @FXML private Button btnCreate;
-    @FXML private Button btnUpdate;
-    @FXML private Button btnDelete;
-    @FXML private Button btnClear;
+    @FXML private Button btnNewCustomer;
     @FXML private Button btnOrderHistory;
     @FXML private Button btnAdjustPoints;
 
@@ -73,6 +55,11 @@ public class CustomerManagementController {
     private final OrderDAO orderDao = new OrderDAO();
     private final ObservableList<Customer> master = FXCollections.observableArrayList();
     private FilteredList<Customer> filtered;
+
+    // Cached options for dialogs
+    private List<RewardTierOption> tierOptions = new ArrayList<>();
+    private List<UserOption> userOptions = new ArrayList<>();
+    private List<AddressOption> addressOptions = new ArrayList<>();
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -83,10 +70,9 @@ public class CustomerManagementController {
     @FXML
     void initialize() {
         setupColumns();
-        setupRoleOptions();
-        AddressInputHelper.configureEditableAddressCombo(cboAddress);
-        setupSelectionBinding();
+        setupActionsColumn();
         setupSearchFiltering();
+        setupSelectionButtons();
         loadCombos();
         refreshTable();
     }
@@ -94,43 +80,47 @@ public class CustomerManagementController {
     private void setupColumns() {
         colCustomerId.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         colFirstName.setCellValueFactory(new PropertyValueFactory<>("firstName"));
-        colMiddleInitial.setCellValueFactory(new PropertyValueFactory<>("middleInitial"));
         colLastName.setCellValueFactory(new PropertyValueFactory<>("lastName"));
         colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
         colPhone.setCellValueFactory(new PropertyValueFactory<>("phone"));
         colRewardTier.setCellValueFactory(new PropertyValueFactory<>("rewardTierDisplay"));
         colRewardBalance.setCellValueFactory(new PropertyValueFactory<>("rewardBalance"));
         colAddress.setCellValueFactory(new PropertyValueFactory<>("addressDisplay"));
-
         tblCustomers.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
-    private void setupRoleOptions() {
-        cboRole.setItems(FXCollections.observableArrayList(
-                "Regular",
-                "VIP",
-                "Wholesale",
-                "Corporate"
-        ));
+    private void setupActionsColumn() {
+        colActions.setCellFactory(col -> new TableCell<>() {
+            private final Button editBtn = new Button("Edit");
+            private final Button deleteBtn = new Button("Delete");
+            private final HBox box = new HBox(6, editBtn, deleteBtn);
+
+            {
+                editBtn.getStyleClass().add("btn-icon-edit");
+                deleteBtn.getStyleClass().add("btn-icon-delete");
+                editBtn.setOnAction(e -> {
+                    Customer c = getTableView().getItems().get(getIndex());
+                    showCustomerDialog(c);
+                });
+                deleteBtn.setOnAction(e -> {
+                    Customer c = getTableView().getItems().get(getIndex());
+                    handleDeleteCustomer(c);
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : box);
+            }
+        });
     }
 
-    private void setupSelectionBinding() {
-        tblCustomers.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> {
-            if (selected == null) return;
-
-            txtCustomerId.setText(String.valueOf(selected.getCustomerId()));
-            txtFirstName.setText(StringUtil.nz(selected.getFirstName()));
-            txtMiddleInitial.setText(StringUtil.nz(selected.getMiddleInitial()));
-            txtLastName.setText(StringUtil.nz(selected.getLastName()));
-            cboRole.setValue(selected.getRole());
-            txtPhone.setText(StringUtil.nz(selected.getPhone()));
-            txtBusinessPhone.setText(StringUtil.nz(selected.getBusinessPhone()));
-            txtEmail.setText(StringUtil.nz(selected.getEmail()));
-            txtRewardBalance.setText(String.valueOf(selected.getRewardBalance()));
-
-            AddressInputHelper.selectAddressById(cboAddress, selected.getAddressId());
-            selectUserById(selected.getUserId());
-            selectRewardTierById(selected.getRewardTierId());
+    private void setupSelectionButtons() {
+        tblCustomers.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
+            boolean hasSelection = selected != null;
+            btnOrderHistory.setDisable(!hasSelection);
+            btnAdjustPoints.setDisable(!hasSelection);
         });
     }
 
@@ -142,7 +132,6 @@ public class CustomerManagementController {
 
             filtered.setPredicate(cust -> {
                 if (q.isEmpty()) return true;
-
                 return StringUtil.containsIgnoreCase(cust.getFirstName(), q)
                         || StringUtil.containsIgnoreCase(cust.getMiddleInitial(), q)
                         || StringUtil.containsIgnoreCase(cust.getLastName(), q)
@@ -166,14 +155,9 @@ public class CustomerManagementController {
 
     private void loadCombos() {
         try {
-            List<RewardTierOption> tiers = dao.getRewardTierOptions();
-            cboRewardTier.setItems(FXCollections.observableArrayList(tiers));
-
-            List<UserOption> users = dao.getUserOptions();
-            cboUser.setItems(FXCollections.observableArrayList(users));
-
-            List<AddressOption> addresses = dao.getAddressOptions();
-            AddressInputHelper.setAddressItems(cboAddress, addresses);
+            tierOptions = dao.getRewardTierOptions();
+            userOptions = dao.getUserOptions();
+            addressOptions = dao.getAddressOptions();
         } catch (SQLException e) {
             LogData.handleException("LOAD_CUSTOMER_COMBOS", e);
             ErrorHandler.showErrorDialog("Database Error", "Could not load dropdown lists.", e.getMessage());
@@ -202,138 +186,199 @@ public class CustomerManagementController {
         refreshTable();
     }
 
+    // ────────────────────────────────────────────────────────────
+    // Create / Edit Dialog
+    // ────────────────────────────────────────────────────────────
+
     @FXML
-    private void onClear() {
-        tblCustomers.getSelectionModel().clearSelection();
-        txtCustomerId.clear();
-        txtFirstName.clear();
-        txtMiddleInitial.clear();
-        txtLastName.clear();
-        cboRole.setValue(null);
-        txtPhone.clear();
-        txtBusinessPhone.clear();
-        txtEmail.clear();
-        AddressInputHelper.clearAddressField(cboAddress);
-        cboUser.getSelectionModel().clearSelection();
-        cboRewardTier.getSelectionModel().clearSelection();
-        txtRewardBalance.clear();
-        lblStatus.setText("Cleared");
+    private void onNewCustomer() {
+        showCustomerDialog(null);
     }
 
-    // ────────────────────────────────────────────────────────────
-    // CRUD operations
-    // ────────────────────────────────────────────────────────────
+    private void showCustomerDialog(Customer existing) {
+        boolean isNew = existing == null;
 
-    @FXML
-    private void onCreate() {
-        ValidationResult vr = validateForm(false);
-        if (!vr.isOk()) {
-            LogData.logAction("VALIDATION_FAILED", "Customer");
-            ErrorHandler.showWarning("Validation", vr.getMessage());
-            return;
+        // Form fields
+        TextField tfFirstName = new TextField(isNew ? "" : StringUtil.nz(existing.getFirstName()));
+        TextField tfMiddleInitial = new TextField(isNew ? "" : StringUtil.nz(existing.getMiddleInitial()));
+        tfMiddleInitial.setMaxWidth(70);
+        TextField tfLastName = new TextField(isNew ? "" : StringUtil.nz(existing.getLastName()));
+        TextField tfPhone = new TextField(isNew ? "" : StringUtil.nz(existing.getPhone()));
+        TextField tfBusinessPhone = new TextField(isNew ? "" : StringUtil.nz(existing.getBusinessPhone()));
+        TextField tfEmail = new TextField(isNew ? "" : StringUtil.nz(existing.getEmail()));
+        TextField tfRewardBalance = new TextField(isNew ? "0" : String.valueOf(existing.getRewardBalance()));
+
+        ComboBox<String> cbRole = new ComboBox<>(FXCollections.observableArrayList(
+                "Regular", "VIP", "Wholesale", "Corporate"));
+        if (!isNew) cbRole.setValue(existing.getRole());
+
+        ComboBox<RewardTierOption> cbTier = new ComboBox<>(FXCollections.observableArrayList(tierOptions));
+        cbTier.setMaxWidth(Double.MAX_VALUE);
+        if (!isNew && existing.getRewardTierId() > 0) {
+            tierOptions.stream().filter(t -> t.getRewardTierId() == existing.getRewardTierId())
+                    .findFirst().ifPresent(cbTier::setValue);
         }
 
-        Customer c;
-        try {
-            c = buildFromForm(false);
-        } catch (IllegalArgumentException ex) {
-            ErrorHandler.showWarning("Validation", ex.getMessage());
-            return;
-        } catch (SQLException ex) {
-            LogData.handleException("CREATE_CUSTOMER_ADDRESS", ex);
-            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
-            return;
+        ComboBox<UserOption> cbUser = new ComboBox<>(FXCollections.observableArrayList(userOptions));
+        cbUser.setMaxWidth(Double.MAX_VALUE);
+        if (!isNew && existing.getUserId() > 0) {
+            userOptions.stream().filter(u -> u.getUserId() == existing.getUserId())
+                    .findFirst().ifPresent(cbUser::setValue);
         }
 
-        try {
-            int newId = dao.insertCustomer(c);
-            LogData.logAction("CREATE", "Customer");
-            refreshTable();
+        ComboBox<AddressOption> cbAddress = new ComboBox<>();
+        AddressInputHelper.configureEditableAddressCombo(cbAddress);
+        AddressInputHelper.setAddressItems(cbAddress, addressOptions);
+        if (!isNew && existing.getAddressId() > 0) {
+            AddressInputHelper.selectAddressById(cbAddress, existing.getAddressId());
+        }
+        cbAddress.setMaxWidth(Double.MAX_VALUE);
 
-            if (newId > 0) {
-                selectCustomerById(newId);
-                lblStatus.setText("Created customer #" + newId);
-            } else {
-                lblStatus.setText("Created customer");
+        Label lblError = new Label();
+        lblError.setStyle("-fx-text-fill: #B85C4C; -fx-font-size: 12px;");
+        lblError.setVisible(false);
+        lblError.setManaged(false);
+
+        GridPane grid = buildFormGrid();
+        int row = 0;
+        addRow(grid, row++, "First Name *", tfFirstName);
+        addRow(grid, row++, "Middle Initial", tfMiddleInitial);
+        addRow(grid, row++, "Last Name *", tfLastName);
+        addRow(grid, row++, "Email *", tfEmail);
+        addRow(grid, row++, "Phone *", tfPhone);
+        addRow(grid, row++, "Business Phone", tfBusinessPhone);
+        addRow(grid, row++, "Role", cbRole);
+        addRow(grid, row++, "Reward Tier *", cbTier);
+        addRow(grid, row++, "Reward Points", tfRewardBalance);
+        addRow(grid, row++, "User Account", cbUser);
+        addRow(grid, row, "Address *", cbAddress);
+
+        VBox content = new VBox(12, grid, lblError);
+        content.setPadding(new Insets(20, 24, 8, 24));
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle(isNew ? "New Customer" : "Edit Customer");
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefWidth(500);
+        dialog.getDialogPane().getStylesheets().add(
+                getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
+        dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
+
+        ButtonType saveType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveType, ButtonType.CANCEL);
+
+        // Intercept OK to validate before closing
+        Button saveBtn = (Button) dialog.getDialogPane().lookupButton(saveType);
+        saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            String err = validateDialog(tfFirstName, tfLastName, tfPhone, tfEmail,
+                    tfMiddleInitial, tfRewardBalance, cbTier, cbAddress);
+            if (err != null) {
+                lblError.setText(err);
+                lblError.setVisible(true);
+                lblError.setManaged(true);
+                event.consume();
             }
-        } catch (SQLException ex) {
-            LogData.handleException("CREATE_CUSTOMER", ex);
-            String friendly = ErrorHandler.friendlyDbMessage(ex);
-            ErrorHandler.showErrorDialog("Create Failed", "Could not create customer.", friendly);
-        }
+        });
+
+        dialog.showAndWait().ifPresent(result -> {
+            if (result.getButtonData() != ButtonBar.ButtonData.OK_DONE) return;
+
+            Customer c = isNew ? new Customer() : existing;
+            c.setFirstName(tfFirstName.getText().trim());
+            c.setMiddleInitial(StringUtil.trimToNull(tfMiddleInitial.getText()));
+            c.setLastName(tfLastName.getText().trim());
+            c.setEmail(tfEmail.getText().trim());
+            c.setPhone(tfPhone.getText().trim());
+            c.setBusinessPhone(StringUtil.trimToNull(tfBusinessPhone.getText()));
+            c.setRole(cbRole.getValue());
+            if (cbTier.getValue() != null) c.setRewardTierId(cbTier.getValue().getRewardTierId());
+            try {
+                c.setRewardBalance(Integer.parseInt(tfRewardBalance.getText().trim()));
+            } catch (NumberFormatException ignored) {
+                c.setRewardBalance(0);
+            }
+            if (cbUser.getValue() != null) c.setUserId(cbUser.getValue().getUserId());
+            c.setTierAssignedDate(LocalDateTime.now());
+
+            try {
+                AddressOption addr = resolveAddress(cbAddress);
+                if (addr != null) c.setAddressId(addr.getAddressId());
+
+                if (isNew) {
+                    int newId = dao.insertCustomer(c);
+                    LogData.logAction("CREATE", "Customer");
+                    refreshTable();
+                    if (newId > 0) { selectCustomerById(newId); lblStatus.setText("Created customer #" + newId); }
+                } else {
+                    dao.updateCustomer(c);
+                    LogData.logAction("UPDATE", "Customer");
+                    refreshTable();
+                    selectCustomerById(c.getCustomerId());
+                    lblStatus.setText("Updated customer #" + c.getCustomerId());
+                }
+            } catch (SQLException ex) {
+                LogData.handleException(isNew ? "CREATE_CUSTOMER" : "UPDATE_CUSTOMER", ex);
+                ErrorHandler.showErrorDialog(isNew ? "Create Failed" : "Update Failed",
+                        "Could not save customer.", ErrorHandler.friendlyDbMessage(ex));
+            }
+        });
     }
 
-    @FXML
-    private void onUpdate() {
-        if (txtCustomerId.getText() == null || txtCustomerId.getText().trim().isEmpty()) {
-            ErrorHandler.showWarning("Update", "Select a customer row to update.");
-            return;
+    private String validateDialog(TextField tfFirst, TextField tfLast, TextField tfPhone,
+                                   TextField tfEmail, TextField tfMI, TextField tfBalance,
+                                   ComboBox<RewardTierOption> cbTier,
+                                   ComboBox<AddressOption> cbAddress) {
+        if (StringUtil.safe(tfFirst.getText()).isBlank()) return "First name is required.";
+        if (StringUtil.safe(tfLast.getText()).isBlank()) return "Last name is required.";
+        if (StringUtil.safe(tfPhone.getText()).isBlank()) return "Phone is required.";
+        if (!StringUtil.PHONE_RX.matcher(StringUtil.safe(tfPhone.getText())).matches()) return "Phone format looks invalid.";
+        if (StringUtil.safe(tfEmail.getText()).isBlank()) return "Email is required.";
+        if (!StringUtil.EMAIL_RX.matcher(StringUtil.safe(tfEmail.getText())).matches()) return "Email format looks invalid.";
+        String mi = StringUtil.safe(tfMI.getText());
+        if (!mi.isBlank() && mi.trim().length() > 2) return "Middle initial must be 1-2 characters.";
+        if (cbTier.getValue() == null) return "Reward tier is required.";
+        String addr = AddressInputHelper.getTypedText(cbAddress);
+        if (cbAddress.getValue() == null && addr.isBlank()) return "Address is required.";
+        String balStr = StringUtil.safe(tfBalance.getText());
+        if (!balStr.isEmpty()) {
+            try {
+                int bal = Integer.parseInt(balStr);
+                if (bal < 0) return "Reward balance cannot be negative.";
+            } catch (NumberFormatException e) {
+                return "Reward balance must be a whole number.";
+            }
         }
-
-        ValidationResult vr = validateForm(true);
-        if (!vr.isOk()) {
-            LogData.logAction("VALIDATION_FAILED", "Customer");
-            ErrorHandler.showWarning("Validation", vr.getMessage());
-            return;
-        }
-
-        Customer c;
-        try {
-            c = buildFromForm(true);
-        } catch (IllegalArgumentException ex) {
-            ErrorHandler.showWarning("Validation", ex.getMessage());
-            return;
-        } catch (SQLException ex) {
-            LogData.handleException("UPDATE_CUSTOMER_ADDRESS", ex);
-            ErrorHandler.showErrorDialog("Database Error", "Could not resolve address.", ex.getMessage());
-            return;
-        }
-
-        try {
-            boolean ok = dao.updateCustomer(c);
-            LogData.logAction("UPDATE", "Customer");
-            refreshTable();
-            selectCustomerById(c.getCustomerId());
-            lblStatus.setText(ok ? "Updated customer #" + c.getCustomerId() : "No update applied");
-        } catch (SQLException ex) {
-            LogData.handleException("UPDATE_CUSTOMER", ex);
-            String friendly = ErrorHandler.friendlyDbMessage(ex);
-            ErrorHandler.showErrorDialog("Update Failed", "Could not update customer.", friendly);
-        }
+        return null;
     }
 
-    @FXML
-    private void onDelete() {
-        Customer selected = tblCustomers.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            ErrorHandler.showWarning("Delete", "Select a customer row to delete.");
-            return;
-        }
+    // ────────────────────────────────────────────────────────────
+    // Delete
+    // ────────────────────────────────────────────────────────────
 
+    private void handleDeleteCustomer(Customer c) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirm Delete");
-        confirm.setHeaderText("Delete customer #" + selected.getCustomerId()
-                + " (" + selected.getFullName() + ")?");
+        confirm.setHeaderText("Delete customer #" + c.getCustomerId() + " (" + c.getFullName() + ")?");
         confirm.setContentText("This cannot be undone. Orders linked to this customer may also be affected.");
+        confirm.getDialogPane().getStylesheets().add(
+                getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
 
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
         try {
-            dao.deleteCustomer(selected.getCustomerId());
+            dao.deleteCustomer(c.getCustomerId());
             LogData.logAction("DELETE", "Customer");
             Sentry.withScope(scope -> {
                 scope.setTag("action", "DELETE");
                 scope.setTag("entity", "customer");
-                Sentry.captureMessage("Deleted customer #" + selected.getCustomerId() + " (" + selected.getFullName() + ")", SentryLevel.WARNING);
+                Sentry.captureMessage("Deleted customer #" + c.getCustomerId() + " (" + c.getFullName() + ")", SentryLevel.WARNING);
             });
             refreshTable();
-            onClear();
-            lblStatus.setText("Deleted customer #" + selected.getCustomerId());
+            lblStatus.setText("Deleted customer #" + c.getCustomerId());
         } catch (SQLException ex) {
             LogData.handleException("DELETE_CUSTOMER", ex);
-            String friendly = ErrorHandler.friendlyDbMessage(ex);
-            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete customer.", friendly);
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete customer.", ErrorHandler.friendlyDbMessage(ex));
         }
     }
 
@@ -352,7 +397,6 @@ public class CustomerManagementController {
         try {
             List<Order> orders = orderDao.getOrdersByCustomerId(selected.getCustomerId());
             LogData.logAction("VIEW_ORDER_HISTORY", "Customer #" + selected.getCustomerId());
-
             showOrderHistoryDialog(selected, orders);
         } catch (SQLException e) {
             LogData.handleException("VIEW_ORDER_HISTORY", e);
@@ -366,11 +410,11 @@ public class CustomerManagementController {
         dialog.setHeaderText(orders.size() + " order(s) found for " + customer.getFullName());
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         dialog.setResizable(true);
+        dialog.getDialogPane().getStylesheets().add(
+                getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
 
-        // ── Orders table ───────────────────────────────────────
         TableView<Order> tblOrders = new TableView<>();
         tblOrders.setPrefHeight(250);
-        tblOrders.setStyle("-fx-font-size: 13px;");
 
         TableColumn<Order, Integer> colOrdId = new TableColumn<>("Order ID");
         colOrdId.setCellValueFactory(new PropertyValueFactory<>("orderId"));
@@ -383,30 +427,9 @@ public class CustomerManagementController {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
-                    setText("");
-                } else {
-                    Order o = getTableView().getItems().get(getIndex());
-                    setText(o.getOrderPlacedDateTime() != null
-                            ? o.getOrderPlacedDateTime().format(DT_FMT) : "");
-                }
-            }
-        });
-
-        TableColumn<Order, String> colOrdScheduled = new TableColumn<>("Scheduled");
-        colOrdScheduled.setCellValueFactory(new PropertyValueFactory<>("orderScheduledDateTime"));
-        colOrdScheduled.setPrefWidth(140);
-        colOrdScheduled.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setText("");
-                } else {
-                    Order o = getTableView().getItems().get(getIndex());
-                    setText(o.getOrderScheduledDateTime() != null
-                            ? o.getOrderScheduledDateTime().format(DT_FMT) : "\u2014");
-                }
+                if (empty) { setText(""); return; }
+                Order o = getTableView().getItems().get(getIndex());
+                setText(o.getOrderPlacedDateTime() != null ? o.getOrderPlacedDateTime().format(DT_FMT) : "");
             }
         });
 
@@ -425,17 +448,6 @@ public class CustomerManagementController {
             }
         });
 
-        TableColumn<Order, Double> colOrdDiscount = new TableColumn<>("Discount");
-        colOrdDiscount.setCellValueFactory(new PropertyValueFactory<>("orderDiscount"));
-        colOrdDiscount.setPrefWidth(80);
-        colOrdDiscount.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Double price, boolean empty) {
-                super.updateItem(price, empty);
-                setText(empty || price == null ? "" : String.format("$%.2f", price));
-            }
-        });
-
         TableColumn<Order, String> colOrdStatus = new TableColumn<>("Status");
         colOrdStatus.setCellValueFactory(new PropertyValueFactory<>("orderStatus"));
         colOrdStatus.setPrefWidth(100);
@@ -444,18 +456,14 @@ public class CustomerManagementController {
         colOrdBakery.setCellValueFactory(new PropertyValueFactory<>("bakeryDisplay"));
         colOrdBakery.setPrefWidth(120);
 
-        tblOrders.getColumns().addAll(colOrdId, colOrdDate, colOrdScheduled,
-                colOrdMethod, colOrdTotal, colOrdDiscount, colOrdStatus, colOrdBakery);
+        tblOrders.getColumns().addAll(colOrdId, colOrdDate, colOrdMethod, colOrdTotal, colOrdStatus, colOrdBakery);
         tblOrders.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        tblOrders.setItems(FXCollections.observableArrayList(orders));
 
-        // ── Order Items table (bottom) ─────────────────────────
         Label lblItems = new Label("Order Items (select an order above)");
-        lblItems.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        lblItems.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
 
         TableView<OrderItem> tblItems = new TableView<>();
         tblItems.setPrefHeight(180);
-        tblItems.setStyle("-fx-font-size: 13px;");
 
         TableColumn<OrderItem, String> colItemProduct = new TableColumn<>("Product");
         colItemProduct.setCellValueFactory(new PropertyValueFactory<>("productDisplay"));
@@ -464,17 +472,6 @@ public class CustomerManagementController {
         TableColumn<OrderItem, Integer> colItemQty = new TableColumn<>("Qty");
         colItemQty.setCellValueFactory(new PropertyValueFactory<>("orderItemQuantity"));
         colItemQty.setPrefWidth(60);
-
-        TableColumn<OrderItem, Double> colItemPrice = new TableColumn<>("Unit Price");
-        colItemPrice.setCellValueFactory(new PropertyValueFactory<>("orderItemUnitPriceAtTime"));
-        colItemPrice.setPrefWidth(100);
-        colItemPrice.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Double price, boolean empty) {
-                super.updateItem(price, empty);
-                setText(empty || price == null ? "" : String.format("$%.2f", price));
-            }
-        });
 
         TableColumn<OrderItem, Double> colItemTotal = new TableColumn<>("Line Total");
         colItemTotal.setCellValueFactory(new PropertyValueFactory<>("orderItemLineTotal"));
@@ -487,62 +484,39 @@ public class CustomerManagementController {
             }
         });
 
-        tblItems.getColumns().addAll(colItemProduct, colItemQty, colItemPrice, colItemTotal);
+        tblItems.getColumns().addAll(colItemProduct, colItemQty, colItemTotal);
         tblItems.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        // Wire: select order -> load items
-        tblOrders.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selOrder) -> {
-            if (selOrder == null) {
-                tblItems.getItems().clear();
-                return;
-            }
+        ComboBox<String> cboStatusFilter = new ComboBox<>(FXCollections.observableArrayList(OrderStatus.FILTER_STATUSES));
+        cboStatusFilter.setValue("All");
+
+        FilteredList<Order> filteredOrders = new FilteredList<>(FXCollections.observableArrayList(orders), o -> true);
+        cboStatusFilter.valueProperty().addListener((obs, old, val) ->
+                filteredOrders.setPredicate(o -> val == null || "All".equals(val) || val.equalsIgnoreCase(o.getOrderStatus())));
+
+        SortedList<Order> sortedOrders = new SortedList<>(filteredOrders);
+        sortedOrders.comparatorProperty().bind(tblOrders.comparatorProperty());
+        tblOrders.setItems(sortedOrders);
+
+        tblOrders.getSelectionModel().selectedItemProperty().addListener((obs, old, selOrder) -> {
+            if (selOrder == null) { tblItems.getItems().clear(); return; }
             try {
                 List<OrderItem> items = orderDao.getOrderItems(selOrder.getOrderId());
                 tblItems.setItems(FXCollections.observableArrayList(items));
-                lblItems.setText("Order #" + selOrder.getOrderId() + " \u2014 "
-                        + items.size() + " item(s)");
+                lblItems.setText("Order #" + selOrder.getOrderId() + " \u2014 " + items.size() + " item(s)");
             } catch (SQLException e) {
                 LogData.handleException("LOAD_ORDER_ITEMS", e);
                 tblItems.getItems().clear();
             }
         });
 
-        // ── Status filter ──────────────────────────────────────
-        ComboBox<String> cboStatusFilter = new ComboBox<>(FXCollections.observableArrayList(
-                OrderStatus.FILTER_STATUSES
-        ));
-        cboStatusFilter.setValue("All");
-        cboStatusFilter.setStyle("-fx-font-size: 13px;");
-
-        FilteredList<Order> filteredOrders = new FilteredList<>(
-                FXCollections.observableArrayList(orders), o -> true);
-
-        cboStatusFilter.valueProperty().addListener((obs, oldVal, newVal) -> {
-            filteredOrders.setPredicate(o -> {
-                if (newVal == null || "All".equals(newVal)) return true;
-                return newVal.equalsIgnoreCase(o.getOrderStatus());
-            });
-        });
-
-        SortedList<Order> sortedOrders = new SortedList<>(filteredOrders);
-        sortedOrders.comparatorProperty().bind(tblOrders.comparatorProperty());
-        tblOrders.setItems(sortedOrders);
-
-        // ── Layout ─────────────────────────────────────────────
-        Label lblFilter = new Label("Filter by status:");
-        lblFilter.setStyle("-fx-font-size: 13px;");
-
-        VBox content = new VBox(10,
-                new javafx.scene.layout.HBox(8, lblFilter, cboStatusFilter),
-                tblOrders,
-                lblItems,
-                tblItems
-        );
+        HBox filterBar = new HBox(8, new Label("Filter by status:"), cboStatusFilter);
+        VBox content = new VBox(10, filterBar, tblOrders, lblItems, tblItems);
         content.setPadding(new Insets(10));
         VBox.setVgrow(tblOrders, Priority.ALWAYS);
 
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefSize(850, 600);
+        dialog.getDialogPane().setPrefSize(750, 580);
         dialog.showAndWait();
     }
 
@@ -562,8 +536,9 @@ public class CustomerManagementController {
         dialog.setTitle("Adjust Loyalty Points");
         dialog.setHeaderText("Customer: " + selected.getFullName()
                 + "\nCurrent Balance: " + selected.getRewardBalance() + " points");
-
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialog.getDialogPane().getStylesheets().add(
+                getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -571,56 +546,42 @@ public class CustomerManagementController {
         grid.setPadding(new Insets(20, 150, 10, 10));
 
         TextField txtAdjust = new TextField("0");
-        txtAdjust.setPromptText("Enter amount (positive to add, negative to subtract)");
-
+        txtAdjust.setPromptText("Positive to add, negative to subtract");
         grid.add(new Label("Adjustment:"), 0, 0);
         grid.add(txtAdjust, 1, 0);
 
         Label lblPreview = new Label("New Balance: " + selected.getRewardBalance());
         grid.add(lblPreview, 1, 1);
 
-        txtAdjust.textProperty().addListener((obs, oldVal, newVal) -> {
+        txtAdjust.textProperty().addListener((obs, old, val) -> {
             try {
-                int adj = Integer.parseInt(newVal.trim());
-                int newBalance = selected.getRewardBalance() + adj;
-                lblPreview.setText("New Balance: " + newBalance + (newBalance < 0 ? " (invalid!)" : ""));
+                int adj = Integer.parseInt(val.trim());
+                int newBal = selected.getRewardBalance() + adj;
+                lblPreview.setText("New Balance: " + newBal + (newBal < 0 ? " (invalid!)" : ""));
             } catch (NumberFormatException e) {
                 lblPreview.setText("New Balance: (invalid input)");
             }
         });
 
         dialog.getDialogPane().setContent(grid);
-
         dialog.setResultConverter(btn -> {
             if (btn == ButtonType.OK) {
-                try {
-                    return Integer.parseInt(txtAdjust.getText().trim());
-                } catch (NumberFormatException e) {
-                    return null;
-                }
+                try { return Integer.parseInt(txtAdjust.getText().trim()); }
+                catch (NumberFormatException e) { return null; }
             }
             return null;
         });
 
-        Optional<Integer> result = dialog.showAndWait();
-
-        result.ifPresent(adjustment -> {
+        dialog.showAndWait().ifPresent(adjustment -> {
             int newBalance = selected.getRewardBalance() + adjustment;
-            if (newBalance < 0) {
-                ErrorHandler.showWarning("Invalid", "Reward balance cannot go below 0.");
-                return;
-            }
-
+            if (newBalance < 0) { ErrorHandler.showWarning("Invalid", "Reward balance cannot go below 0."); return; }
             try {
                 dao.updateRewardBalance(selected.getCustomerId(), newBalance);
-                LogData.logAction("ADJUST_POINTS",
-                        "Customer #" + selected.getCustomerId()
-                                + " adjusted by " + adjustment
-                                + " (new balance: " + newBalance + ")");
+                LogData.logAction("ADJUST_POINTS", "Customer #" + selected.getCustomerId()
+                        + " adjusted by " + adjustment + " (new: " + newBalance + ")");
                 refreshTable();
                 selectCustomerById(selected.getCustomerId());
-                lblStatus.setText("Adjusted points for " + selected.getFullName()
-                        + " by " + adjustment + " -> " + newBalance);
+                lblStatus.setText("Adjusted points for " + selected.getFullName() + " by " + adjustment + " -> " + newBalance);
             } catch (SQLException e) {
                 LogData.handleException("ADJUST_POINTS", e);
                 ErrorHandler.showErrorDialog("Error", "Could not update reward balance.", e.getMessage());
@@ -632,92 +593,36 @@ public class CustomerManagementController {
     // Helpers
     // ────────────────────────────────────────────────────────────
 
-    private Customer buildFromForm(boolean includeId) throws SQLException {
-        Customer c = new Customer();
-
-        if (includeId) {
-            c.setCustomerId(Integer.parseInt(txtCustomerId.getText().trim()));
-        }
-
-        c.setFirstName(txtFirstName.getText().trim());
-        c.setMiddleInitial(StringUtil.trimToNull(txtMiddleInitial.getText()));
-        c.setLastName(txtLastName.getText().trim());
-        c.setRole(cboRole.getValue());
-        c.setPhone(txtPhone.getText().trim());
-        c.setBusinessPhone(StringUtil.trimToNull(txtBusinessPhone.getText()));
-        c.setEmail(txtEmail.getText().trim());
-
-        AddressOption addr = resolveAddressSelection(true);
-        c.setAddressId(addr.getAddressId());
-
-        UserOption user = cboUser.getValue();
-        c.setUserId(user != null ? user.getUserId() : 0);
-
-        RewardTierOption tier = cboRewardTier.getValue();
-        c.setRewardTierId(tier.getRewardTierId());
-
-        String balStr = StringUtil.safe(txtRewardBalance.getText());
-        c.setRewardBalance(balStr.isEmpty() ? 0 : Integer.parseInt(balStr));
-
-        c.setTierAssignedDate(LocalDateTime.now());
-
-        return c;
+    private GridPane buildFormGrid() {
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(10);
+        javafx.scene.layout.ColumnConstraints c0 = new javafx.scene.layout.ColumnConstraints();
+        c0.setMinWidth(130);
+        c0.setHgrow(Priority.NEVER);
+        javafx.scene.layout.ColumnConstraints c1 = new javafx.scene.layout.ColumnConstraints();
+        c1.setHgrow(Priority.ALWAYS);
+        c1.setMaxWidth(Double.MAX_VALUE);
+        grid.getColumnConstraints().addAll(c0, c1);
+        return grid;
     }
 
-    private ValidationResult validateForm(boolean isUpdate) {
-        String first = StringUtil.safe(txtFirstName.getText());
-        String last = StringUtil.safe(txtLastName.getText());
-        String phone = StringUtil.safe(txtPhone.getText());
-        String email = StringUtil.safe(txtEmail.getText());
-        String mi = StringUtil.safe(txtMiddleInitial.getText());
-        AddressOption addr = cboAddress.getValue();
-        String typedAddress = AddressInputHelper.getTypedText(cboAddress);
-        RewardTierOption tier = cboRewardTier.getValue();
+    private void addRow(GridPane grid, int row, String labelText, Control control) {
+        Label lbl = new Label(labelText);
+        lbl.getStyleClass().add("form-label");
+        control.setMaxWidth(Double.MAX_VALUE);
+        grid.add(lbl, 0, row);
+        grid.add(control, 1, row);
+    }
 
-        if (isUpdate) {
-            String id = StringUtil.safe(txtCustomerId.getText());
-            if (id.isBlank()) return ValidationResult.fail("Customer ID is missing (select a row first).");
-            try {
-                Integer.parseInt(id);
-            } catch (NumberFormatException ex) {
-                return ValidationResult.fail("Customer ID is invalid.");
-            }
-        }
-
-        if (first.isBlank()) return ValidationResult.fail("First name is required.");
-        if (last.isBlank()) return ValidationResult.fail("Last name is required.");
-
-        if (phone.isBlank()) return ValidationResult.fail("Phone is required.");
-        if (!StringUtil.PHONE_RX.matcher(phone).matches()) return ValidationResult.fail("Phone format looks invalid.");
-
-        if (email.isBlank()) return ValidationResult.fail("Email is required.");
-        if (!StringUtil.EMAIL_RX.matcher(email).matches()) return ValidationResult.fail("Email format looks invalid.");
-
-        if (!mi.isBlank() && mi.trim().length() > 2) return ValidationResult.fail("Middle initial must be 1-2 characters.");
-
-        if (addr == null && typedAddress.isBlank()) return ValidationResult.fail("Address is required.");
-        if (tier == null) return ValidationResult.fail("Reward tier is required.");
-
-        // Length limits matching SQL columns
-        if (first.length() > 50) return ValidationResult.fail("First name must be 50 characters or less.");
-        if (last.length() > 50) return ValidationResult.fail("Last name must be 50 characters or less.");
-        if (phone.length() > 20) return ValidationResult.fail("Phone must be 20 characters or less.");
-        String biz = StringUtil.safe(txtBusinessPhone.getText());
-        if (!biz.isBlank() && biz.length() > 20) return ValidationResult.fail("Business phone must be 20 characters or less.");
-        if (email.length() > 254) return ValidationResult.fail("Email must be 254 characters or less.");
-
-        // Reward balance validation
-        String balStr = StringUtil.safe(txtRewardBalance.getText());
-        if (!balStr.isEmpty()) {
-            try {
-                int bal = Integer.parseInt(balStr);
-                if (bal < 0) return ValidationResult.fail("Reward balance cannot be negative.");
-            } catch (NumberFormatException e) {
-                return ValidationResult.fail("Reward balance must be a whole number.");
-            }
-        }
-
-        return ValidationResult.ok();
+    private AddressOption resolveAddress(ComboBox<AddressOption> cbAddress) throws SQLException {
+        AddressOption selected = cbAddress.getValue();
+        if (selected != null) return selected;
+        String typed = AddressInputHelper.getTypedText(cbAddress);
+        if (typed.isBlank()) return null;
+        AddressOption resolved = SharedDAO.findOrCreateAddressFromInput(typed);
+        loadCombos();
+        return resolved;
     }
 
     private void selectCustomerById(int id) {
@@ -728,47 +633,5 @@ public class CustomerManagementController {
                 return;
             }
         }
-    }
-
-    private AddressOption resolveAddressSelection(boolean required) throws SQLException {
-        AddressOption selected = cboAddress.getValue();
-        if (selected != null) return selected;
-
-        String typed = AddressInputHelper.getTypedText(cboAddress);
-        if (typed.isBlank()) {
-            if (required) throw new IllegalArgumentException("Address is required.");
-            return null;
-        }
-
-        AddressOption resolved = SharedDAO.findOrCreateAddressFromInput(typed);
-        loadCombos();
-        AddressInputHelper.selectAddressById(cboAddress, resolved.getAddressId());
-        return resolved;
-    }
-
-    private void selectUserById(int userId) {
-        if (cboUser.getItems() == null) return;
-        if (userId <= 0) {
-            cboUser.getSelectionModel().clearSelection();
-            return;
-        }
-        for (UserOption u : cboUser.getItems()) {
-            if (u.getUserId() == userId) {
-                cboUser.getSelectionModel().select(u);
-                return;
-            }
-        }
-        cboUser.getSelectionModel().clearSelection();
-    }
-
-    private void selectRewardTierById(int tierId) {
-        if (cboRewardTier.getItems() == null) return;
-        for (RewardTierOption t : cboRewardTier.getItems()) {
-            if (t.getRewardTierId() == tierId) {
-                cboRewardTier.getSelectionModel().select(t);
-                return;
-            }
-        }
-        cboRewardTier.getSelectionModel().clearSelection();
     }
 }
