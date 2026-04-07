@@ -1,6 +1,6 @@
 package com.sait.workshop05;
 
-import com.sait.workshop05.database.RewardTierDAO;
+import com.sait.workshop05.api.RewardTierApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.RewardTier;
 import javafx.collections.FXCollections;
@@ -12,7 +12,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.util.Optional;
 
 public class RewardTierController {
@@ -34,7 +33,6 @@ public class RewardTierController {
     @FXML private CheckBox chkUnlimited;
     @FXML private TextField txtDiscountRate;
 
-    private final RewardTierDAO dao = new RewardTierDAO();
     private final ObservableList<RewardTier> master = FXCollections.observableArrayList();
     private FilteredList<RewardTier> filtered;
 
@@ -181,13 +179,25 @@ public class RewardTierController {
     private void refreshTable() {
         try {
             master.clear();
-            master.addAll(dao.getAllRewardTiers());
+            for (RewardTierApi.RewardTierJson j : RewardTierApi.list()) {
+                master.add(fromJson(j));
+            }
             lblStatus.setText(master.size() + " tier(s) loaded");
             LogData.logAction("READ", "RewardTier");
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LogData.handleException("READ_REWARD_TIERS", e);
-            showError("Database Error", "Could not load reward tiers.", e.getMessage());
+            showError("API Error", "Could not load reward tiers.", e.getMessage());
         }
+    }
+
+    private RewardTier fromJson(RewardTierApi.RewardTierJson j) {
+        RewardTier t = new RewardTier();
+        t.setRewardTierId(j.id != null ? j.id : 0);
+        t.setRewardTierName(j.name != null ? j.name : "");
+        t.setRewardTierMinPoints(j.minPoints);
+        t.setRewardTierMaxPoints(j.maxPoints == null ? 0 : j.maxPoints);
+        t.setRewardTierDiscountRate(j.discountRatePercent);
+        return t;
     }
 
     @FXML
@@ -220,27 +230,26 @@ public class RewardTierController {
         RewardTier tier = buildFromForm(false);
 
         try {
-            // Check for overlapping ranges
             Integer maxPoints = chkUnlimited.isSelected() ? null :
                     (txtMaxPoints.getText().isEmpty() ? null : Integer.parseInt(txtMaxPoints.getText()));
 
-            if (!dao.validatePointsRange(tier.getRewardTierMinPoints(), maxPoints, null)) {
-                showWarning("Validation", "Point range overlaps with an existing tier.");
-                return;
-            }
-
-            int newId = dao.insertRewardTier(tier);
+            RewardTierApi.RewardTierJson created = RewardTierApi.create(
+                    tier.getRewardTierName(),
+                    tier.getRewardTierMinPoints(),
+                    maxPoints,
+                    tier.getRewardTierDiscountRate()
+            );
             LogData.logAction("CREATE", "RewardTier");
             refreshTable();
 
-            if (newId > 0) {
-                selectTierById(newId);
-                lblStatus.setText("Created tier #" + newId);
+            if (created.id != null && created.id > 0) {
+                selectTierById(created.id);
+                lblStatus.setText("Created tier #" + created.id);
             }
 
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             LogData.handleException("CREATE_REWARD_TIER", ex);
-            showError("Create Failed", "Could not create reward tier.", friendlyDbMessage(ex));
+            showError("Create Failed", "Could not create reward tier.", ex.getMessage());
         }
     }
 
@@ -261,23 +270,23 @@ public class RewardTierController {
         RewardTier tier = buildFromForm(true);
 
         try {
-            // Check for overlapping points range
             Integer maxPoints = chkUnlimited.isSelected() ? null :
                     (txtMaxPoints.getText().isEmpty() ? null : Integer.parseInt(txtMaxPoints.getText()));
 
-            if (!dao.validatePointsRange(tier.getRewardTierMinPoints(), maxPoints, tier.getRewardTierId())) {
-                showWarning("Validation", "Points range overlaps with an existing tier.");
-                return;
-            }
-
-            boolean ok = dao.updateRewardTier(tier);
+            RewardTierApi.update(
+                    tier.getRewardTierId(),
+                    tier.getRewardTierName(),
+                    tier.getRewardTierMinPoints(),
+                    maxPoints,
+                    tier.getRewardTierDiscountRate()
+            );
             LogData.logAction("UPDATE", "RewardTier");
             refreshTable();
             selectTierById(tier.getRewardTierId());
-            lblStatus.setText(ok ? "Updated tier #" + tier.getRewardTierId() : "No update applied");
-        } catch (SQLException ex) {
+            lblStatus.setText("Updated tier #" + tier.getRewardTierId());
+        } catch (Exception ex) {
             LogData.handleException("UPDATE_REWARD_TIER", ex);
-            showError("Update Failed", "Could not update reward tier.", friendlyDbMessage(ex));
+            showError("Update Failed", "Could not update reward tier.", ex.getMessage());
         }
     }
 
@@ -298,20 +307,14 @@ public class RewardTierController {
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
         try {
-            dao.deleteRewardTier(selected.getRewardTierId());
+            RewardTierApi.delete(selected.getRewardTierId());
             LogData.logAction("DELETE", "RewardTier");
             refreshTable();
             onClear();
             lblStatus.setText("Deleted tier #" + selected.getRewardTierId());
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             LogData.handleException("DELETE_REWARD_TIER", ex);
-
-            String friendly = friendlyDbMessage(ex);
-            if (friendly.contains("assigned to customers")) {
-                showError("Delete Failed", "Cannot delete tier", "This tier is currently assigned to customers. Please reassign customers first.");
-            } else {
-                showError("Delete Failed", "Could not delete reward tier.", friendly);
-            }
+            showError("Delete Failed", "Could not delete reward tier.", ex.getMessage());
         }
     }
 
@@ -395,23 +398,6 @@ public class RewardTierController {
         }
 
         return ValidationResult.ok();
-    }
-
-    private String friendlyDbMessage(SQLException ex) {
-        String sqlState = ex.getSQLState();
-        String msg = (ex.getMessage() == null) ? "" : ex.getMessage();
-
-        if (sqlState != null && sqlState.startsWith("23")) {
-            if (msg.toLowerCase().contains("uq_rewardtier_name")) {
-                return "A tier with this name already exists.";
-            }
-            if (msg.toLowerCase().contains("ck_rewardtier_maxpoints")) {
-                return "Maximum points must be greater than or equal to minimum points.";
-            }
-            return "This operation violates a database constraint.";
-        }
-
-        return msg.isBlank() ? "Unknown database error." : msg;
     }
 
     private void selectTierById(int id) {
