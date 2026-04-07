@@ -26,8 +26,6 @@
                         styleClass="btn-muted" prefHeight="36" disable="true"/>
                 <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
                         styleClass="btn-muted" prefHeight="36"/>
-                <Button fx:id="btnNewCustomer" text="New Customer" onAction="#onNewCustomer"
-                        styleClass="btn-accent" prefHeight="36"/>
             </HBox>
 
             <!-- Table -->
@@ -41,7 +39,7 @@
                     <TableColumn fx:id="colRewardTier" text="TIER" prefWidth="90"/>
                     <TableColumn fx:id="colRewardBalance" text="POINTS" prefWidth="80"/>
                     <TableColumn fx:id="colAddress" text="ADDRESS" prefWidth="180"/>
-                    <TableColumn fx:id="colActions" text="" prefWidth="130"/>
+                    <TableColumn fx:id="colActions" text="" prefWidth="80"/>
                 </columns>
             </TableView>
 

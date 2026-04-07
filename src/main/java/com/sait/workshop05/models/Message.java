@@ -5,29 +5,24 @@ import javafx.beans.property.*;
 import java.time.LocalDateTime;
 
 /**
- * Message model representing a message between users.
- * This is a preliminary model - table may need to be created in the database.
+ * Message model representing a message between users (API uses UUID strings for user and message ids).
  */
 public class Message {
-    private final IntegerProperty messageId;
-    private final IntegerProperty senderId;
-    private final IntegerProperty receiverId;
+    private final StringProperty messageId;
+    private final StringProperty senderId;
+    private final StringProperty receiverId;
     private final StringProperty messageSubject;
     private final StringProperty messageContent;
     private final ObjectProperty<LocalDateTime> messageSentDateTime;
     private final BooleanProperty messageIsRead;
 
-    // Display properties
     private final StringProperty senderDisplay;
     private final StringProperty receiverDisplay;
 
-    /**
-     * Default constructor - initializes all properties
-     */
     public Message() {
-        this.messageId = new SimpleIntegerProperty();
-        this.senderId = new SimpleIntegerProperty();
-        this.receiverId = new SimpleIntegerProperty();
+        this.messageId = new SimpleStringProperty();
+        this.senderId = new SimpleStringProperty();
+        this.receiverId = new SimpleStringProperty();
         this.messageSubject = new SimpleStringProperty();
         this.messageContent = new SimpleStringProperty();
         this.messageSentDateTime = new SimpleObjectProperty<>();
@@ -36,41 +31,40 @@ public class Message {
         this.receiverDisplay = new SimpleStringProperty();
     }
 
-    // Getters and Setters
-    public int getMessageId() {
+    public String getMessageId() {
         return messageId.get();
     }
 
-    public IntegerProperty messageIdProperty() {
+    public StringProperty messageIdProperty() {
         return messageId;
     }
 
-    public void setMessageId(int messageId) {
-        this.messageId.set(messageId);
+    public void setMessageId(String messageId) {
+        this.messageId.set(messageId != null ? messageId : "");
     }
 
-    public int getSenderId() {
+    public String getSenderId() {
         return senderId.get();
     }
 
-    public IntegerProperty senderIdProperty() {
+    public StringProperty senderIdProperty() {
         return senderId;
     }
 
-    public void setSenderId(int senderId) {
-        this.senderId.set(senderId);
+    public void setSenderId(String senderId) {
+        this.senderId.set(senderId != null ? senderId : "");
     }
 
-    public int getReceiverId() {
+    public String getReceiverId() {
         return receiverId.get();
     }
 
-    public IntegerProperty receiverIdProperty() {
+    public StringProperty receiverIdProperty() {
         return receiverId;
     }
 
-    public void setReceiverId(int receiverId) {
-        this.receiverId.set(receiverId);
+    public void setReceiverId(String receiverId) {
+        this.receiverId.set(receiverId != null ? receiverId : "");
     }
 
     public String getMessageSubject() {
@@ -157,4 +151,3 @@ public class Message {
                 '}';
     }
 }
-
