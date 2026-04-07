@@ -53,9 +53,7 @@ public class DashboardController {
     @FXML
     void initialize() {
         setupColumns();
-        loadSummaryCards();
-        loadRecentOrders();
-
+        loadDashboard();
         btnNewOrder.setOnAction(e -> onNewOrder());
     }
 
@@ -166,25 +164,17 @@ public class DashboardController {
     // Load data
     // ───────────────────────────────────────────────
 
-    private void loadSummaryCards() {
+    private void loadDashboard() {
         try {
             DashboardApi.SummaryResponse s = DashboardApi.fetchSummary();
-            lblTotalRevenu.setText(String.format("$%,.2f", s.totalRevenue.doubleValue()));
+
+            // Summary cards
+            lblTotalRevenu.setText(String.format("$%,.2f", s.totalRevenue != null ? s.totalRevenue.doubleValue() : 0));
             lblTotalOrders.setText(String.valueOf(s.totalOrders));
             lblTotalCustomers.setText(String.valueOf(s.totalCustomers));
             lblActiveProducts.setText(String.valueOf(s.totalProducts));
-        } catch (Exception e) {
-            lblTotalRevenu.setText("$0.00");
-            lblTotalOrders.setText("0");
-            lblTotalCustomers.setText("0");
-            lblActiveProducts.setText("0");
-            LogData.handleException("LOAD_DASHBOARD_STATS", e);
-        }
-    }
 
-    private void loadRecentOrders() {
-        try {
-            DashboardApi.SummaryResponse s = DashboardApi.fetchSummary();
+            // Recent orders table
             orderProductsMap.clear();
             List<Order> recent = new java.util.ArrayList<>();
             if (s.recentOrders != null) {
@@ -199,15 +189,17 @@ public class DashboardController {
                     recent.add(o);
                 }
             }
-
-            ObservableList<Order> data = FXCollections.observableArrayList(recent);
-            tbvRecentOrders.setItems(data);
+            tbvRecentOrders.setItems(FXCollections.observableArrayList(recent));
             lblStatus.setText(recent.size() + " recent order(s)");
 
         } catch (Exception e) {
+            lblTotalRevenu.setText("$0.00");
+            lblTotalOrders.setText("0");
+            lblTotalCustomers.setText("0");
+            lblActiveProducts.setText("0");
             tbvRecentOrders.setItems(FXCollections.observableArrayList());
-            lblStatus.setText("Could not load orders");
-            LogData.handleException("LOAD_RECENT_ORDERS", e);
+            lblStatus.setText("Could not load dashboard");
+            LogData.handleException("LOAD_DASHBOARD", e);
         }
     }
 
@@ -217,8 +209,7 @@ public class DashboardController {
 
     @FXML
     private void onRefresh() {
-        loadSummaryCards();
-        loadRecentOrders();
+        loadDashboard();
     }
 
     private void onNewOrder() {
