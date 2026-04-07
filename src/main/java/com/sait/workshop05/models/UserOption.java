@@ -1,15 +1,16 @@
 package com.sait.workshop05.models;
 
 public class UserOption {
-    private final int userId;
+    /** API user id (UUID string). */
+    private final String userId;
     private final String username;
 
-    public UserOption(int userId, String username) {
+    public UserOption(String userId, String username) {
         this.userId = userId;
         this.username = username;
     }
 
-    public int getUserId() {
+    public String getUserId() {
         return userId;
     }
 
@@ -19,7 +20,6 @@ public class UserOption {
 
     @Override
     public String toString() {
-        // What shows in the ComboBox dropdown
-        return userId + " - " + username;
+        return username;
     }
 }

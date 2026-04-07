@@ -2,14 +2,12 @@
 
 package com.sait.workshop05.analytics;
 
-import com.sait.workshop05.database.AnalyticsDAO;
+import com.sait.workshop05.api.AnalyticsApi;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public class SalesByEmployeeHandler implements KPIHandler {
-
-    private final AnalyticsDAO dao = new AnalyticsDAO();
 
     @Override
     public double getPrimaryValue(LocalDate start,
@@ -17,7 +15,7 @@ public class SalesByEmployeeHandler implements KPIHandler {
                                   String bakerySelection,
                                   List<Integer> scopeBakeryIds) throws Exception {
 
-        return dao.getTotalSalesByEmployee(start, end, bakerySelection, scopeBakeryIds);
+        return AnalyticsApi.getTotalSalesByEmployee(start, end, bakerySelection);
     }
 
     @Override
@@ -26,7 +24,7 @@ public class SalesByEmployeeHandler implements KPIHandler {
                                         String bakerySelection,
                                         List<Integer> scopeBakeryIds) throws Exception {
 
-        return dao.getSalesByEmployee(start, end, bakerySelection, scopeBakeryIds);
+        return AnalyticsApi.getSalesByEmployee(start, end, bakerySelection);
     }
 
     @Override

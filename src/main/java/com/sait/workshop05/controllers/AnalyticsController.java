@@ -3,7 +3,7 @@
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.analytics.*;
-import com.sait.workshop05.database.AnalyticsDAO;
+import com.sait.workshop05.api.AnalyticsApi;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
 import javafx.collections.FXCollections;
@@ -29,7 +29,6 @@ public class AnalyticsController {
     @FXML private StackPane chartContainer;
 
     private final UserSession session = UserSession.getInstance();
-    private final AnalyticsDAO dao = new AnalyticsDAO();
 
     private static final String ALL_BAKERIES_ADMIN = "All Bakeries";
     private static final String ALL_MY_BAKERIES = "All My Bakeries";
@@ -150,13 +149,13 @@ public class AnalyticsController {
 
         try {
             if (session.isAdmin()) {
-                List<String> bakeries = dao.getBakeryNames();
+                List<String> bakeries = AnalyticsApi.getBakeryNames();
                 bakeries.add(0, ALL_BAKERIES_ADMIN);
                 bakeryComboBox.setItems(FXCollections.observableArrayList(bakeries));
                 bakeryComboBox.setValue(ALL_BAKERIES_ADMIN);
             } else {
                 List<Integer> scopeIds = session.getAccessibleBakeryIds();
-                List<String> bakeries = dao.getBakeryNamesByIds(scopeIds);
+                List<String> bakeries = AnalyticsApi.getBakeryNamesByIds(scopeIds);
 
                 bakeries.add(0, ALL_MY_BAKERIES);
 
@@ -251,26 +250,25 @@ public class AnalyticsController {
 
         return switch (type) {
             case REVENUE_OVER_TIME, REVENUE_BY_BAKERY ->
-                    dao.getInProgressRevenue(start, end,
-                            type == KPIType.REVENUE_BY_BAKERY ? ALL_BAKERIES_ADMIN : bakerySelection,
-                            scopeBakeryIds);
+                    AnalyticsApi.getInProgressRevenue(start, end,
+                            type == KPIType.REVENUE_BY_BAKERY ? ALL_BAKERIES_ADMIN : bakerySelection);
 
             case AVERAGE_ORDER_VALUE ->
-                    dao.getInProgressAverageOrderValue(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressAverageOrderValue(start, end, bakerySelection);
 
             case COMPLETION_RATE ->
-                    dao.getInProgressRate(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressRate(start, end, bakerySelection);
 
             case TOP_PRODUCTS -> {
                 double sum = 0;
-                for (DataPoint dp : dao.getInProgressTopProducts(start, end, bakerySelection, scopeBakeryIds)) {
+                for (DataPoint dp : AnalyticsApi.getInProgressTopProducts(start, end, bakerySelection)) {
                     sum += dp.getValue();
                 }
                 yield sum;
             }
 
             case SALES_BY_EMPLOYEE ->
-                    dao.getInProgressTotalSalesByEmployee(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressTotalSalesByEmployee(start, end, bakerySelection);
         };
     }
 
@@ -282,22 +280,22 @@ public class AnalyticsController {
 
         return switch (type) {
             case REVENUE_OVER_TIME ->
-                    dao.getInProgressRevenueOverTime(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressRevenueOverTime(start, end, bakerySelection);
 
             case REVENUE_BY_BAKERY ->
-                    dao.getInProgressRevenueByBakery(start, end, scopeBakeryIds);
+                    AnalyticsApi.getInProgressRevenueByBakery(start, end);
 
             case AVERAGE_ORDER_VALUE ->
-                    dao.getInProgressAverageOrderValueOverTime(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressAverageOrderValueOverTime(start, end, bakerySelection);
 
             case COMPLETION_RATE ->
-                    dao.getInProgressRateOverTime(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressRateOverTime(start, end, bakerySelection);
 
             case TOP_PRODUCTS ->
-                    dao.getInProgressTopProducts(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressTopProducts(start, end, bakerySelection);
 
             case SALES_BY_EMPLOYEE ->
-                    dao.getInProgressSalesByEmployee(start, end, bakerySelection, scopeBakeryIds);
+                    AnalyticsApi.getInProgressSalesByEmployee(start, end, bakerySelection);
         };
     }
 
@@ -620,7 +618,7 @@ public class AnalyticsController {
         try {
             List<Integer> scopeBakeryIds = session.isAdmin() ? null : session.getAccessibleBakeryIds();
 
-            List<LocalDate> validDates = dao.getAvailableOrderDates(bakerySelection, scopeBakeryIds);
+            List<LocalDate> validDates = AnalyticsApi.getAvailableOrderDates(bakerySelection, scopeBakeryIds);
 
             if (validDates.isEmpty()) {
                 startDatePicker.setValue(null);

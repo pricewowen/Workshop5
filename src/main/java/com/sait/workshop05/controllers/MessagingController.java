@@ -1,11 +1,12 @@
 package com.sait.workshop05.controllers;
 
+import com.sait.workshop05.api.MessageApi;
+import com.sait.workshop05.api.ReferenceApi;
 import com.sait.workshop05.models.ConversationSummary;
-import com.sait.workshop05.database.MessageDAO;
+import com.sait.workshop05.models.Message;
 import com.sait.workshop05.models.UserOption;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.util.ErrorHandler;
-import com.sait.workshop05.models.Message;
 import com.sait.workshop05.session.UserSession;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,26 +20,22 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
-import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
- * Controller for the internal staff messaging view (Phase 10).
- * Supports conversation list, message thread display, and sending new messages.
+ * Staff messaging backed by {@code /api/v1/messages}.
  */
 public class MessagingController {
 
-    // ── Left panel: Conversations ──
     @FXML private ListView<ConversationSummary> lstConversations;
     @FXML private TextField txtConversationSearch;
     @FXML private Button btnNewMessage;
     @FXML private Button btnRefreshConversations;
     @FXML private Label lblUnreadCount;
 
-    // ── Right panel: Thread ──
     @FXML private Label lblThreadTitle;
     @FXML private ScrollPane scrollMessages;
     @FXML private VBox vboxMessages;
@@ -47,41 +44,33 @@ public class MessagingController {
     @FXML private Button btnSend;
     @FXML private Label lblComposeStatus;
 
-    private final MessageDAO messageDAO = new MessageDAO();
     private final ObservableList<ConversationSummary> conversationList = FXCollections.observableArrayList();
     private FilteredList<ConversationSummary> filteredConversations;
 
-    private int currentUserId;
-    private int selectedPartnerId = -1;
+    private String currentUserUuid;
+    private String selectedPartnerId = "";
     private String selectedPartnerName = "";
 
-    /** Guard flag to prevent infinite recursion between selection listener and loadConversationThread(). */
     private boolean isLoadingThread = false;
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    // ───────────────────────────────────────────────
-    // Initialise
-    // ───────────────────────────────────────────────
-
     @FXML
     void initialize() {
-        currentUserId = UserSession.getInstance().getCurrentUser().getUserId();
+        currentUserUuid = UserSession.getInstance().getApiUserId();
+        if (currentUserUuid == null || currentUserUuid.isBlank()) {
+            ErrorHandler.showErrorDialog("Session", "Missing user id from login. Please log in again.", null);
+        }
 
         setupConversationList();
         setupSearchFilter();
         setupSelectionBinding();
         refreshConversations();
 
-        // Disable send controls until a conversation is selected
         btnSend.setDisable(true);
         txtSubject.setDisable(true);
         txtMessageContent.setDisable(true);
     }
-
-    // ───────────────────────────────────────────────
-    // Conversation list setup
-    // ───────────────────────────────────────────────
 
     private void setupConversationList() {
         lstConversations.setCellFactory(lv -> new ListCell<>() {
@@ -119,7 +108,6 @@ public class MessagingController {
                     setGraphic(cell);
                     setText(null);
 
-                    // Highlight rows with unread messages
                     if (item.getUnreadCount() > 0) {
                         setStyle("-fx-background-color: #F8EDD5;");
                     } else {
@@ -156,34 +144,90 @@ public class MessagingController {
         );
     }
 
-    // ───────────────────────────────────────────────
-    // Load conversation data
-    // ───────────────────────────────────────────────
+    private static LocalDateTime parseSent(String s) {
+        if (s == null || s.isBlank()) return LocalDateTime.MIN;
+        try {
+            return OffsetDateTime.parse(s).toLocalDateTime();
+        } catch (Exception e) {
+            try {
+                return LocalDateTime.parse(s);
+            } catch (Exception e2) {
+                return LocalDateTime.MIN;
+            }
+        }
+    }
 
     private void refreshConversations() {
+        if (currentUserUuid == null || currentUserUuid.isBlank()) {
+            return;
+        }
         try {
-            List<ConversationSummary> partners = messageDAO.getConversationPartners(currentUserId);
-            conversationList.setAll(partners);
+            List<MessageApi.LegacyMessageJson> rows = MessageApi.myMessages();
+            Map<String, String> userNames = new HashMap<>();
+            for (UserOption u : ReferenceApi.loadAdminUsers()) {
+                userNames.put(u.getUserId(), u.getUsername());
+            }
 
-            int totalUnread = partners.stream().mapToInt(ConversationSummary::getUnreadCount).sum();
+            Map<String, LocalDateTime> lastByPartner = new HashMap<>();
+            Map<String, Integer> unreadByPartner = new HashMap<>();
+
+            for (MessageApi.LegacyMessageJson m : rows) {
+                String other = otherParty(m, currentUserUuid);
+                if (other == null || other.isBlank()) continue;
+
+                LocalDateTime t = parseSent(m.sentAt);
+                lastByPartner.merge(other, t, (a, b) -> a.isAfter(b) ? a : b);
+
+                if (m.receiverId != null && m.receiverId.equals(currentUserUuid) && !m.read) {
+                    unreadByPartner.merge(other, 1, Integer::sum);
+                }
+            }
+
+            List<ConversationSummary> summaries = new ArrayList<>();
+            for (Map.Entry<String, LocalDateTime> e : lastByPartner.entrySet()) {
+                String pid = e.getKey();
+                String name = userNames.getOrDefault(pid, pid.substring(0, Math.min(8, pid.length())) + "…");
+                int unread = unreadByPartner.getOrDefault(pid, 0);
+                summaries.add(new ConversationSummary(pid, name, e.getValue(), unread));
+            }
+            summaries.sort(Comparator.comparing(ConversationSummary::getLastMessageTime).reversed());
+
+            conversationList.setAll(summaries);
+
+            int totalUnread = summaries.stream().mapToInt(ConversationSummary::getUnreadCount).sum();
             lblUnreadCount.setText(totalUnread > 0 ? totalUnread + " unread" : "No unread messages");
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             ErrorHandler.showErrorDialog("Load Error", "Could not load conversations", e.getMessage());
             LogData.handleException("LOAD_CONVERSATIONS", e);
         }
     }
 
+    private static String otherParty(MessageApi.LegacyMessageJson m, String me) {
+        if (m.senderId != null && m.senderId.equals(me)) {
+            return m.receiverId;
+        }
+        return m.senderId;
+    }
+
     private void loadConversationThread() {
-        if (selectedPartnerId < 0) return;
+        if (selectedPartnerId == null || selectedPartnerId.isBlank()) return;
 
         isLoadingThread = true;
         try {
-            // Mark messages from this partner as read
-            messageDAO.markConversationAsRead(currentUserId, selectedPartnerId);
+            List<MessageApi.LegacyMessageJson> rows = MessageApi.conversation(selectedPartnerId);
 
-            // Load the conversation
-            List<Message> messages = messageDAO.getConversation(currentUserId, selectedPartnerId);
+            for (MessageApi.LegacyMessageJson m : rows) {
+                if (m.receiverId != null && m.receiverId.equals(currentUserUuid) && !m.read && m.id != null) {
+                    MessageApi.markRead(m.id);
+                }
+            }
+
+            rows = MessageApi.conversation(selectedPartnerId);
+            List<Message> messages = new ArrayList<>();
+            for (MessageApi.LegacyMessageJson m : rows) {
+                messages.add(MessageApi.toModel(m));
+            }
 
             lblThreadTitle.setText("Conversation with " + selectedPartnerName);
             vboxMessages.getChildren().clear();
@@ -198,23 +242,19 @@ public class MessagingController {
                 }
             }
 
-            // Scroll to bottom after messages load
             scrollMessages.applyCss();
             scrollMessages.layout();
             scrollMessages.setVvalue(1.0);
 
-            // Refresh the conversation list to update unread counts
             refreshConversations();
 
-            // Re-select the current partner (guard flag prevents recursion)
             for (ConversationSummary cs : conversationList) {
-                if (cs.getPartnerId() == selectedPartnerId) {
+                if (cs.getPartnerId().equals(selectedPartnerId)) {
                     lstConversations.getSelectionModel().select(cs);
                     break;
                 }
             }
 
-            // Pre-fill subject for replies
             if (!messages.isEmpty()) {
                 Message lastMsg = messages.get(messages.size() - 1);
                 String lastSubject = lastMsg.getMessageSubject();
@@ -225,7 +265,7 @@ public class MessagingController {
                 }
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             ErrorHandler.showErrorDialog("Load Error", "Could not load message thread", e.getMessage());
             LogData.handleException("LOAD_THREAD", e);
         } finally {
@@ -233,18 +273,13 @@ public class MessagingController {
         }
     }
 
-    // ───────────────────────────────────────────────
-    // Message bubble factory
-    // ───────────────────────────────────────────────
-
     private VBox createMessageBubble(Message msg) {
-        boolean isSentByMe = msg.getSenderId() == currentUserId;
+        boolean isSentByMe = currentUserUuid != null && currentUserUuid.equals(msg.getSenderId());
 
         VBox bubble = new VBox(2);
         bubble.setPadding(new Insets(6, 10, 6, 10));
         bubble.setMaxWidth(500);
 
-        // Subject line (if present)
         if (msg.getMessageSubject() != null && !msg.getMessageSubject().isBlank()) {
             Label subjectLabel = new Label(msg.getMessageSubject());
             subjectLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #4e342e;");
@@ -252,13 +287,11 @@ public class MessagingController {
             bubble.getChildren().add(subjectLabel);
         }
 
-        // Message content
         Label contentLabel = new Label(msg.getMessageContent());
         contentLabel.setWrapText(true);
         contentLabel.setStyle("-fx-font-size: 13px;");
         bubble.getChildren().add(contentLabel);
 
-        // Timestamp
         Label timeLabel = new Label(
                 msg.getMessageSentDateTime() != null
                         ? msg.getMessageSentDateTime().format(DT_FMT)
@@ -267,7 +300,6 @@ public class MessagingController {
         timeLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #8A8178;");
         bubble.getChildren().add(timeLabel);
 
-        // Styling
         if (isSentByMe) {
             bubble.setStyle("-fx-background-color: #E8F0E5; -fx-background-radius: 12; " +
                     "-fx-border-color: #C5D9C8; -fx-border-radius: 12;");
@@ -276,37 +308,27 @@ public class MessagingController {
                     "-fx-border-color: #E8E2DA; -fx-border-radius: 12;");
         }
 
-        // Wrap in HBox for alignment
         HBox wrapper = new HBox();
         wrapper.setPadding(new Insets(2, 0, 2, 0));
 
         if (isSentByMe) {
-            // Sent messages align right
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
             wrapper.getChildren().addAll(spacer, bubble);
         } else {
-            // Received messages align left
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
             wrapper.getChildren().addAll(bubble, spacer);
         }
 
-        VBox container = new VBox(wrapper);
-        return container;
+        return new VBox(wrapper);
     }
-
-    // ───────────────────────────────────────────────
-    // Actions
-    // ───────────────────────────────────────────────
 
     @FXML
     void onNewMessage() {
         try {
-            List<UserOption> allUsers = messageDAO.getAllStaffUsers();
-
-            // Remove current user from list
-            allUsers.removeIf(u -> u.getUserId() == currentUserId);
+            List<UserOption> allUsers = ReferenceApi.loadAdminUsers();
+            allUsers.removeIf(u -> currentUserUuid != null && u.getUserId().equals(currentUserUuid));
 
             if (allUsers.isEmpty()) {
                 ErrorHandler.showInfo("No Recipients", "There are no other staff users to message.");
@@ -327,9 +349,8 @@ public class MessagingController {
                 txtSubject.setText("");
                 txtSubject.requestFocus();
 
-                // Load existing conversation if any
                 try {
-                    List<Message> existing = messageDAO.getConversation(currentUserId, selectedPartnerId);
+                    List<MessageApi.LegacyMessageJson> existing = MessageApi.conversation(selectedPartnerId);
                     vboxMessages.getChildren().clear();
 
                     if (existing.isEmpty()) {
@@ -337,19 +358,18 @@ public class MessagingController {
                         empty.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 13px;");
                         vboxMessages.getChildren().add(empty);
                     } else {
-                        for (Message msg : existing) {
-                            vboxMessages.getChildren().add(createMessageBubble(msg));
+                        for (MessageApi.LegacyMessageJson m : existing) {
+                            vboxMessages.getChildren().add(createMessageBubble(MessageApi.toModel(m)));
                         }
                     }
-                } catch (SQLException e) {
+                } catch (Exception e) {
                     LogData.handleException("LOAD_CONVERSATION", e);
                 }
 
-                // Select existing conversation if it exists (guarded to prevent recursion)
                 isLoadingThread = true;
                 try {
                     for (ConversationSummary cs : conversationList) {
-                        if (cs.getPartnerId() == selectedPartnerId) {
+                        if (cs.getPartnerId().equals(selectedPartnerId)) {
                             lstConversations.getSelectionModel().select(cs);
                             break;
                         }
@@ -359,7 +379,7 @@ public class MessagingController {
                 }
             });
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             ErrorHandler.showErrorDialog("Error", "Could not load staff users", e.getMessage());
             LogData.handleException("LOAD_STAFF_USERS", e);
         }
@@ -367,7 +387,7 @@ public class MessagingController {
 
     @FXML
     void onSendMessage() {
-        if (selectedPartnerId < 0) {
+        if (selectedPartnerId == null || selectedPartnerId.isBlank()) {
             ErrorHandler.showErrorDialog("No Recipient", "Please select a conversation or start a new message.", null);
             return;
         }
@@ -375,7 +395,6 @@ public class MessagingController {
         String subject = txtSubject.getText() != null ? txtSubject.getText().trim() : "";
         String content = txtMessageContent.getText() != null ? txtMessageContent.getText().trim() : "";
 
-        // Validation
         if (content.isEmpty()) {
             ErrorHandler.showErrorDialog("Validation Error", "Message content cannot be empty.", null);
             txtMessageContent.requestFocus();
@@ -397,47 +416,31 @@ public class MessagingController {
         }
 
         try {
-            Message message = new Message();
-            message.setSenderId(currentUserId);
-            message.setReceiverId(selectedPartnerId);
-            message.setMessageSubject(subject);
-            message.setMessageContent(content);
-            message.setMessageSentDateTime(LocalDateTime.now());
-            message.setMessageIsRead(false);
+            MessageApi.send(selectedPartnerId, subject, content);
 
-            int newId = messageDAO.sendMessage(message);
+            LogData.logAction("SEND_MESSAGE", "Message to " + selectedPartnerName);
 
-            if (newId > 0) {
-                LogData.logAction("SEND_MESSAGE",
-                        "Message #" + newId + " to " + selectedPartnerName);
+            txtMessageContent.clear();
+            lblComposeStatus.setText("Message sent!");
 
-                // Clear compose area
-                txtMessageContent.clear();
-                lblComposeStatus.setText("Message sent!");
+            loadConversationThread();
 
-                // Reload conversation
-                loadConversationThread();
-            } else {
-                ErrorHandler.showErrorDialog("Send Error", "Message could not be sent.", null);
-            }
-
-        } catch (SQLException e) {
-            ErrorHandler.showErrorDialog("Send Error", "Failed to send message", ErrorHandler.friendlyDbMessage(e));
+        } catch (Exception e) {
+            ErrorHandler.showErrorDialog("Send Error", "Failed to send message", e.getMessage());
             LogData.handleException("SEND_MESSAGE", e);
         }
     }
 
     @FXML
     void onRefreshConversations() {
-        int previousPartnerId = selectedPartnerId;
+        String previousPartnerId = selectedPartnerId;
         refreshConversations();
 
-        // Re-select previous conversation (guarded to prevent recursion)
-        if (previousPartnerId > 0) {
+        if (previousPartnerId != null && !previousPartnerId.isBlank()) {
             isLoadingThread = true;
             try {
                 for (ConversationSummary cs : conversationList) {
-                    if (cs.getPartnerId() == previousPartnerId) {
+                    if (cs.getPartnerId().equals(previousPartnerId)) {
                         lstConversations.getSelectionModel().select(cs);
                         break;
                     }
@@ -448,14 +451,9 @@ public class MessagingController {
         }
     }
 
-    // ───────────────────────────────────────────────
-    // Helpers
-    // ───────────────────────────────────────────────
-
     private void enableComposeArea() {
         btnSend.setDisable(false);
         txtSubject.setDisable(false);
         txtMessageContent.setDisable(false);
     }
-
 }
