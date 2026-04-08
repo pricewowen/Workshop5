@@ -181,7 +181,16 @@ public class AnalyticsController {
             LocalDate end = endDatePicker.getValue();
             String bakerySelection = bakeryComboBox.getValue();
 
-            if (start != null && end != null && start.isAfter(end)) {
+            if (start == null || end == null) {
+                kpiValueLabel.setText("No date selected");
+                kpiTitleLabel.setText(handler.getTitle());
+                secondaryValueLabel.setText("—");
+                secondaryTitleLabel.setText(getSecondaryTitle(type));
+                chartContainer.getChildren().clear();
+                return;
+            }
+
+            if (start.isAfter(end)) {
                 kpiValueLabel.setText("Invalid Date Range");
                 kpiTitleLabel.setText("");
                 secondaryValueLabel.setText("Invalid Date Range");
@@ -637,30 +646,6 @@ public class AnalyticsController {
             if (endDatePicker.getValue() == null) {
                 endDatePicker.setValue(last);
             }
-
-            Set<LocalDate> validSet = new HashSet<>(validDates);
-
-            startDatePicker.setDayCellFactory(picker ->
-                    new DateCell() {
-                        @Override
-                        public void updateItem(LocalDate date, boolean empty) {
-                            super.updateItem(date, empty);
-                            if (empty || !validSet.contains(date)) {
-                                setDisable(true);
-                            }
-                        }
-                    });
-
-            endDatePicker.setDayCellFactory(picker ->
-                    new DateCell() {
-                        @Override
-                        public void updateItem(LocalDate date, boolean empty) {
-                            super.updateItem(date, empty);
-                            if (empty || !validSet.contains(date)) {
-                                setDisable(true);
-                            }
-                        }
-                    });
 
         } catch (Exception e) {
             e.printStackTrace();
