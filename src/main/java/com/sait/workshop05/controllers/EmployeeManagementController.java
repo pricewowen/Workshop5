@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import com.sait.workshop05.session.UserSession;
 
 public class EmployeeManagementController {
 
@@ -53,6 +55,7 @@ public class EmployeeManagementController {
 
     private final ObservableList<Employee> master = FXCollections.observableArrayList();
     private FilteredList<Employee> filtered;
+    private List<UserOption> allUsers = new ArrayList<>();
 
     private List<UserOption> userOptions = new ArrayList<>();
     private List<BakeryOption> bakeryOptions = new ArrayList<>();
@@ -132,7 +135,9 @@ public class EmployeeManagementController {
 
     private void loadCombos() {
         try {
-            userOptions = ReferenceApi.loadAdminUsers();
+            List<UserOption> users = ReferenceApi.loadAdminUsers();
+            allUsers = new ArrayList<>(users);
+            userOptions = users;
             bakeryOptions = ReferenceApi.loadBakeries();
             addressOptions = ReferenceApi.loadAddresses();
         } catch (Exception e) {
@@ -206,12 +211,31 @@ public class EmployeeManagementController {
         TextField tfBusinessPhone = new TextField(isNew ? "" : StringUtil.nz(existing.getEmployeeBusinessPhone()));
         TextField tfEmail = new TextField(isNew ? "" : StringUtil.nz(existing.getEmployeeEmail()));
 
-        ComboBox<String> cbRole = new ComboBox<>(FXCollections.observableArrayList(
-                "Admin", "Manager", "Employee", "Baker", "Cashier", "Customer Support"));
+        List<String> roleList = new ArrayList<>(java.util.Arrays.asList(
+                "Manager", "Employee", "Baker", "Cashier", "Customer Support"));
+        if (UserSession.getInstance().isAdmin()) {
+            roleList.add(0, "Admin");
+        }
+        ComboBox<String> cbRole = new ComboBox<>(FXCollections.observableArrayList(roleList));
         if (!isNew) cbRole.setValue(existing.getEmployeeRole());
 
         ComboBox<UserOption> cbUser = new ComboBox<>(FXCollections.observableArrayList(userOptions));
         cbUser.setMaxWidth(Double.MAX_VALUE);
+        cbUser.setEditable(true);
+        cbUser.setOnKeyReleased(evt -> {
+            javafx.scene.input.KeyCode code = evt.getCode();
+            if (code == javafx.scene.input.KeyCode.ENTER || code == javafx.scene.input.KeyCode.ESCAPE
+                    || code == javafx.scene.input.KeyCode.UP || code == javafx.scene.input.KeyCode.DOWN) return;
+            String typed = cbUser.getEditor().getText();
+            cbUser.getSelectionModel().clearSelection();
+            String lc = typed == null ? "" : typed.toLowerCase();
+            List<UserOption> match = lc.isEmpty() ? new ArrayList<>(allUsers)
+                    : allUsers.stream().filter(u -> u.getUsername().toLowerCase().contains(lc))
+                              .collect(Collectors.toList());
+            cbUser.setItems(FXCollections.observableArrayList(match));
+            if (typed != null) { cbUser.getEditor().setText(typed); cbUser.getEditor().positionCaret(typed.length()); }
+            cbUser.show();
+        });
         if (!isNew && existing.getUserId() != null && !existing.getUserId().isBlank()) {
             userOptions.stream().filter(u -> existing.getUserId().equals(u.getUserId()))
                     .findFirst().ifPresent(cbUser::setValue);

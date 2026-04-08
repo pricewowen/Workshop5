@@ -29,6 +29,7 @@ import javafx.scene.layout.VBox;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,6 +57,7 @@ public class CustomerManagementController {
 
     private final ObservableList<Customer> master = FXCollections.observableArrayList();
     private FilteredList<Customer> filtered;
+    private List<RewardTierApi.RewardTierJson> tierData = new ArrayList<>();
 
     // Cached options for dialogs
     private List<RewardTierOption> tierOptions = new ArrayList<>();
@@ -145,11 +147,13 @@ public class CustomerManagementController {
 
     private void loadCombos() {
         try {
-            List<RewardTierOption> tiers = new ArrayList<>();
-            for (RewardTierApi.RewardTierJson t : RewardTierApi.list()) {
-                if (t.id != null) tiers.add(new RewardTierOption(t.id, t.name != null ? t.name : ""));
+            List<RewardTierApi.RewardTierJson> tiers = RewardTierApi.list();
+            tierData = new ArrayList<>(tiers);
+            List<RewardTierOption> tierOptionsList = new ArrayList<>();
+            for (RewardTierApi.RewardTierJson t : tiers) {
+                if (t.id != null) tierOptionsList.add(new RewardTierOption(t.id, t.name != null ? t.name : ""));
             }
-            tierOptions = tiers;
+            tierOptions = tierOptionsList;
             userOptions = ReferenceApi.loadAdminUsers();
             addressOptions = ReferenceApi.loadAddresses();
         } catch (Exception e) {
@@ -478,7 +482,12 @@ public class CustomerManagementController {
             int newBalance = selected.getRewardBalance() + adjustment;
             if (newBalance < 0) { ErrorHandler.showWarning("Invalid", "Reward balance cannot go below 0."); return; }
             try {
-                CustomerApi.patch(selected.getCustomerId(), CustomerApi.patchRewardBalance(newBalance));
+                java.util.Map<String, Object> patchBody = new LinkedHashMap<>(CustomerApi.patchRewardBalance(newBalance));
+                Integer newTierId = findTierForBalance(newBalance);
+                if (newTierId != null) {
+                    patchBody.put("rewardTierId", newTierId);
+                }
+                CustomerApi.patch(selected.getCustomerId(), patchBody);
                 LogData.logAction("ADJUST_POINTS", "Customer " + selected.getCustomerId()
                         + " adjusted by " + adjustment + " -> " + newBalance);
                 refreshTable();
@@ -539,5 +548,15 @@ public class CustomerManagementController {
                 return;
             }
         }
+    }
+
+    private Integer findTierForBalance(int balance) {
+        for (RewardTierApi.RewardTierJson tier : tierData) {
+            if (tier.id == null) continue;
+            boolean meetsMin = balance >= tier.minPoints;
+            boolean meetsMax = tier.maxPoints == null || balance <= tier.maxPoints;
+            if (meetsMin && meetsMax) return tier.id;
+        }
+        return null;
     }
 }
