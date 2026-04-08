@@ -7,218 +7,43 @@
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.sait.workshop05.controllers.CustomerManagementController"
-            prefWidth="1200" prefHeight="800"
             styleClass="page-root">
-
     <children>
+        <VBox spacing="16" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+              AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+            <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
 
-        <VBox spacing="12"
-              AnchorPane.topAnchor="0"
-              AnchorPane.bottomAnchor="0"
-              AnchorPane.leftAnchor="0"
-              AnchorPane.rightAnchor="0"
-              fillWidth="true">
-
-            <padding>
-                <Insets top="14" right="14" bottom="14" left="14"/>
-            </padding>
-
-            <HBox spacing="12" alignment="CENTER_LEFT">
-                <Label text="Customer Management" styleClass="page-title"/>
-
+            <!-- Toolbar -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="txtSearch" promptText="Search customers..."
+                           prefWidth="300" prefHeight="36"/>
                 <Region HBox.hgrow="ALWAYS"/>
-
-                <Label text="Search:" style="-fx-font-size: 13px;"/>
-                <TextField fx:id="txtSearch"
-                           promptText="Search name, email, phone, tier, address"
-                           prefWidth="420"
-                           style="-fx-font-size: 13px;"/>
-
-                <Button text="Refresh"
-                        fx:id="btnRefresh"
-                        onAction="#onRefresh"
-                        prefWidth="100"
-                        styleClass="btn-muted"/>
+                <Button fx:id="btnOrderHistory" text="Order History"
+                        onAction="#onViewOrderHistory"
+                        styleClass="btn-muted" prefHeight="36" disable="true"/>
+                <Button fx:id="btnAdjustPoints" text="Adjust Points"
+                        onAction="#onAdjustPoints"
+                        styleClass="btn-muted" prefHeight="36" disable="true"/>
+                <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
+                        styleClass="btn-muted" prefHeight="36"/>
             </HBox>
 
-            <SplitPane dividerPositions="0.65" VBox.vgrow="ALWAYS" prefWidth="1.0" prefHeight="1.0">
+            <!-- Table -->
+            <TableView fx:id="tblCustomers" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colCustomerId" text="ID" prefWidth="60"/>
+                    <TableColumn fx:id="colFirstName" text="FIRST NAME" prefWidth="120"/>
+                    <TableColumn fx:id="colLastName" text="LAST NAME" prefWidth="120"/>
+                    <TableColumn fx:id="colEmail" text="EMAIL" prefWidth="200"/>
+                    <TableColumn fx:id="colPhone" text="PHONE" prefWidth="130"/>
+                    <TableColumn fx:id="colRewardTier" text="TIER" prefWidth="90"/>
+                    <TableColumn fx:id="colRewardBalance" text="POINTS" prefWidth="80"/>
+                    <TableColumn fx:id="colAddress" text="ADDRESS" prefWidth="180"/>
+                    <TableColumn fx:id="colActions" text="" prefWidth="80"/>
+                </columns>
+            </TableView>
 
-                <items>
-
-                    <VBox spacing="10" SplitPane.resizableWithParent="true" fillWidth="true">
-
-                        <TableView fx:id="tblCustomers"
-                                   VBox.vgrow="ALWAYS"
-                                   prefWidth="1.0"
-                                   style="-fx-font-size: 13px;">
-                            <fixedCellSize>28</fixedCellSize>
-
-                            <columns>
-                                <TableColumn fx:id="colCustomerId" text="ID" prefWidth="55"/>
-                                <TableColumn fx:id="colFirstName" text="First" prefWidth="110"/>
-                                <TableColumn fx:id="colMiddleInitial" text="MI" prefWidth="40"/>
-                                <TableColumn fx:id="colLastName" text="Last" prefWidth="110"/>
-                                <TableColumn fx:id="colEmail" text="Email" prefWidth="180"/>
-                                <TableColumn fx:id="colPhone" text="Phone" prefWidth="120"/>
-                                <TableColumn fx:id="colRewardTier" text="Tier" prefWidth="90"/>
-                                <TableColumn fx:id="colRewardBalance" text="Points" prefWidth="70"/>
-                                <TableColumn fx:id="colAddress" text="Address" prefWidth="200"/>
-                            </columns>
-                        </TableView>
-
-                        <Label fx:id="lblStatus"
-                               text=""
-                               style="-fx-text-fill: #444; -fx-font-size: 13px;"/>
-                    </VBox>
-
-                    <ScrollPane fitToWidth="true"
-                                fitToHeight="true"
-                                hbarPolicy="NEVER"
-                                vbarPolicy="AS_NEEDED"
-                                prefWidth="440"
-                                SplitPane.resizableWithParent="true">
-
-                        <content>
-                            <VBox spacing="14"
-                                  fillWidth="true"
-                                  prefWidth="1.0"
-                                  styleClass="form-panel">
-
-                                <padding>
-                                    <Insets top="16" right="16" bottom="16" left="16"/>
-                                </padding>
-
-                                <Label text="Customer Details"
-                                       styleClass="form-panel-title"/>
-
-                                <GridPane hgap="12" vgap="12" prefWidth="1.0">
-                                    <columnConstraints>
-                                        <ColumnConstraints minWidth="130"/>
-                                        <ColumnConstraints hgrow="ALWAYS"/>
-                                    </columnConstraints>
-
-                                    <Label text="Customer ID:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtCustomerId" editable="false" promptText="Auto"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-
-                                    <Label text="First Name*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtFirstName"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-
-                                    <Label text="Middle Initial:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtMiddleInitial"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-
-                                    <Label text="Last Name*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtLastName"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-
-                                    <Label text="Role:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboRole" promptText="Select role"
-                                              style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="4" GridPane.columnIndex="1"/>
-
-                                    <Label text="Phone*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="5" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtPhone"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="5" GridPane.columnIndex="1"/>
-
-                                    <Label text="Business Phone:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="6" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtBusinessPhone"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="6" GridPane.columnIndex="1"/>
-
-                                    <Label text="Email*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="7" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtEmail"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="7" GridPane.columnIndex="1"/>
-
-                                    <Label text="Address*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="8" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboAddress" promptText="Type address or select suggestion"
-                                              style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="8" GridPane.columnIndex="1"/>
-
-                                    <Label text="User Account:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="9" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboUser" promptText="(Optional)"
-                                              style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="9" GridPane.columnIndex="1"/>
-
-                                    <Label text="Reward Tier*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="10" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboRewardTier" promptText="Select tier"
-                                              style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="10" GridPane.columnIndex="1"/>
-
-                                    <Label text="Reward Points:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="11" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtRewardBalance" promptText="0"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="11" GridPane.columnIndex="1"/>
-                                </GridPane>
-
-                                <Separator/>
-
-                                <GridPane hgap="12" vgap="12">
-                                    <columnConstraints>
-                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10"/>
-                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10"/>
-                                    </columnConstraints>
-                                    <rowConstraints>
-                                        <RowConstraints minHeight="38" vgrow="NEVER"/>
-                                        <RowConstraints minHeight="38" vgrow="NEVER"/>
-                                    </rowConstraints>
-                                    <Button text="Create" fx:id="btnCreate" onAction="#onCreate"
-                                            prefHeight="38" styleClass="btn-accent"
-                                            maxWidth="1.7976931348623157E308"
-                                            GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
-                                    <Button text="Update" fx:id="btnUpdate" onAction="#onUpdate"
-                                            prefHeight="38" styleClass="btn-accent"
-                                            maxWidth="1.7976931348623157E308"
-                                            GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
-                                    <Button text="Delete" fx:id="btnDelete" onAction="#onDelete"
-                                            prefHeight="38" styleClass="danger-button"
-                                            maxWidth="1.7976931348623157E308"
-                                            GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
-                                    <Button text="Clear" fx:id="btnClear" onAction="#onClear"
-                                            prefHeight="38" styleClass="btn-muted"
-                                            maxWidth="1.7976931348623157E308"
-                                            GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
-                                </GridPane>
-
-                                <Separator/>
-
-                                <HBox spacing="12">
-                                    <Button text="View Order History" fx:id="btnOrderHistory"
-                                            onAction="#onViewOrderHistory"
-                                            prefHeight="38" styleClass="btn-muted"
-                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
-                                    <Button text="Adjust Points" fx:id="btnAdjustPoints"
-                                            onAction="#onAdjustPoints"
-                                            prefHeight="38" styleClass="btn-accent"
-                                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
-                                </HBox>
-
-                                <Label text="* required" style="-fx-text-fill: #666; -fx-font-size: 12px;"/>
-                            </VBox>
-                        </content>
-                    </ScrollPane>
-
-                </items>
-            </SplitPane>
+            <Label fx:id="lblStatus" text="" styleClass="hint-label"/>
         </VBox>
     </children>
 </AnchorPane>

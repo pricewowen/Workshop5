@@ -4,8 +4,6 @@ package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.analytics.*;
 import com.sait.workshop05.api.AnalyticsApi;
-import com.sait.workshop05.api.OrderApi;
-import com.sait.workshop05.models.Order;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
 import javafx.collections.FXCollections;
@@ -15,7 +13,6 @@ import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 
 public class AnalyticsController {
@@ -36,8 +33,6 @@ public class AnalyticsController {
 
     private static final String ALL_BAKERIES_ADMIN = "All Bakeries";
     private static final String ALL_MY_BAKERIES = "All My Bakeries";
-
-    private boolean updatingDatePickers = false;
 
     @FXML
     public void initialize() {
@@ -93,31 +88,21 @@ public class AnalyticsController {
         chartTypeComboBox.setOnAction(e -> onRefresh());
 
         startDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (updatingDatePickers) return;
-
             if (endDatePicker.getValue() != null &&
                     newVal != null &&
                     newVal.isAfter(endDatePicker.getValue())) {
                 endDatePicker.setValue(newVal);
             }
-
-            if (startDatePicker.getValue() != null && endDatePicker.getValue() != null) {
-                onRefresh();
-            }
+            onRefresh();
         });
 
         endDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (updatingDatePickers) return;
-
             if (startDatePicker.getValue() != null &&
                     newVal != null &&
                     newVal.isBefore(startDatePicker.getValue())) {
                 startDatePicker.setValue(newVal);
             }
-
-            if (startDatePicker.getValue() != null && endDatePicker.getValue() != null) {
-                onRefresh();
-            }
+            onRefresh();
         });
 
         onRefresh();
@@ -166,11 +151,12 @@ public class AnalyticsController {
                 ChartType.LINE.getDisplayName(),
                 ChartType.BAR.getDisplayName(),
                 ChartType.PIE.getDisplayName()
-        ));
+            ));
         chartTypeComboBox.setValue(ChartType.LINE.getDisplayName());
     }
 
     private void loadBakeryOptions() {
+
         try {
             if (session.isAdmin()) {
                 List<String> bakeries = AnalyticsApi.getBakeryNames();
@@ -180,10 +166,13 @@ public class AnalyticsController {
             } else {
                 List<Integer> scopeIds = session.getAccessibleBakeryIds();
                 List<String> bakeries = AnalyticsApi.getBakeryNamesByIds(scopeIds);
+
                 bakeries.add(0, ALL_MY_BAKERIES);
+
                 bakeryComboBox.setItems(FXCollections.observableArrayList(bakeries));
                 bakeryComboBox.setValue(ALL_MY_BAKERIES);
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -193,7 +182,6 @@ public class AnalyticsController {
     private void onRefresh() {
 
         if (kpiComboBox.getValue() == null) return;
-        if (startDatePicker.getValue() == null || endDatePicker.getValue() == null) return;
 
         try {
             KPIType type = KPIType.fromDisplayName(kpiComboBox.getValue());
@@ -202,6 +190,15 @@ public class AnalyticsController {
             LocalDate start = startDatePicker.getValue();
             LocalDate end = endDatePicker.getValue();
             String bakerySelection = bakeryComboBox.getValue();
+
+            if (start == null || end == null) {
+                kpiValueLabel.setText("No date selected");
+                kpiTitleLabel.setText(handler.getTitle());
+                secondaryValueLabel.setText("—");
+                secondaryTitleLabel.setText(getSecondaryTitle(type));
+                chartContainer.getChildren().clear();
+                return;
+            }
 
             if (start.isAfter(end)) {
                 kpiValueLabel.setText("Invalid Date Range");
@@ -661,10 +658,11 @@ public class AnalyticsController {
     }
 
     private void configureDatePickers(String bakerySelection) {
-        try {
-            updatingDatePickers = true;
 
-            List<LocalDate> validDates = resolveValidDatesFromOrdersApi(bakerySelection);
+        try {
+            List<Integer> scopeBakeryIds = session.isAdmin() ? null : session.getAccessibleBakeryIds();
+
+            List<LocalDate> validDates = AnalyticsApi.getAvailableOrderDates(bakerySelection, scopeBakeryIds);
 
             if (validDates.isEmpty()) {
                 startDatePicker.setValue(null);
@@ -677,7 +675,7 @@ public class AnalyticsController {
             validDates.sort(LocalDate::compareTo);
 
             LocalDate first = validDates.get(0);
-            LocalDate last = validDates.get(validDates.size() - 1);
+            LocalDate last  = validDates.get(validDates.size() - 1);
 
             if (startDatePicker.getValue() == null) {
                 startDatePicker.setValue(first);
@@ -720,57 +718,10 @@ public class AnalyticsController {
             } else {
                 startDatePicker.setDayCellFactory(null);
                 endDatePicker.setDayCellFactory(null);
-
-                if (startDatePicker.getValue() == null) {
-                    startDatePicker.setValue(first);
-                }
-                if (endDatePicker.getValue() == null) {
-                    endDatePicker.setValue(last);
-                }
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            startDatePicker.setValue(null);
-            endDatePicker.setValue(null);
-        } finally {
-            updatingDatePickers = false;
         }
-    }
-
-    private List<LocalDate> resolveValidDatesFromOrdersApi(String bakerySelection) throws Exception {
-        List<Order> orders = OrderApi.listOrders();
-        Set<LocalDate> dates = new TreeSet<>();
-
-        for (Order order : orders) {
-            if (order == null) continue;
-
-            if (!isAllBakerySelection(bakerySelection)) {
-                String bakeryDisplay = order.getBakeryDisplay();
-                if (bakeryDisplay == null || !bakeryDisplay.equals(bakerySelection)) {
-                    continue;
-                }
-            }
-
-            LocalDateTime placed = order.getOrderPlacedDateTime();
-            if (placed != null) {
-                dates.add(placed.toLocalDate());
-                continue;
-            }
-
-            LocalDateTime scheduled = order.getOrderScheduledDateTime();
-            if (scheduled != null) {
-                dates.add(scheduled.toLocalDate());
-            }
-        }
-
-        return new ArrayList<>(dates);
-    }
-
-    private boolean isAllBakerySelection(String bakerySelection) {
-        return bakerySelection == null
-                || bakerySelection.isBlank()
-                || ALL_BAKERIES_ADMIN.equals(bakerySelection)
-                || ALL_MY_BAKERIES.equals(bakerySelection);
     }
 }

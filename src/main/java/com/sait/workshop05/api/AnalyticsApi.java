@@ -1,5 +1,7 @@
 package com.sait.workshop05.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sait.workshop05.analytics.DataPoint;
 import com.sait.workshop05.models.Order;
@@ -14,27 +16,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Analytics derived primarily from Orders API data.
- *
- * Why this implementation:
- * - Workshop 7 analytics endpoints are partially broken/missing.
- * - /api/v1/orders is working reliably.
- * - The old Workshop 5 behavior depended on status buckets anyway.
- *
- * Recognized statuses:
- * - Completed
- * - Delivered
- *
- * In-progress / pending statuses:
- * - Pending
- * - Paid
- * - Processing
- * - Ready
- * - Scheduled
- * - Out for Delivery
- *
- * Excluded:
- * - Cancelled
+ * Admin analytics backed by the Spring API (JWT scope is enforced server-side).
+ * Falls back to local order/order-item derived logic when specific endpoints are
+ * missing or broken.
  */
 public final class AnalyticsApi {
 
@@ -64,12 +48,7 @@ public final class AnalyticsApi {
 
     /**
      * Emergency seed fallback for Sales by Employee.
-     *
-     * Why this exists:
-     * - Workshop 7 employee/batch endpoints are currently 500ing.
-     * - Orders + order details are still 200.
-     * - The old DAO logic grouped by Batch -> Employee.
-     * - The current seeded dataset gives us stable batch_id -> employee_id assignments.
+     * Used because those backend relations/endpoints have proven unreliable.
      */
     private static final Map<Integer, String> BATCH_TO_EMPLOYEE = buildSeedBatchEmployeeMap();
 
@@ -77,6 +56,18 @@ public final class AnalyticsApi {
 
     private static String enc(String s) {
         return URLEncoder.encode(s, StandardCharsets.UTF_8);
+    }
+
+    private static String baseQuery(LocalDate start, LocalDate end, String bakerySelection) {
+        String q = "?start=" + start + "&end=" + end;
+        if (bakerySelection != null && !bakerySelection.isBlank()) {
+            q += "&bakerySelection=" + enc(bakerySelection);
+        }
+        return q;
+    }
+
+    private static double readBigDecimalNumber(String body, ObjectMapper mapper) throws Exception {
+        return mapper.readValue(body, BigDecimal.class).doubleValue();
     }
 
     private static boolean isAllBakerySelection(String bakerySelection) {
@@ -424,91 +415,132 @@ public final class AnalyticsApi {
         return out;
     }
 
-    // ── Recognized analytics ─────────────────────────────────────────────────
-
     public static double getTotalRevenue(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
-        double total = 0.0;
-
-        for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-            if (isRecognized(order)) {
-                total += finalAmount(order);
-            }
+        double fallback = 0.0;
+        try {
+            fallback = localRevenueOverTime(start, end, bakerySelection, true)
+                    .stream()
+                    .mapToDouble(DataPoint::getValue)
+                    .sum();
+        } catch (Exception ignored) {
         }
 
-        return total;
+        ObjectMapper mapper = ApiClient.getInstance().getMapper();
+        String path = "/api/v1/admin/analytics/metrics/total-revenue" + baseQuery(start, end, bakerySelection);
+        return tryBackendNumber(path, fallback);
     }
 
     public static List<DataPoint> getRevenueOverTime(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        String path = "/api/v1/admin/analytics/revenue-over-time" + baseQuery(start, end, bakerySelection);
+        List<DataPoint> backend = tryBackendSeries(path);
+        if (!backend.isEmpty()) return backend;
         return localRevenueOverTime(start, end, bakerySelection, true);
     }
 
     public static List<DataPoint> getRevenueByBakery(LocalDate start, LocalDate end) throws Exception {
+        String path = "/api/v1/admin/analytics/revenue-by-bakery?start=" + start + "&end=" + end;
+        List<DataPoint> backend = tryBackendSeries(path);
+        if (!backend.isEmpty()) return backend;
         return localRevenueByBakery(start, end, true);
     }
 
     public static double getAverageOrderValue(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
-        double total = 0.0;
-        int count = 0;
-
-        for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-            if (isRecognized(order)) {
-                total += finalAmount(order);
-                count++;
+        double fallback = 0.0;
+        try {
+            List<Order> orders = listFilteredOrders(start, end, bakerySelection);
+            double total = 0.0;
+            int count = 0;
+            for (Order order : orders) {
+                if (isRecognized(order)) {
+                    total += finalAmount(order);
+                    count++;
+                }
             }
+            fallback = average(total, count);
+        } catch (Exception ignored) {
         }
 
-        return average(total, count);
+        String path = "/api/v1/admin/analytics/metrics/average-order-value" + baseQuery(start, end, bakerySelection);
+        return tryBackendNumber(path, fallback);
     }
 
     public static List<DataPoint> getAverageOrderValueOverTime(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        String path = "/api/v1/admin/analytics/series/average-order-value-over-time" + baseQuery(start, end, bakerySelection);
+        List<DataPoint> backend = tryBackendSeries(path);
+        if (!backend.isEmpty()) return backend;
         return localAverageOrderValueOverTime(start, end, bakerySelection, true);
     }
 
     public static double getCompletionRate(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
-        int recognized = 0;
-        int inProgress = 0;
-
-        for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-            if (isRecognized(order)) {
-                recognized++;
-            } else if (isInProgress(order)) {
-                inProgress++;
+        double fallback = 0.0;
+        try {
+            int recognized = 0;
+            int inProgress = 0;
+            for (Order order : listFilteredOrders(start, end, bakerySelection)) {
+                if (isRecognized(order)) {
+                    recognized++;
+                } else if (isInProgress(order)) {
+                    inProgress++;
+                }
             }
+            int denom = recognized + inProgress;
+            fallback = denom == 0 ? 0.0 : (recognized * 100.0) / denom;
+        } catch (Exception ignored) {
         }
 
-        int denom = recognized + inProgress;
-        return denom == 0 ? 0.0 : (recognized * 100.0) / denom;
+        String path = "/api/v1/admin/analytics/metrics/completion-rate" + baseQuery(start, end, bakerySelection);
+        return tryBackendNumber(path, fallback);
     }
 
     public static List<DataPoint> getCompletionRateOverTime(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        String path = "/api/v1/admin/analytics/series/completion-rate-over-time" + baseQuery(start, end, bakerySelection);
+        List<DataPoint> backend = tryBackendSeries(path);
+        if (!backend.isEmpty()) return backend;
         return localCompletionRateOverTime(start, end, bakerySelection, true);
     }
 
     public static List<DataPoint> getTopProducts(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        String path = "/api/v1/admin/analytics/series/top-products" + baseQuery(start, end, bakerySelection);
+        List<DataPoint> backend = tryBackendSeries(path);
+        if (!backend.isEmpty()) return backend;
         return localTopProducts(start, end, bakerySelection, true);
     }
 
-    public static double getTotalSalesByEmployee(LocalDate start,
-                                                 LocalDate end,
-                                                 String bakerySelection) throws Exception {
+    public static double getTotalSalesByEmployee(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        double fallback = 0.0;
+        try {
+            for (Order order : listFilteredOrders(start, end, bakerySelection)) {
+                if (!isRecognized(order)) continue;
 
-        double total = 0.0;
-
-        for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-            if (!isRecognized(order)) continue;
-
-            List<OrderItem> items = getOrderItemsCached(order.getOrderId());
-            for (OrderItem item : items) {
-                total += item.getOrderItemLineTotal();
+                List<OrderItem> items = getOrderItemsCached(order.getOrderId());
+                for (OrderItem item : items) {
+                    String employee = employeeNameForBatch(item.getBatchId());
+                    if (!shouldDisplayEmployee(employee)) continue;
+                    fallback += item.getOrderItemLineTotal();
+                }
             }
+        } catch (Exception ignored) {
         }
 
-        return total;
+        String path = "/api/v1/admin/analytics/metrics/sales-by-employee-total" + baseQuery(start, end, bakerySelection);
+        return tryBackendNumber(path, fallback);
     }
 
-    public static List<DataPoint> getSalesByEmployee(LocalDate start,
-                                                     LocalDate end,
-                                                     String bakerySelection) throws Exception {
+    public static List<DataPoint> getSalesByEmployee(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        String path = "/api/v1/admin/analytics/series/sales-by-employee" + baseQuery(start, end, bakerySelection);
+        List<DataPoint> backend = tryBackendSeries(path);
+
+        if (!backend.isEmpty()) {
+            List<DataPoint> filtered = new ArrayList<>();
+            for (DataPoint dp : backend) {
+                if (shouldDisplayEmployee(dp.getLabel())) {
+                    filtered.add(dp);
+                }
+            }
+            if (!filtered.isEmpty()) {
+                return filtered;
+            }
+        }
 
         Map<String, Double> totals = new HashMap<>();
 
@@ -527,14 +559,13 @@ public final class AnalyticsApi {
     }
 
     public static List<String> getBakeryNames() throws Exception {
-        Set<String> names = new TreeSet<>();
-        for (Order order : listAllOrders()) {
-            String bakery = order.getBakeryDisplay();
-            if (bakery != null && !bakery.isBlank()) {
-                names.add(bakery);
-            }
+        var res = ApiClient.getInstance().get("/api/v1/admin/analytics/meta/bakery-names");
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("bakery-names failed: " + res.statusCode() + " " + res.body());
         }
-        return new ArrayList<>(names);
+        ObjectMapper mapper = ApiClient.getInstance().getMapper();
+        JavaType type = mapper.getTypeFactory().constructCollectionType(List.class, String.class);
+        return mapper.readValue(res.body(), type);
     }
 
     public static List<String> getBakeryNamesByIds(List<Integer> bakeryIds) throws Exception {
@@ -542,8 +573,30 @@ public final class AnalyticsApi {
     }
 
     public static List<LocalDate> getAvailableOrderDates(String bakerySelection, List<Integer> scopeBakeryIds) throws Exception {
-        Set<LocalDate> dates = new TreeSet<>();
+        LocalDate start = LocalDate.of(1970, 1, 1);
+        LocalDate end = LocalDate.of(2100, 1, 1);
+        String path = "/api/v1/admin/analytics/meta/order-dates?start=" + start + "&end=" + end;
+        if (bakerySelection != null && !bakerySelection.isBlank()) {
+            path += "&bakerySelection=" + enc(bakerySelection);
+        }
 
+        try {
+            var res = ApiClient.getInstance().get(path);
+            if (res.statusCode() < 400) {
+                ObjectMapper mapper = ApiClient.getInstance().getMapper();
+                List<String> raw = mapper.readValue(res.body(), new TypeReference<List<String>>() {});
+                List<LocalDate> out = new ArrayList<>();
+                for (String s : raw) {
+                    if (s != null && !s.isBlank()) {
+                        out.add(LocalDate.parse(s));
+                    }
+                }
+                return out;
+            }
+        } catch (Exception ignored) {
+        }
+
+        Set<LocalDate> dates = new TreeSet<>();
         for (Order order : listAllOrders()) {
             if (!bakeryMatches(order, bakerySelection)) continue;
 
@@ -552,95 +605,134 @@ public final class AnalyticsApi {
                 dates.add(date);
             }
         }
-
         return new ArrayList<>(dates);
     }
 
-    // ── In-progress analytics ────────────────────────────────────────────────
-
     public static double getInProgressRevenue(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
-        double total = 0.0;
-
-        for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-            if (isInProgress(order)) {
-                total += finalAmount(order);
-            }
+        double fallback = 0.0;
+        try {
+            fallback = localRevenueOverTime(start, end, bakerySelection, false)
+                    .stream()
+                    .mapToDouble(DataPoint::getValue)
+                    .sum();
+        } catch (Exception ignored) {
         }
 
-        return total;
+        String path = "/api/v1/admin/analytics/metrics/in-progress-revenue" + baseQuery(start, end, bakerySelection);
+        return tryBackendNumber(path, fallback);
     }
 
     public static double getInProgressAverageOrderValue(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
-        double total = 0.0;
-        int count = 0;
-
-        for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-            if (isInProgress(order)) {
-                total += finalAmount(order);
-                count++;
+        double fallback = 0.0;
+        try {
+            List<Order> orders = listFilteredOrders(start, end, bakerySelection);
+            double total = 0.0;
+            int count = 0;
+            for (Order order : orders) {
+                if (isInProgress(order)) {
+                    total += finalAmount(order);
+                    count++;
+                }
             }
+            fallback = average(total, count);
+        } catch (Exception ignored) {
         }
 
-        return average(total, count);
+        String path = "/api/v1/admin/analytics/metrics/in-progress-average-order-value" + baseQuery(start, end, bakerySelection);
+        return tryBackendNumber(path, fallback);
     }
 
     public static double getInProgressRate(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
-        int recognized = 0;
-        int inProgress = 0;
-
-        for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-            if (isRecognized(order)) {
-                recognized++;
-            } else if (isInProgress(order)) {
-                inProgress++;
+        double fallback = 0.0;
+        try {
+            int recognized = 0;
+            int inProgress = 0;
+            for (Order order : listFilteredOrders(start, end, bakerySelection)) {
+                if (isRecognized(order)) {
+                    recognized++;
+                } else if (isInProgress(order)) {
+                    inProgress++;
+                }
             }
+            int denom = recognized + inProgress;
+            fallback = denom == 0 ? 0.0 : (inProgress * 100.0) / denom;
+        } catch (Exception ignored) {
         }
 
-        int denom = recognized + inProgress;
-        return denom == 0 ? 0.0 : (inProgress * 100.0) / denom;
+        String path = "/api/v1/admin/analytics/metrics/in-progress-rate" + baseQuery(start, end, bakerySelection);
+        return tryBackendNumber(path, fallback);
     }
 
-    public static double getInProgressTotalSalesByEmployee(LocalDate start,
-                                                           LocalDate end,
-                                                           String bakerySelection) throws Exception {
+    public static double getInProgressTotalSalesByEmployee(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        double fallback = 0.0;
+        try {
+            for (Order order : listFilteredOrders(start, end, bakerySelection)) {
+                if (!isInProgress(order)) continue;
 
-        double total = 0.0;
-
-        for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-            if (!isInProgress(order)) continue;
-
-            List<OrderItem> items = getOrderItemsCached(order.getOrderId());
-            for (OrderItem item : items) {
-                total += item.getOrderItemLineTotal();
+                List<OrderItem> items = getOrderItemsCached(order.getOrderId());
+                for (OrderItem item : items) {
+                    String employee = employeeNameForBatch(item.getBatchId());
+                    if (!shouldDisplayEmployee(employee)) continue;
+                    fallback += item.getOrderItemLineTotal();
+                }
             }
+        } catch (Exception ignored) {
         }
 
-        return total;
+        String path = "/api/v1/admin/analytics/metrics/in-progress-sales-by-employee-total" + baseQuery(start, end, bakerySelection);
+        return tryBackendNumber(path, fallback);
     }
 
     public static List<DataPoint> getInProgressRevenueOverTime(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        String path = "/api/v1/admin/analytics/series/in-progress-revenue-over-time" + baseQuery(start, end, bakerySelection);
+        List<DataPoint> backend = tryBackendSeries(path);
+        if (!backend.isEmpty()) return backend;
         return localRevenueOverTime(start, end, bakerySelection, false);
     }
 
     public static List<DataPoint> getInProgressRevenueByBakery(LocalDate start, LocalDate end) throws Exception {
+        String path = "/api/v1/admin/analytics/series/in-progress-revenue-by-bakery?start=" + start + "&end=" + end;
+        List<DataPoint> backend = tryBackendSeries(path);
+        if (!backend.isEmpty()) return backend;
         return localRevenueByBakery(start, end, false);
     }
 
     public static List<DataPoint> getInProgressAverageOrderValueOverTime(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        String path = "/api/v1/admin/analytics/series/in-progress-average-order-value-over-time" + baseQuery(start, end, bakerySelection);
+        List<DataPoint> backend = tryBackendSeries(path);
+        if (!backend.isEmpty()) return backend;
         return localAverageOrderValueOverTime(start, end, bakerySelection, false);
     }
 
     public static List<DataPoint> getInProgressRateOverTime(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        String path = "/api/v1/admin/analytics/series/in-progress-rate-over-time" + baseQuery(start, end, bakerySelection);
+        List<DataPoint> backend = tryBackendSeries(path);
+        if (!backend.isEmpty()) return backend;
         return localCompletionRateOverTime(start, end, bakerySelection, false);
     }
 
     public static List<DataPoint> getInProgressTopProducts(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        String path = "/api/v1/admin/analytics/series/in-progress-top-products" + baseQuery(start, end, bakerySelection);
+        List<DataPoint> backend = tryBackendSeries(path);
+        if (!backend.isEmpty()) return backend;
         return localTopProducts(start, end, bakerySelection, false);
     }
 
-    public static List<DataPoint> getInProgressSalesByEmployee(LocalDate start,
-                                                               LocalDate end,
-                                                               String bakerySelection) throws Exception {
+    public static List<DataPoint> getInProgressSalesByEmployee(LocalDate start, LocalDate end, String bakerySelection) throws Exception {
+        String path = "/api/v1/admin/analytics/series/in-progress-sales-by-employee" + baseQuery(start, end, bakerySelection);
+        List<DataPoint> backend = tryBackendSeries(path);
+
+        if (!backend.isEmpty()) {
+            List<DataPoint> filtered = new ArrayList<>();
+            for (DataPoint dp : backend) {
+                if (shouldDisplayEmployee(dp.getLabel())) {
+                    filtered.add(dp);
+                }
+            }
+            if (!filtered.isEmpty()) {
+                return filtered;
+            }
+        }
 
         Map<String, Double> totals = new HashMap<>();
 
@@ -658,21 +750,23 @@ public final class AnalyticsApi {
         return mapToSeriesSortedByValueDesc(totals);
     }
 
-    // ── Shared parsing helpers kept for graceful backend fallbacks ───────────
-
     private static List<DataPoint> parseDataPointSeries(String body) throws Exception {
         ObjectMapper mapper = ApiClient.getInstance().getMapper();
-        com.fasterxml.jackson.databind.JavaType type =
-                mapper.getTypeFactory().constructCollectionType(List.class, Dp.class);
-
+        JavaType type = mapper.getTypeFactory().constructCollectionType(List.class, Dp.class);
         List<Dp> rows = mapper.readValue(body, type);
         List<DataPoint> out = new ArrayList<>();
-
         for (Dp r : rows) {
             out.add(new DataPoint(r.label, r.value != null ? r.value.doubleValue() : 0.0));
         }
-
         return out;
+    }
+
+    private static List<DataPoint> getDataPointSeries(String path) throws Exception {
+        var res = ApiClient.getInstance().get(path);
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("GET " + path + " failed: " + res.statusCode() + " " + res.body());
+        }
+        return parseDataPointSeries(res.body());
     }
 
     @SuppressWarnings("unused")
