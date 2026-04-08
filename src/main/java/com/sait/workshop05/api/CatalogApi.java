@@ -115,6 +115,7 @@ public final class CatalogApi {
     }
 
     /** JSON shape for GET /api/v1/products */
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class ProductResponse {
         public Integer id;
         public String name;

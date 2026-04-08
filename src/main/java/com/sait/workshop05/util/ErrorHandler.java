@@ -137,6 +137,30 @@ public class ErrorHandler {
         if (e instanceof SQLException) {
             return friendlyDbMessage((SQLException) e);
         }
-        return e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.";
+        String msg = e.getMessage();
+        if (msg == null) return "An unexpected error occurred.";
+        return sanitizeApiError(msg);
+    }
+
+    private static String sanitizeApiError(String message) {
+        if (message.matches("(?s).*(failed|error): \\d{3}.*")) {
+            int code = extractHttpStatusCode(message);
+            if (code == 401 || code == 403) return "You do not have permission to perform this action.";
+            if (code == 404) return "The requested resource was not found.";
+            if (code == 409) return "A conflict occurred — this record may already exist.";
+            if (code >= 500) return "A server error occurred. Please try again later.";
+            if (code > 0) return "Request failed (HTTP " + code + "). Please try again.";
+        }
+        if (message.length() > 200) return message.substring(0, 200) + "...";
+        return message;
+    }
+
+    private static int extractHttpStatusCode(String message) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d{3})").matcher(message);
+        while (m.find()) {
+            int code = Integer.parseInt(m.group(1));
+            if (code >= 100 && code < 600) return code;
+        }
+        return -1;
     }
 }

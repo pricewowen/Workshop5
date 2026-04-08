@@ -1,3 +1,5 @@
+// η℩.cαηtor ↈ (and his AI, ⌈𝗆𝖾𝗍𝖺𝖼𝗈𝖽𝖺⌋ ⊛)
+
 package com.sait.workshop05.analytics;
 
 import com.sait.workshop05.api.AnalyticsApi;
@@ -12,6 +14,7 @@ public class SalesByEmployeeHandler implements KPIHandler {
                                   LocalDate end,
                                   String bakerySelection,
                                   List<Integer> scopeBakeryIds) throws Exception {
+
         return AnalyticsApi.getTotalSalesByEmployee(start, end, bakerySelection);
     }
 
@@ -20,6 +23,7 @@ public class SalesByEmployeeHandler implements KPIHandler {
                                         LocalDate end,
                                         String bakerySelection,
                                         List<Integer> scopeBakeryIds) throws Exception {
+
         return AnalyticsApi.getSalesByEmployee(start, end, bakerySelection);
     }
 

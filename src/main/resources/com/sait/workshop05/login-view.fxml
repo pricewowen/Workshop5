@@ -6,89 +6,92 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.sait.workshop05.controllers.LoginController"
-            prefHeight="600.0" prefWidth="800.0"
-            styleClass="login-root">
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.sait.workshop05.controllers.LoginController"
+      prefHeight="600.0" prefWidth="900.0">
 
-    <center>
-        <VBox alignment="CENTER" spacing="30">
-            <padding>
-                <Insets top="50" right="50" bottom="50" left="50"/>
-            </padding>
+    <!-- Left brand panel -->
+    <VBox HBox.hgrow="ALWAYS" maxWidth="400" alignment="CENTER" spacing="20"
+          styleClass="login-brand-panel">
+        <padding><Insets top="60" right="48" bottom="60" left="48"/></padding>
 
-            <VBox alignment="CENTER" spacing="25"
-                  styleClass="login-card"
-                  prefWidth="400" maxWidth="400">
+        <ImageView fitHeight="48" fitWidth="220" pickOnBounds="true" preserveRatio="true">
+            <image><Image smooth="true" url="@bakery_logo.png"/></image>
+        </ImageView>
 
-                <VBox alignment="CENTER" spacing="10">
-                    <ImageView fitHeight="80.0" fitWidth="320.0" pickOnBounds="true" preserveRatio="true">
-                        <image>
-                            <Image smooth="true" url="@bakery_logo.png"/>
-                        </image>
-                    </ImageView>
-                    <Label text="Management System" styleClass="login-title"/>
-                </VBox>
+        <Label text="Management System" styleClass="login-brand-title">
+            <VBox.margin><Insets top="12"/></VBox.margin>
+        </Label>
 
-                <Separator prefWidth="320"/>
+        <Label text="Staff-only access. Contact your administrator for login credentials."
+               styleClass="login-brand-tagline" wrapText="true" textAlignment="CENTER"/>
+    </VBox>
 
-                <VBox spacing="15" prefWidth="320">
-                    <VBox spacing="5">
-                        <Label text="Email" styleClass="form-label"/>
-                        <TextField fx:id="emailField"
-                                   promptText="Enter your email"
-                                   prefHeight="40"/>
-                    </VBox>
+    <!-- Right form panel -->
+    <VBox HBox.hgrow="ALWAYS" alignment="CENTER" styleClass="login-right-panel">
+        <padding><Insets top="60" right="60" bottom="60" left="60"/></padding>
 
-                    <VBox spacing="5">
-                        <Label text="Password" styleClass="form-label"/>
-                        <HBox spacing="0" prefHeight="40">
-                            <StackPane HBox.hgrow="ALWAYS">
-                                <PasswordField fx:id="passwordField"
-                                              promptText="Enter your password"
-                                              prefHeight="40"
-                                              style="-fx-background-radius: 4 0 0 4;"/>
-                                <TextField fx:id="passwordVisible"
-                                           promptText="Enter your password"
-                                           prefHeight="40"
-                                           visible="false"
-                                           managed="false"
-                                           style="-fx-background-radius: 4 0 0 4;"/>
-                            </StackPane>
-                            <Button fx:id="togglePasswordBtn"
-                                    text="Show"
-                                    onAction="#handleTogglePassword"
-                                    prefHeight="40" prefWidth="60"
-                                    styleClass="toggle-password-btn"
-                                    style="-fx-background-radius: 0 4 4 0;"/>
-                        </HBox>
-                    </VBox>
+        <VBox alignment="CENTER_LEFT" spacing="24"
+              styleClass="login-card" maxWidth="380" prefWidth="380">
 
-                    <Label fx:id="errorLabel"
-                           text="Error message"
-                           styleClass="error-text"
-                           wrapText="true"
-                           visible="false"/>
-
-                    <Button fx:id="loginButton" text="Login"
-                            onAction="#handleLogin"
-                            styleClass="btn-cta"
-                            prefWidth="320" prefHeight="45">
-                        <VBox.margin>
-                            <Insets top="10"/>
-                        </VBox.margin>
-                    </Button>
-                </VBox>
-
-                <VBox alignment="CENTER" spacing="5">
-                    <VBox.margin>
-                        <Insets top="10"/>
-                    </VBox.margin>
-                    <Label text="Contact your administrator for login credentials" styleClass="login-hint"/>
-                </VBox>
+            <VBox spacing="4">
+                <Label text="Welcome back" styleClass="login-card-title"/>
+                <Label text="Sign in to your account" styleClass="login-card-subtitle"/>
             </VBox>
-        </VBox>
-    </center>
 
-</BorderPane>
+            <VBox spacing="16" prefWidth="320">
+
+                <VBox spacing="6">
+                    <Label text="Email" styleClass="form-label"/>
+                    <TextField fx:id="emailField"
+                               promptText="you@example.com"
+                               prefHeight="42"
+                               maxWidth="1.7976931348623157E308"/>
+                </VBox>
+
+                <VBox spacing="6">
+                    <Label text="Password" styleClass="form-label"/>
+                    <HBox spacing="0">
+                        <StackPane HBox.hgrow="ALWAYS">
+                            <PasswordField fx:id="passwordField"
+                                          promptText="••••••••"
+                                          prefHeight="42"
+                                          style="-fx-background-radius: 8 0 0 8; -fx-border-radius: 8 0 0 8;"/>
+                            <TextField fx:id="passwordVisible"
+                                       promptText="••••••••"
+                                       prefHeight="42"
+                                       visible="false" managed="false"
+                                       style="-fx-background-radius: 8 0 0 8; -fx-border-radius: 8 0 0 8;"/>
+                        </StackPane>
+                        <Button fx:id="togglePasswordBtn"
+                                text="Show"
+                                onAction="#handleTogglePassword"
+                                prefHeight="42" prefWidth="64"
+                                style="-fx-background-radius: 0 8 8 0; -fx-border-radius: 0 8 8 0; -fx-background-color: #F5F3EF; -fx-border-color: #D4CCC4; -fx-border-width: 1; -fx-cursor: hand;"/>
+                    </HBox>
+                </VBox>
+
+                <Label fx:id="errorLabel"
+                       text=""
+                       styleClass="error-text"
+                       wrapText="true"
+                       visible="false"/>
+
+                <Button fx:id="loginButton"
+                        text="Sign In"
+                        onAction="#handleLogin"
+                        styleClass="btn-cta"
+                        maxWidth="1.7976931348623157E308"
+                        prefHeight="44">
+                    <VBox.margin><Insets top="4"/></VBox.margin>
+                </Button>
+
+            </VBox>
+
+            <Label text="Contact your administrator for access" styleClass="login-hint"/>
+
+        </VBox>
+    </VBox>
+
+</HBox>
