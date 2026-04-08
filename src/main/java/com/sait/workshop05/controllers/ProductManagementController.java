@@ -40,6 +40,7 @@ public class ProductManagementController {
     @FXML private TableColumn<Product, String> colDescription;
     @FXML private TableColumn<Product, Double> colBasePrice;
     @FXML private TableColumn<Product, String> colTags;
+    @FXML private TableColumn<Product, String> colImage;
     @FXML private TableColumn<Product, Void> colActions;
 
     // ── Toolbar ────────────────────────────────────────────────
@@ -80,6 +81,16 @@ public class ProductManagementController {
             protected void updateItem(Double price, boolean empty) {
                 super.updateItem(price, empty);
                 setText(empty || price == null ? "" : String.format("$%.2f", price));
+            }
+        });
+
+        colImage.setCellValueFactory(new PropertyValueFactory<>("imageUrl"));
+        colImage.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String url, boolean empty) {
+                super.updateItem(url, empty);
+                if (empty) { setText(""); return; }
+                setText(url != null && !url.isBlank() ? "Yes" : "No");
             }
         });
 
@@ -176,6 +187,7 @@ public class ProductManagementController {
         } else {
             pr.setTagsDisplay("");
         }
+        pr.setImageUrl(p.imageUrl);
         return pr;
     }
 
@@ -244,7 +256,9 @@ public class ProductManagementController {
 
         // Image picker
         File[] selectedImageFile = {null};
-        Label lblImage = new Label(isNew ? "No file selected" : "Current image (browse to replace)");
+        boolean existingHasImage = !isNew && existing.hasImage();
+        Label lblImage = new Label(isNew ? "No file selected"
+                : existingHasImage ? "Current image set (browse to replace)" : "No image set (browse to add)");
         Button btnBrowse = new Button("Browse Image...");
         btnBrowse.getStyleClass().add("btn-muted");
         HBox imageRow = new HBox(8, btnBrowse, lblImage);

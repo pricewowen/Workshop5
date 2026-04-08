@@ -1,6 +1,7 @@
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.BakeryApi;
+import com.sait.workshop05.api.ImageUploadApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Address;
 import com.sait.workshop05.models.Bakery;
@@ -18,14 +19,17 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 
+import java.io.File;
 import java.util.Optional;
 
 public class BakeryLocationsController {
@@ -210,6 +214,14 @@ public class BakeryLocationsController {
         applyCapFirstLetter(tfCity);
         applyPostalFormatter(tfPostal);
 
+        // Image picker
+        File[] selectedImageFile = {null};
+        Label lblImage = new Label("No file selected");
+        Button btnBrowse = new Button("Browse Image...");
+        btnBrowse.getStyleClass().add("btn-muted");
+        HBox imageRow = new HBox(8, btnBrowse, lblImage);
+        imageRow.setAlignment(Pos.CENTER_LEFT);
+
         Label lblError = new Label();
         lblError.setStyle("-fx-text-fill: #B85C4C; -fx-font-size: 12px;");
         lblError.setVisible(false);
@@ -224,7 +236,12 @@ public class BakeryLocationsController {
         addRow(grid, row++, "Address Line 2", tfLine2);
         addRow(grid, row++, "City *", tfCity);
         addRow(grid, row++, "Province *", cbProvince);
-        addRow(grid, row, "Postal Code *", tfPostal);
+        addRow(grid, row++, "Postal Code *", tfPostal);
+
+        Label imgLabel = new Label("Location Image");
+        imgLabel.getStyleClass().add("form-label");
+        grid.add(imgLabel, 0, row);
+        grid.add(imageRow, 1, row);
 
         VBox content = new VBox(12, grid, lblError);
         content.setPadding(new Insets(20, 24, 8, 24));
@@ -236,6 +253,22 @@ public class BakeryLocationsController {
         dialog.getDialogPane().getStylesheets().add(
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
+
+        // Wire browse button after scene is available
+        dialog.getDialogPane().sceneProperty().addListener((obs, old, scene) -> {
+            if (scene == null) return;
+            btnBrowse.setOnAction(e -> {
+                FileChooser chooser = new FileChooser();
+                chooser.setTitle("Select Location Image");
+                chooser.getExtensionFilters().add(
+                        new FileChooser.ExtensionFilter("Image files (JPG, PNG)", "*.jpg", "*.jpeg", "*.png"));
+                File file = chooser.showOpenDialog(scene.getWindow());
+                if (file != null) {
+                    selectedImageFile[0] = file;
+                    lblImage.setText(file.getName());
+                }
+            });
+        });
 
         ButtonType saveType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(saveType, ButtonType.CANCEL);
@@ -270,16 +303,29 @@ public class BakeryLocationsController {
                 b.setAddress(addr);
             }
             try {
+                int savedBakeryId;
                 if (isNew) {
-                    BakeryApi.create(b);
+                    Bakery created = BakeryApi.create(b);
+                    savedBakeryId = created.getBakeryId();
                     LogData.logAction("CREATE", "Bakery");
                     if (lblStatus != null) lblStatus.setText("Location created.");
                 } else {
                     BakeryApi.update(b.getBakeryId(), b);
+                    savedBakeryId = b.getBakeryId();
                     LogData.logAction("UPDATE", "Bakery");
                     if (lblStatus != null) lblStatus.setText("Location updated.");
                 }
                 refreshTable();
+
+                if (selectedImageFile[0] != null && savedBakeryId > 0) {
+                    try {
+                        ImageUploadApi.uploadBakeryImage(savedBakeryId, selectedImageFile[0]);
+                        LogData.logAction("UPLOAD_IMAGE", "Bakery #" + savedBakeryId);
+                    } catch (Exception uploadEx) {
+                        LogData.handleException("UPLOAD_BAKERY_IMAGE", uploadEx);
+                        ErrorHandler.showErrorDialog("Upload Failed", "Location saved but image upload failed.", uploadEx.getMessage());
+                    }
+                }
             } catch (Exception ex) {
                 LogData.handleException(isNew ? "CREATE_BAKERY" : "UPDATE_BAKERY", ex);
                 ErrorHandler.showErrorDialog(isNew ? "Create Failed" : "Update Failed",

@@ -114,6 +114,8 @@ public class CustomerManagementController {
     }
 
     private void setupSelectionButtons() {
+        if (btnOrderHistory != null) btnOrderHistory.setDisable(true);
+        if (btnAdjustPoints != null) btnAdjustPoints.setDisable(true);
         tblCustomers.getSelectionModel().selectedItemProperty().addListener((obs, old, selected) -> {
             boolean has = selected != null;
             if (btnOrderHistory != null) btnOrderHistory.setDisable(!has);
