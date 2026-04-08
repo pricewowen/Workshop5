@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
 <VBox spacing="20"
       xmlns="http://javafx.com/javafx/17"
@@ -11,8 +12,14 @@
       styleClass="page-root"
       style="-fx-padding: 20;">
 
-    <Label text="Analytics Overview"
-           styleClass="page-title" />
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <Label text="Analytics Overview"
+               styleClass="page-title" />
+        <Region HBox.hgrow="ALWAYS" />
+        <CheckBox fx:id="compressedViewCheckBox"
+                  text="Compressed View"
+                  selected="true" />
+    </HBox>
 
     <HBox spacing="15">
         <DatePicker fx:id="startDatePicker" promptText="Start Date" />
