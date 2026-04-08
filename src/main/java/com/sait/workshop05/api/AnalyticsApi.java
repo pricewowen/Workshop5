@@ -40,6 +40,7 @@ public final class AnalyticsApi {
 
     private static final String ALL_BAKERIES_ADMIN = "All Bakeries";
     private static final String ALL_MY_BAKERIES = "All My Bakeries";
+    private static final String UNKNOWN_EMPLOYEE = "Unknown Employee";
 
     private static final Set<String> RECOGNIZED_STATUSES = Set.of(
             "completed",
@@ -69,22 +70,6 @@ public final class AnalyticsApi {
      * - Orders + order details are still 200.
      * - The old DAO logic grouped by Batch -> Employee.
      * - The current seeded dataset gives us stable batch_id -> employee_id assignments.
-     *
-     * Seed source used:
-     * employee ids:
-     * 1 Mason Clark
-     * 2 Sophia Patel
-     * 3 Ethan Wright
-     * 4 Isabella Chen
-     * 5 Noah Martin
-     * 6 Ava Roberts
-     * 7 Logan Scott
-     * 8 Mia Kim
-     * 9 Jackson Hall
-     *
-     * batch ids:
-     * 1->1, 2->2, 3->3, 4->4, 5->3, 6->2, 7->5, 8->6, 9->7,
-     * 10->8, 11->9, 12->6, 13->7, 14->8, 15->9, 16->5, 17->4, 18->2
      */
     private static final Map<Integer, String> BATCH_TO_EMPLOYEE = buildSeedBatchEmployeeMap();
 
@@ -254,9 +239,15 @@ public final class AnalyticsApi {
     private static String employeeNameForBatch(int batchId) {
         String employee = BATCH_TO_EMPLOYEE.get(batchId);
         if (employee == null || employee.isBlank()) {
-            return "Unknown Employee";
+            return UNKNOWN_EMPLOYEE;
         }
         return employee;
+    }
+
+    private static boolean shouldDisplayEmployee(String employeeName) {
+        return employeeName != null
+                && !employeeName.isBlank()
+                && !UNKNOWN_EMPLOYEE.equals(employeeName);
     }
 
     private static double tryBackendNumber(String path, double fallback) {
@@ -504,11 +495,9 @@ public final class AnalyticsApi {
         double total = 0.0;
 
         for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-
             if (!isRecognized(order)) continue;
 
             List<OrderItem> items = getOrderItemsCached(order.getOrderId());
-
             for (OrderItem item : items) {
                 total += item.getOrderItemLineTotal();
             }
@@ -524,13 +513,12 @@ public final class AnalyticsApi {
         Map<String, Double> totals = new HashMap<>();
 
         for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-
             if (!isRecognized(order)) continue;
 
             List<OrderItem> items = getOrderItemsCached(order.getOrderId());
-
             for (OrderItem item : items) {
                 String employee = employeeNameForBatch(item.getBatchId());
+                if (!shouldDisplayEmployee(employee)) continue;
                 totals.merge(employee, item.getOrderItemLineTotal(), Double::sum);
             }
         }
@@ -619,11 +607,9 @@ public final class AnalyticsApi {
         double total = 0.0;
 
         for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-
             if (!isInProgress(order)) continue;
 
             List<OrderItem> items = getOrderItemsCached(order.getOrderId());
-
             for (OrderItem item : items) {
                 total += item.getOrderItemLineTotal();
             }
@@ -659,13 +645,12 @@ public final class AnalyticsApi {
         Map<String, Double> totals = new HashMap<>();
 
         for (Order order : listFilteredOrders(start, end, bakerySelection)) {
-
             if (!isInProgress(order)) continue;
 
             List<OrderItem> items = getOrderItemsCached(order.getOrderId());
-
             for (OrderItem item : items) {
                 String employee = employeeNameForBatch(item.getBatchId());
+                if (!shouldDisplayEmployee(employee)) continue;
                 totals.merge(employee, item.getOrderItemLineTotal(), Double::sum);
             }
         }
