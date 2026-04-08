@@ -1,146 +1,79 @@
 # Workshop 5 — Bakery Management System
 
 ## Overview
-**Peelin' Good Bakery** is a staff-facing bakery business management desktop application built with Java, JavaFX, and MySQL. It allows admins and employees to manage products, customers, orders, employees, locations, rewards, messaging, and view analytics — all from a single dashboard.
 
-**This is a staff-only application.** There is no customer login. Customers are data records managed by staff through the app.
+**Peelin' Good Bakery** is a staff-facing bakery management desktop app built with **Java, JavaFX, and HTTP**. It talks to the **Workshop 7 Spring Boot API** for products, customers, orders, employees, bakeries, rewards, analytics, and messaging. There is **no local MySQL or JDBC** in this project.
 
-## Tech Stack
-- Java Development Kit (JDK) 23
-- JavaFX 17.0.6 (UI framework)
-- MySQL (database)
-- XAMPP (local server environment)
-- BCrypt (password hashing)
-- Maven (build tool)
+**Staff-only:** there is no customer login in this app. Customer records are maintained by staff against the shared API.
 
-## Prerequisites
+## Tech stack
+
 - JDK 23
 - JavaFX 17.0.6
-- XAMPP (or any MySQL server)
+- `java.net.http` + Jackson for REST calls
+- Maven
+
+## Prerequisites
+
+- JDK 23
+- **Workshop 7 backend** running (default `http://localhost:8080`) with database migrated and seeded
 - IntelliJ IDEA (recommended) or any Java IDE
-- Git
 
-## Project Setup
+## Setup
 
-### 1. Clone and Open
-1. Clone the repository
-2. Open the project in your IDE
+### 1. Clone and open
 
-### 2. Database Setup
-1. Open XAMPP and start **Apache** and **MySQL**
-   - If MySQL 80 is already running: press **Win + R**, type `services.msc`, stop **MySQL80** first
-2. Click **Admin** for MySQL to open phpMyAdmin
-3. Go to the **Import** tab
-4. Select `BakeryEcommerceFull.sql` from the project root
-5. Import the database
+Clone the repo and open the `Workshop5` Maven module.
 
-### 3. Database User Setup
-Create a MySQL user in phpMyAdmin:
-- **Username:** `baker`
-- **Host:** `Local`
-- **Password:** `Password1`
+### 2. API base URL
 
-Grant all privileges on the `BakeryEcommerce` database.
-
-### 4. Environment Configuration
-Create a file named `.env.local` in the project root:
+Create **`.env.local`** in the **project root** (`Workshop5/` — same directory as `pom.xml`):
 
 ```properties
-DB_URL=jdbc:mysql://localhost:3306/bakeryecommerce?useSSL=false&serverTimezone=UTC
-DB_USER=baker
-DB_PASSWORD=Password1
+API_URL=http://localhost:8080
 ```
 
-### 5. Generate Test Staff Accounts
-The database needs staff user accounts with BCrypt-hashed passwords to log in.
+Use a different host or port if your API listens elsewhere (no trailing slash required).
 
-1. Open `src/main/java/com/sait/workshop05/database/GenerateTestUserSQL.java`
-2. Run it (right-click -> Run 'GenerateTestUserSQL.main()')
-3. Copy the SQL output from the console
-4. Paste and execute it in phpMyAdmin (select the `BakeryEcommerce` database first)
+### 3. Run the application
 
-### 6. Run the Application
-- In IntelliJ: right-click `MainApplication.java` -> Run
-- Or via Maven: `mvn clean javafx:run`
+- **IDE:** run `com.sait.workshop05.MainApplication`
+- **Maven:** `mvn clean javafx:run`
 
----
+On startup, the app checks that the API responds (`GET /api/v1/tags`). Ensure the backend is up first.
 
-## Test Credentials
+## Test credentials
 
-| Role | Username | Password |
-|------|----------|----------|
-| **Admin** | `admin` | `admin123` |
-| **Employee** | `employee1` | `emp123` |
-| **Employee** | `manager` | `manager123` |
+Use accounts from your **Workshop 7** seed data (see Workshop 7 docs). Examples (adjust if your seed differs):
 
-> **Note:** You must run `GenerateTestUserSQL.java` and execute the output SQL before these credentials will work. Each run generates different BCrypt hashes (this is normal).
+| Role       | Username   | Password   |
+| ---------- | ---------- | ---------- |
+| Admin      | `admin`    | `Admin123!` |
+| Employee   | `employee2`| `Emp123!`  |
 
----
+Log in with the **username** (or email if your login screen accepts it) and password validated by the API.
 
-## User Roles
+## Roles
 
-### Admin
-- Full access to all features
-- CRUD employees, products, customers, locations, rewards
-- View analytics and charts
-- Manage orders
-- Internal messaging
-
-### Employee
-- CRUD products and customers
-- Manage customer loyalty points
-- View customer order history
-- Manage orders (POS-style new orders, update status)
-- Internal messaging
-- **Cannot access:** Employee management, Locations, Analytics
-
----
-
-## Application Flow
-
-```
-Login Screen (Role dropdown: Admin / Employee)
-    |
-    v
-Main Dashboard (sidebar navigation)
-    |-- Dashboard        (overview + recent orders)
-    |-- Orders           (POS-style order management)
-    |-- Products         (CRUD)
-    |-- Customers        (CRUD + order history + loyalty points)
-    |-- Employees        (CRUD - Admin only)
-    |-- Locations        (CRUD bakery branches - Admin only)
-    |-- Rewards          (CRUD loyalty tiers)
-    |-- Messages         (internal staff chat)
-    |-- Analytics        (sales charts - Admin only)
-    |-- Activity Log     (all DB changes + exceptions)
-    |-- Logout
-```
-
----
+- **Admin:** full CRUD, analytics, locations, employees, orders, messaging.
+- **Employee:** products, customers, orders, messaging; no employee/locations/analytics admin areas as configured in the UI.
 
 ## Troubleshooting
 
-### Database Connection Failed
-- Verify MySQL is running (check XAMPP control panel)
-- Ensure `.env.local` exists in the project root with correct credentials
-- Check that the `BakeryEcommerce` database has been imported
-- Verify the database URL, username, and password
+### `API_URL is missing from .env.local`
 
-### Invalid Username or Password
-- Verify you ran `GenerateTestUserSQL.java` and executed the output SQL
-- Make sure you selected the correct role in the dropdown (Admin vs Employee)
-- Query the database to verify users exist: `SELECT * FROM User;`
+Create `.env.local` in the project root with `API_URL=...` as above.
 
-### BCrypt Dependency Not Found
-- Run `mvn clean install` to download dependencies
-- Reload the Maven project in your IDE
-- Check that `jbcrypt` is in `pom.xml`
+### Login fails / connection errors
 
-### Module Errors
-- Ensure `module-info.java` includes `requires jbcrypt;`
-- Try "Invalidate Caches / Restart" in IntelliJ
+- Confirm Workshop 7 is running and reachable at `API_URL`.
+- Check firewall and port (`8080` by default).
+- Use the same credentials as in the API database (BCrypt hashes are on the server only).
 
----
+### Module / JavaFX errors
 
-## Activity Logging
-All database changes and caught exceptions are logged to `Log.txt` in the project root. Each entry is a single line with a timestamp, as required by the project proposal.
+Ensure the project uses JDK 23 and that JavaFX run configuration matches `module-info` exports.
+
+## Legacy note
+
+Older MySQL scripts and JDBC DAOs were removed. Schema and data live in **Workshop 7** (Flyway migrations and seed SQL).
