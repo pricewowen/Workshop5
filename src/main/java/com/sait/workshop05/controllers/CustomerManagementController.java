@@ -16,6 +16,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
@@ -33,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class CustomerManagementController {
 
@@ -76,8 +78,7 @@ public class CustomerManagementController {
         setupActionsColumn();
         setupSearchFiltering();
         setupSelectionButtons();
-        loadCombos();
-        refreshTable();
+        loadAllAsync();
     }
 
     private void setupColumns() {
@@ -147,47 +148,95 @@ public class CustomerManagementController {
         tblCustomers.setItems(sorted);
     }
 
-    private void loadCombos() {
-        try {
-            List<RewardTierApi.RewardTierJson> tiers = RewardTierApi.list();
-            tierData = new ArrayList<>(tiers);
-            List<RewardTierOption> tierOptionsList = new ArrayList<>();
-            for (RewardTierApi.RewardTierJson t : tiers) {
-                if (t.id != null) tierOptionsList.add(new RewardTierOption(t.id, t.name != null ? t.name : ""));
+    // ────────────────────────────────────────────────────────────
+    // Async data loading
+    // ────────────────────────────────────────────────────────────
+
+    /**
+     * Fetches all reference data and customer rows in a single background task.
+     * Replaces the old loadCombos() + refreshTable() pair that ran 5 blocking
+     * HTTP calls on the FX thread (2 of which were duplicates).
+     */
+    private void loadAllAsync() {
+        lblStatus.setText("Loading...");
+        Task<CombinedData> task = new Task<>() {
+            @Override
+            protected CombinedData call() throws Exception {
+                List<RewardTierApi.RewardTierJson> tiers = RewardTierApi.list();
+                List<UserOption> users = ReferenceApi.loadAdminUsers();
+                List<AddressOption> addrs = ReferenceApi.loadAddresses();
+                List<CustomerApi.CustomerRow> customers = CustomerApi.list();
+                return new CombinedData(tiers, users, addrs, customers);
             }
-            tierOptions = tierOptionsList;
-            userOptions = ReferenceApi.loadAdminUsers();
-            addressOptions = ReferenceApi.loadAddresses();
-        } catch (Exception e) {
-            LogData.handleException("LOAD_CUSTOMER_COMBOS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load dropdown lists.", e.getMessage());
-        }
+        };
+        task.setOnSucceeded(e -> applyData(task.getValue()));
+        task.setOnFailed(e -> {
+            Throwable t = task.getException();
+            LogData.handleException("LOAD_CUSTOMERS", new RuntimeException(t));
+            ErrorHandler.showErrorDialog("API Error", "Could not load customers.", t != null ? t.getMessage() : null);
+        });
+        new Thread(task).start();
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Refresh
-    // ────────────────────────────────────────────────────────────
+    private void applyData(CombinedData d) {
+        tierData = new ArrayList<>(d.tiers);
+        tierOptions = d.tiers.stream()
+                .filter(t -> t.id != null)
+                .map(t -> new RewardTierOption(t.id, t.name != null ? t.name : ""))
+                .collect(Collectors.toList());
+        userOptions = d.users;
+        addressOptions = d.addrs;
 
-    private void refreshTable() {
-        try {
+        Map<Integer, String> tierMap = new HashMap<>();
+        for (RewardTierApi.RewardTierJson t : d.tiers) {
+            if (t.id != null) tierMap.put(t.id, t.name != null ? t.name : "");
+        }
+        Map<Integer, String> addrMap = new HashMap<>();
+        for (AddressOption a : d.addrs) {
+            addrMap.put(a.getAddressId(), a.getLine1() + ", " + a.getCity());
+        }
+        master.clear();
+        for (CustomerApi.CustomerRow row : d.customers) {
+            master.add(fromCustomerRow(row, tierMap, addrMap));
+        }
+        lblStatus.setText(master.size() + " customer(s) loaded");
+        LogData.logAction("READ", "Customer");
+    }
+
+    /**
+     * After a mutation (edit/adjust points), re-fetches only the customer list
+     * using already-cached tier and address data. Much cheaper than loadAllAsync().
+     */
+    private void refreshCustomersOnlyAsync(Runnable afterRefresh) {
+        Task<List<CustomerApi.CustomerRow>> task = new Task<>() {
+            @Override
+            protected List<CustomerApi.CustomerRow> call() throws Exception {
+                return CustomerApi.list();
+            }
+        };
+        task.setOnSucceeded(e -> {
             Map<Integer, String> tierMap = new HashMap<>();
-            for (RewardTierApi.RewardTierJson t : RewardTierApi.list()) {
+            for (RewardTierApi.RewardTierJson t : tierData) {
                 if (t.id != null) tierMap.put(t.id, t.name != null ? t.name : "");
             }
             Map<Integer, String> addrMap = new HashMap<>();
-            for (AddressOption a : ReferenceApi.loadAddresses()) {
+            for (AddressOption a : addressOptions) {
                 addrMap.put(a.getAddressId(), a.getLine1() + ", " + a.getCity());
             }
             master.clear();
-            for (CustomerApi.CustomerRow row : CustomerApi.list()) {
+            for (CustomerApi.CustomerRow row : task.getValue()) {
                 master.add(fromCustomerRow(row, tierMap, addrMap));
             }
             lblStatus.setText(master.size() + " customer(s) loaded");
             LogData.logAction("READ", "Customer");
-        } catch (Exception e) {
-            LogData.handleException("READ_CUSTOMERS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load customers.", e.getMessage());
-        }
+            if (afterRefresh != null) afterRefresh.run();
+        });
+        task.setOnFailed(e -> {
+            Throwable t = task.getException();
+            LogData.handleException("READ_CUSTOMERS", new RuntimeException(t));
+            ErrorHandler.showErrorDialog("API Error", "Could not load customers.", t != null ? t.getMessage() : null);
+        });
+        new Thread(task).start();
     }
 
     private Customer fromCustomerRow(CustomerApi.CustomerRow row, Map<Integer, String> tierMap, Map<Integer, String> addrMap) {
@@ -213,8 +262,7 @@ public class CustomerManagementController {
 
     @FXML
     private void onRefresh() {
-        loadCombos();
-        refreshTable();
+        loadAllAsync();
     }
 
     // ────────────────────────────────────────────────────────────
@@ -279,12 +327,27 @@ public class CustomerManagementController {
             if (StringUtil.safe(tfLastName.getText()).isBlank()) { showErr(lblError, "Last name is required."); event.consume(); return; }
             if (StringUtil.safe(tfPhone.getText()).isBlank()) { showErr(lblError, "Phone is required."); event.consume(); return; }
             if (StringUtil.safe(tfEmail.getText()).isBlank()) { showErr(lblError, "Email is required."); event.consume(); return; }
-            if (cbTier.getValue() == null) { showErr(lblError, "Reward tier is required."); event.consume(); }
+            if (cbTier.getValue() == null) { showErr(lblError, "Reward tier is required."); event.consume(); return; }
+            String balStr = StringUtil.safe(tfRewardBalance.getText());
+            try {
+                int bal = Integer.parseInt(balStr);
+                if (bal < 0) { showErr(lblError, "Reward points cannot be negative."); event.consume(); }
+            } catch (NumberFormatException e) {
+                showErr(lblError, "Reward points must be a whole number.");
+                event.consume();
+            }
         });
 
         dialog.showAndWait().ifPresent(result -> {
             if (result.getButtonData() != ButtonBar.ButtonData.OK_DONE) return;
             try {
+                int newBalance = Integer.parseInt(StringUtil.safe(tfRewardBalance.getText()));
+                Integer newTierId = cbTier.getValue() != null ? cbTier.getValue().getRewardTierId() : existing.getRewardTierId();
+                // Auto-recalculate tier if balance changed
+                if (newBalance != existing.getRewardBalance()) {
+                    Integer autoTier = findTierForBalance(newBalance);
+                    if (autoTier != null) newTierId = autoTier;
+                }
                 AddressOption addr = resolveAddress(cbAddress);
                 Map<String, Object> body = CustomerApi.patchBodyForProfile(
                         tfFirstName.getText().trim(),
@@ -294,13 +357,16 @@ public class CustomerManagementController {
                         tfBusinessPhone.getText().trim().isEmpty() ? null : tfBusinessPhone.getText().trim(),
                         tfEmail.getText().trim(),
                         addr != null ? addr.getAddressId() : existing.getAddressId(),
-                        cbTier.getValue() != null ? cbTier.getValue().getRewardTierId() : existing.getRewardTierId()
+                        newTierId
                 );
+                body.put("rewardBalance", newBalance);
                 CustomerApi.patch(existing.getCustomerId(), body);
                 LogData.logAction("UPDATE", "Customer");
-                refreshTable();
-                selectCustomerById(existing.getCustomerId());
-                lblStatus.setText("Updated customer " + existing.getCustomerId());
+                String cid = existing.getCustomerId();
+                refreshCustomersOnlyAsync(() -> {
+                    selectCustomerById(cid);
+                    lblStatus.setText("Updated customer " + cid);
+                });
             } catch (Exception ex) {
                 LogData.handleException("UPDATE_CUSTOMER", ex);
                 ErrorHandler.showErrorDialog("Update Failed", "Could not update customer.", ex.getMessage());
@@ -492,9 +558,14 @@ public class CustomerManagementController {
                 CustomerApi.patch(selected.getCustomerId(), patchBody);
                 LogData.logAction("ADJUST_POINTS", "Customer " + selected.getCustomerId()
                         + " adjusted by " + adjustment + " -> " + newBalance);
-                refreshTable();
-                selectCustomerById(selected.getCustomerId());
-                lblStatus.setText("Adjusted points for " + selected.getFirstName() + " by " + adjustment + " -> " + newBalance);
+                String cid = selected.getCustomerId();
+                String firstName = selected.getFirstName();
+                int finalAdjustment = adjustment;
+                int finalBalance = newBalance;
+                refreshCustomersOnlyAsync(() -> {
+                    selectCustomerById(cid);
+                    lblStatus.setText("Adjusted points for " + firstName + " by " + finalAdjustment + " -> " + finalBalance);
+                });
             } catch (Exception e) {
                 LogData.handleException("ADJUST_POINTS", e);
                 ErrorHandler.showErrorDialog("Error", "Could not update reward balance.", e.getMessage());
@@ -560,5 +631,24 @@ public class CustomerManagementController {
             if (meetsMin && meetsMax) return tier.id;
         }
         return null;
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // Inner types
+    // ────────────────────────────────────────────────────────────
+
+    private static final class CombinedData {
+        final List<RewardTierApi.RewardTierJson> tiers;
+        final List<UserOption> users;
+        final List<AddressOption> addrs;
+        final List<CustomerApi.CustomerRow> customers;
+
+        CombinedData(List<RewardTierApi.RewardTierJson> tiers, List<UserOption> users,
+                     List<AddressOption> addrs, List<CustomerApi.CustomerRow> customers) {
+            this.tiers = tiers;
+            this.users = users;
+            this.addrs = addrs;
+            this.customers = customers;
+        }
     }
 }

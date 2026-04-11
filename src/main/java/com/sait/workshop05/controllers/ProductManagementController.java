@@ -12,6 +12,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
@@ -65,8 +66,7 @@ public class ProductManagementController {
         setupColumns();
         setupActionsColumn();
         setupSearchFiltering();
-        loadTagOptions();
-        refreshTable();
+        loadAllAsync();
     }
 
     private void setupColumns() {
@@ -145,35 +145,75 @@ public class ProductManagementController {
         tblProducts.setItems(sorted);
     }
 
-    private void loadTagOptions() {
-        try {
-            List<CatalogApi.TagResponse> tags = CatalogApi.fetchTags();
-            allTagNames = tags.stream().map(t -> t.name).collect(Collectors.toList());
-            tagNameToId = tags.stream().collect(Collectors.toMap(t -> t.name, t -> t.id));
-        } catch (Exception e) {
-            LogData.handleException("LOAD_TAG_OPTIONS", e);
-        }
+    // ────────────────────────────────────────────────────────────
+    // Async data loading
+    // ────────────────────────────────────────────────────────────
+
+    /**
+     * Fetches tags and products together in one background task.
+     * Replaces the old loadTagOptions() + refreshTable() pair that fetched tags
+     * twice (once each) and blocked the FX thread.
+     */
+    private void loadAllAsync() {
+        lblStatus.setText("Loading...");
+        Task<ProductLoadData> task = new Task<>() {
+            @Override
+            protected ProductLoadData call() throws Exception {
+                List<CatalogApi.TagResponse> tags = CatalogApi.fetchTags();
+                List<CatalogApi.ProductResponse> products = CatalogApi.fetchProducts(null, null);
+                return new ProductLoadData(tags, products);
+            }
+        };
+        task.setOnSucceeded(e -> applyData(task.getValue()));
+        task.setOnFailed(e -> {
+            Throwable t = task.getException();
+            LogData.handleException("LOAD_PRODUCTS", new RuntimeException(t));
+            ErrorHandler.showErrorDialog("API Error", "Could not load products.", t != null ? t.getMessage() : null);
+        });
+        new Thread(task).start();
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Refresh
-    // ────────────────────────────────────────────────────────────
+    private void applyData(ProductLoadData d) {
+        allTagNames = d.tags.stream().map(t -> t.name).collect(Collectors.toList());
+        tagNameToId = d.tags.stream().collect(Collectors.toMap(t -> t.name, t -> t.id));
+        Map<Integer, String> idToName = d.tags.stream().collect(Collectors.toMap(t -> t.id, t -> t.name));
 
-    private void refreshTable() {
-        try {
-            List<CatalogApi.ProductResponse> rows = CatalogApi.fetchProducts(null, null);
-            Map<Integer, String> idToName = CatalogApi.fetchTags().stream()
-                    .collect(Collectors.toMap(t -> t.id, t -> t.name));
+        master.clear();
+        for (CatalogApi.ProductResponse p : d.products) {
+            master.add(toProduct(p, idToName));
+        }
+        lblStatus.setText(master.size() + " product(s) loaded");
+        LogData.logAction("READ", "Product");
+    }
+
+    /**
+     * Re-fetches only the product list after a mutation, reusing the cached
+     * tagNameToId map to avoid an extra tags API call.
+     */
+    private void refreshProductsOnlyAsync(Runnable afterRefresh) {
+        Task<List<CatalogApi.ProductResponse>> task = new Task<>() {
+            @Override
+            protected List<CatalogApi.ProductResponse> call() throws Exception {
+                return CatalogApi.fetchProducts(null, null);
+            }
+        };
+        task.setOnSucceeded(e -> {
+            Map<Integer, String> idToName = tagNameToId.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
             master.clear();
-            for (CatalogApi.ProductResponse p : rows) {
+            for (CatalogApi.ProductResponse p : task.getValue()) {
                 master.add(toProduct(p, idToName));
             }
             lblStatus.setText(master.size() + " product(s) loaded");
             LogData.logAction("READ", "Product");
-        } catch (Exception e) {
-            LogData.handleException("READ_PRODUCTS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load products.", e.getMessage());
-        }
+            if (afterRefresh != null) afterRefresh.run();
+        });
+        task.setOnFailed(e -> {
+            Throwable t = task.getException();
+            LogData.handleException("READ_PRODUCTS", new RuntimeException(t));
+            ErrorHandler.showErrorDialog("API Error", "Could not load products.", t != null ? t.getMessage() : null);
+        });
+        new Thread(task).start();
     }
 
     private Product toProduct(CatalogApi.ProductResponse p, Map<Integer, String> idToName) {
@@ -193,8 +233,7 @@ public class ProductManagementController {
 
     @FXML
     private void onRefresh() {
-        loadTagOptions();
-        refreshTable();
+        loadAllAsync();
     }
 
     // ────────────────────────────────────────────────────────────
@@ -214,8 +253,8 @@ public class ProductManagementController {
         if (!isNew) {
             try {
                 CatalogApi.ProductResponse p = CatalogApi.fetchProduct(existing.getProductId());
-                Map<Integer, String> idToName = CatalogApi.fetchTags().stream()
-                        .collect(Collectors.toMap(t -> t.id, t -> t.name));
+                Map<Integer, String> idToName = tagNameToId.entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
                 if (p.tagIds != null) {
                     p.tagIds.stream().map(idToName::get).filter(Objects::nonNull).forEach(assignedTags::add);
                 }
@@ -257,8 +296,13 @@ public class ProductManagementController {
         // Image picker
         File[] selectedImageFile = {null};
         boolean existingHasImage = !isNew && existing.hasImage();
-        Label lblImage = new Label(isNew ? "No file selected"
-                : existingHasImage ? "Current image set (browse to replace)" : "No image set (browse to add)");
+        String currentImageText = existingHasImage
+                ? "Current: " + imageFilename(existing.getImageUrl())
+                : "No image";
+        Label lblImage = new Label(isNew ? "No file selected" : currentImageText);
+        lblImage.setStyle(existingHasImage
+                ? "-fx-text-fill: #3A7A3A; -fx-font-size: 12px;"
+                : "-fx-text-fill: #888; -fx-font-size: 12px;");
         Button btnBrowse = new Button("Browse Image...");
         btnBrowse.getStyleClass().add("btn-muted");
         HBox imageRow = new HBox(8, btnBrowse, lblImage);
@@ -312,6 +356,7 @@ public class ProductManagementController {
                 if (file != null) {
                     selectedImageFile[0] = file;
                     lblImage.setText(file.getName());
+                    lblImage.setStyle("-fx-text-fill: #2C6AA0; -fx-font-size: 12px;");
                 }
             });
         });
@@ -345,21 +390,35 @@ public class ProductManagementController {
                     CatalogApi.ProductResponse created = CatalogApi.createProduct(name, desc, price, tagIds, "");
                     LogData.logAction("CREATE", "Product");
                     productId = created.id != null ? created.id : -1;
-                    refreshTable();
-                    if (productId > 0) { selectProductById(productId); lblStatus.setText("Created product #" + productId); }
+                    int finalProductId = productId;
+                    refreshProductsOnlyAsync(() -> {
+                        if (finalProductId > 0) {
+                            selectProductById(finalProductId);
+                            lblStatus.setText("Created product #" + finalProductId);
+                        }
+                    });
                 } else {
                     CatalogApi.updateProduct(existing.getProductId(), name, desc, price, tagIds, "");
                     LogData.logAction("UPDATE", "Product");
                     productId = existing.getProductId();
-                    refreshTable();
-                    selectProductById(productId);
-                    lblStatus.setText("Updated product #" + productId);
+                    int finalProductId = productId;
+                    refreshProductsOnlyAsync(() -> {
+                        selectProductById(finalProductId);
+                        lblStatus.setText("Updated product #" + finalProductId);
+                    });
                 }
 
                 if (selectedImageFile[0] != null && productId > 0) {
+                    int finalProductId = productId;
+                    File imageFile = selectedImageFile[0];
+                    boolean wasNew = isNew;
                     try {
-                        ImageUploadApi.uploadProductImage(productId, selectedImageFile[0]);
-                        LogData.logAction("UPLOAD_IMAGE", "Product #" + productId);
+                        ImageUploadApi.uploadProductImage(finalProductId, imageFile);
+                        LogData.logAction("UPLOAD_IMAGE", "Product #" + finalProductId);
+                        refreshProductsOnlyAsync(() -> {
+                            selectProductById(finalProductId);
+                            lblStatus.setText((wasNew ? "Created" : "Updated") + " product #" + finalProductId + " — image uploaded.");
+                        });
                     } catch (Exception uploadEx) {
                         LogData.handleException("UPLOAD_PRODUCT_IMAGE", uploadEx);
                         ErrorHandler.showErrorDialog("Upload Failed", "Product saved but image upload failed.", uploadEx.getMessage());
@@ -414,8 +473,8 @@ public class ProductManagementController {
                 scope.setTag("entity", "product");
                 Sentry.captureMessage("Deleted product #" + p.getProductId() + " (" + p.getProductName() + ")", SentryLevel.WARNING);
             });
-            refreshTable();
-            lblStatus.setText("Deleted product #" + p.getProductId());
+            int pid = p.getProductId();
+            refreshProductsOnlyAsync(() -> lblStatus.setText("Deleted product #" + pid));
         } catch (Exception ex) {
             LogData.handleException("DELETE_PRODUCT", ex);
             ErrorHandler.showErrorDialog("Delete Failed", "Could not delete product.", ex.getMessage());
@@ -455,6 +514,28 @@ public class ProductManagementController {
                 tblProducts.scrollTo(p);
                 return;
             }
+        }
+    }
+
+    /** Returns the filename portion of a URL, or a truncated URL if no path separator. */
+    private static String imageFilename(String url) {
+        if (url == null || url.isBlank()) return "none";
+        int slash = url.lastIndexOf('/');
+        String name = slash >= 0 ? url.substring(slash + 1) : url;
+        return name.length() > 40 ? name.substring(0, 40) + "…" : name;
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // Inner types
+    // ────────────────────────────────────────────────────────────
+
+    private static final class ProductLoadData {
+        final List<CatalogApi.TagResponse> tags;
+        final List<CatalogApi.ProductResponse> products;
+
+        ProductLoadData(List<CatalogApi.TagResponse> tags, List<CatalogApi.ProductResponse> products) {
+            this.tags = tags;
+            this.products = products;
         }
     }
 }
