@@ -11,6 +11,7 @@ import com.sait.workshop05.session.UserSession;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -65,7 +66,7 @@ public class MessagingController {
         setupConversationList();
         setupSearchFilter();
         setupSelectionBinding();
-        refreshConversations();
+        refreshConversationsAsync();
 
         btnSend.setDisable(true);
         txtSubject.setDisable(true);
@@ -74,6 +75,33 @@ public class MessagingController {
 
     private void setupConversationList() {
         lstConversations.setCellFactory(lv -> new ListCell<>() {
+            private final Label nameLabel = new Label();
+            private final Label timeLabel = new Label();
+            private final HBox top = new HBox(8);
+            private final VBox cellBox = new VBox(2);
+
+            {
+                top.setAlignment(Pos.CENTER_LEFT);
+                cellBox.setPadding(new Insets(4, 6, 4, 6));
+                cellBox.getChildren().addAll(top, timeLabel);
+                // Re-apply styles whenever selection changes (selected ↔ deselected)
+                selectedProperty().addListener((obs, wasSelected, selected) -> applyStyles(selected));
+            }
+
+            private void applyStyles(boolean selected) {
+                ConversationSummary item = getItem();
+                if (selected) {
+                    nameLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: white;");
+                    timeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: rgba(255,255,255,0.75);");
+                    setStyle("-fx-background-color: #C4714A;");
+                } else {
+                    nameLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2C1A0E;");
+                    timeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #8A8178;");
+                    boolean unread = item != null && item.getUnreadCount() > 0;
+                    setStyle(unread ? "-fx-background-color: #F8EDD5;" : "");
+                }
+            }
+
             @Override
             protected void updateItem(ConversationSummary item, boolean empty) {
                 super.updateItem(item, empty);
@@ -81,39 +109,26 @@ public class MessagingController {
                     setText(null);
                     setGraphic(null);
                     setStyle("");
-                } else {
-                    VBox cell = new VBox(2);
-                    cell.setPadding(new Insets(4, 6, 4, 6));
-
-                    Label nameLabel = new Label(item.getPartnerUsername());
-                    nameLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
-
-                    Label timeLabel = new Label(item.getLastMessageTime().format(DT_FMT));
-                    timeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #8A8178;");
-
-                    HBox top = new HBox(8);
-                    top.setAlignment(Pos.CENTER_LEFT);
-                    top.getChildren().add(nameLabel);
-
-                    if (item.getUnreadCount() > 0) {
-                        Label badge = new Label(String.valueOf(item.getUnreadCount()));
-                        badge.setStyle("-fx-background-color: #C75B52; -fx-text-fill: white; " +
-                                "-fx-padding: 1 6 1 6; -fx-background-radius: 10; -fx-font-size: 11px;");
-                        Region spacer = new Region();
-                        HBox.setHgrow(spacer, Priority.ALWAYS);
-                        top.getChildren().addAll(spacer, badge);
-                    }
-
-                    cell.getChildren().addAll(top, timeLabel);
-                    setGraphic(cell);
-                    setText(null);
-
-                    if (item.getUnreadCount() > 0) {
-                        setStyle("-fx-background-color: #F8EDD5;");
-                    } else {
-                        setStyle("");
-                    }
+                    return;
                 }
+
+                nameLabel.setText(item.getPartnerUsername());
+                timeLabel.setText(item.getLastMessageTime() != null
+                        ? item.getLastMessageTime().format(DT_FMT) : "");
+
+                top.getChildren().setAll(nameLabel);
+                if (item.getUnreadCount() > 0) {
+                    Label badge = new Label(String.valueOf(item.getUnreadCount()));
+                    badge.setStyle("-fx-background-color: #C75B52; -fx-text-fill: white; " +
+                            "-fx-padding: 1 6 1 6; -fx-background-radius: 10; -fx-font-size: 11px;");
+                    Region spacer = new Region();
+                    HBox.setHgrow(spacer, Priority.ALWAYS);
+                    top.getChildren().addAll(spacer, badge);
+                }
+
+                setGraphic(cellBox);
+                setText(null);
+                applyStyles(isSelected());
             }
         });
     }
@@ -137,7 +152,7 @@ public class MessagingController {
                     if (newVal != null && !isLoadingThread) {
                         selectedPartnerId = newVal.getPartnerId();
                         selectedPartnerName = newVal.getPartnerUsername();
-                        loadConversationThread();
+                        loadConversationThreadAsync();
                         enableComposeArea();
                     }
                 }
@@ -157,120 +172,145 @@ public class MessagingController {
         }
     }
 
-    private void refreshConversations() {
-        if (currentUserUuid == null || currentUserUuid.isBlank()) {
-            return;
-        }
-        try {
-            List<MessageApi.LegacyMessageJson> rows = MessageApi.myMessages();
-            Map<String, String> userNames = new HashMap<>();
-            for (UserOption u : ReferenceApi.loadAdminUsers()) {
-                userNames.put(u.getUserId(), u.getUsername());
-            }
+    // ────────────────────────────────────────────────────────────
+    // Async conversation loading
+    // ────────────────────────────────────────────────────────────
 
-            Map<String, LocalDateTime> lastByPartner = new HashMap<>();
-            Map<String, Integer> unreadByPartner = new HashMap<>();
+    private void refreshConversationsAsync() {
+        if (currentUserUuid == null || currentUserUuid.isBlank()) return;
 
-            for (MessageApi.LegacyMessageJson m : rows) {
-                String other = otherParty(m, currentUserUuid);
-                if (other == null || other.isBlank()) continue;
-
-                LocalDateTime t = parseSent(m.sentAt);
-                lastByPartner.merge(other, t, (a, b) -> a.isAfter(b) ? a : b);
-
-                if (m.receiverId != null && m.receiverId.equals(currentUserUuid) && !m.read) {
-                    unreadByPartner.merge(other, 1, Integer::sum);
+        Task<ConversationData> task = new Task<>() {
+            @Override
+            protected ConversationData call() throws Exception {
+                List<MessageApi.LegacyMessageJson> rows = MessageApi.myMessages();
+                Map<String, String> userNames = new HashMap<>();
+                for (UserOption u : ReferenceApi.loadAdminUsers()) {
+                    userNames.put(u.getUserId(), u.getUsername());
                 }
+                return new ConversationData(rows, userNames);
             }
-
-            List<ConversationSummary> summaries = new ArrayList<>();
-            for (Map.Entry<String, LocalDateTime> e : lastByPartner.entrySet()) {
-                String pid = e.getKey();
-                String name = userNames.getOrDefault(pid, pid.substring(0, Math.min(8, pid.length())) + "…");
-                int unread = unreadByPartner.getOrDefault(pid, 0);
-                summaries.add(new ConversationSummary(pid, name, e.getValue(), unread));
-            }
-            summaries.sort(Comparator.comparing(ConversationSummary::getLastMessageTime).reversed());
-
-            conversationList.setAll(summaries);
-
-            int totalUnread = summaries.stream().mapToInt(ConversationSummary::getUnreadCount).sum();
-            lblUnreadCount.setText(totalUnread > 0 ? totalUnread + " unread" : "No unread messages");
-
-        } catch (Exception e) {
-            ErrorHandler.showErrorDialog("Load Error", "Could not load conversations", e.getMessage());
-            LogData.handleException("LOAD_CONVERSATIONS", e);
-        }
+        };
+        task.setOnSucceeded(e -> applyConversations(task.getValue()));
+        task.setOnFailed(e -> {
+            Throwable t = task.getException();
+            ErrorHandler.showErrorDialog("Load Error", "Could not load conversations", t != null ? t.getMessage() : null);
+            LogData.handleException("LOAD_CONVERSATIONS", new RuntimeException(t));
+        });
+        new Thread(task).start();
     }
 
-    private static String otherParty(MessageApi.LegacyMessageJson m, String me) {
-        if (m.senderId != null && m.senderId.equals(me)) {
-            return m.receiverId;
+    private void applyConversations(ConversationData d) {
+        Map<String, LocalDateTime> lastByPartner = new HashMap<>();
+        Map<String, Integer> unreadByPartner = new HashMap<>();
+
+        for (MessageApi.LegacyMessageJson m : d.messages) {
+            String other = otherParty(m, currentUserUuid);
+            if (other == null || other.isBlank()) continue;
+
+            LocalDateTime t = parseSent(m.sentAt);
+            lastByPartner.merge(other, t, (a, b) -> a.isAfter(b) ? a : b);
+
+            if (m.receiverId != null && m.receiverId.equals(currentUserUuid) && !m.read) {
+                unreadByPartner.merge(other, 1, Integer::sum);
+            }
         }
-        return m.senderId;
+
+        List<ConversationSummary> summaries = new ArrayList<>();
+        for (Map.Entry<String, LocalDateTime> entry : lastByPartner.entrySet()) {
+            String pid = entry.getKey();
+            String name = d.userNames.getOrDefault(pid, pid.substring(0, Math.min(8, pid.length())) + "…");
+            int unread = unreadByPartner.getOrDefault(pid, 0);
+            summaries.add(new ConversationSummary(pid, name, entry.getValue(), unread));
+        }
+        summaries.sort(Comparator.comparing(ConversationSummary::getLastMessageTime).reversed());
+
+        conversationList.setAll(summaries);
+
+        int totalUnread = summaries.stream().mapToInt(ConversationSummary::getUnreadCount).sum();
+        lblUnreadCount.setText(totalUnread > 0 ? totalUnread + " unread" : "No unread messages");
     }
 
-    private void loadConversationThread() {
+    /**
+     * Loads a conversation thread in a background task.
+     * Eliminates the old double-fetch pattern: previously the conversation was
+     * fetched once to mark messages read, then fetched again immediately after.
+     * Now we mark-read in the background and use the same response for rendering.
+     */
+    private void loadConversationThreadAsync() {
         if (selectedPartnerId == null || selectedPartnerId.isBlank()) return;
 
         isLoadingThread = true;
-        try {
-            List<MessageApi.LegacyMessageJson> rows = MessageApi.conversation(selectedPartnerId);
+        String partnerId = selectedPartnerId;
+        String me = currentUserUuid;
 
-            for (MessageApi.LegacyMessageJson m : rows) {
-                if (m.receiverId != null && m.receiverId.equals(currentUserUuid) && !m.read && m.id != null) {
-                    MessageApi.markRead(m.id);
+        Task<List<MessageApi.LegacyMessageJson>> task = new Task<>() {
+            @Override
+            protected List<MessageApi.LegacyMessageJson> call() throws Exception {
+                List<MessageApi.LegacyMessageJson> rows = MessageApi.conversation(partnerId);
+                // Mark unread messages as read in the same pass — no second fetch needed
+                for (MessageApi.LegacyMessageJson m : rows) {
+                    if (m.receiverId != null && m.receiverId.equals(me) && !m.read && m.id != null) {
+                        MessageApi.markRead(m.id);
+                    }
                 }
+                return rows;
             }
-
-            rows = MessageApi.conversation(selectedPartnerId);
-            List<Message> messages = new ArrayList<>();
-            for (MessageApi.LegacyMessageJson m : rows) {
-                messages.add(MessageApi.toModel(m));
-            }
-
-            lblThreadTitle.setText("Conversation with " + selectedPartnerName);
-            vboxMessages.getChildren().clear();
-
-            if (messages.isEmpty()) {
-                Label empty = new Label("No messages yet. Send the first message below!");
-                empty.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 13px;");
-                vboxMessages.getChildren().add(empty);
-            } else {
-                for (Message msg : messages) {
-                    vboxMessages.getChildren().add(createMessageBubble(msg));
+        };
+        task.setOnSucceeded(e -> {
+            try {
+                List<MessageApi.LegacyMessageJson> rows = task.getValue();
+                List<Message> messages = new ArrayList<>();
+                for (MessageApi.LegacyMessageJson m : rows) {
+                    messages.add(MessageApi.toModel(m));
                 }
-            }
 
-            scrollMessages.applyCss();
-            scrollMessages.layout();
-            scrollMessages.setVvalue(1.0);
+                lblThreadTitle.setText("Conversation with " + selectedPartnerName);
+                vboxMessages.getChildren().clear();
 
-            refreshConversations();
-
-            for (ConversationSummary cs : conversationList) {
-                if (cs.getPartnerId().equals(selectedPartnerId)) {
-                    lstConversations.getSelectionModel().select(cs);
-                    break;
+                if (messages.isEmpty()) {
+                    Label empty = new Label("No messages yet. Send the first message below!");
+                    empty.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 13px;");
+                    vboxMessages.getChildren().add(empty);
+                } else {
+                    for (Message msg : messages) {
+                        vboxMessages.getChildren().add(createMessageBubble(msg));
+                    }
                 }
-            }
 
-            if (!messages.isEmpty()) {
-                Message lastMsg = messages.get(messages.size() - 1);
-                String lastSubject = lastMsg.getMessageSubject();
-                if (lastSubject != null && !lastSubject.startsWith("Re: ")) {
-                    txtSubject.setText("Re: " + lastSubject);
-                } else if (lastSubject != null) {
-                    txtSubject.setText(lastSubject);
+                scrollMessages.applyCss();
+                scrollMessages.layout();
+                scrollMessages.setVvalue(1.0);
+
+                // Refresh sidebar counts to clear the unread badge
+                refreshConversationsAsync();
+
+                for (ConversationSummary cs : conversationList) {
+                    if (cs.getPartnerId().equals(selectedPartnerId)) {
+                        lstConversations.getSelectionModel().select(cs);
+                        break;
+                    }
                 }
-            }
 
-        } catch (Exception e) {
-            ErrorHandler.showErrorDialog("Load Error", "Could not load message thread", e.getMessage());
-            LogData.handleException("LOAD_THREAD", e);
-        } finally {
+                if (!messages.isEmpty()) {
+                    Message lastMsg = messages.get(messages.size() - 1);
+                    String lastSubject = lastMsg.getMessageSubject();
+                    if (lastSubject != null && !lastSubject.startsWith("Re: ")) {
+                        txtSubject.setText("Re: " + lastSubject);
+                    } else if (lastSubject != null) {
+                        txtSubject.setText(lastSubject);
+                    }
+                }
+            } finally {
+                isLoadingThread = false;
+            }
+        });
+        task.setOnFailed(e -> {
             isLoadingThread = false;
-        }
+            Throwable t = task.getException();
+            ErrorHandler.showErrorDialog("Load Error", "Could not load message thread", t != null ? t.getMessage() : null);
+            LogData.handleException("LOAD_THREAD", new RuntimeException(t));
+        });
+        new Thread(task).start();
     }
 
     private VBox createMessageBubble(Message msg) {
@@ -423,7 +463,7 @@ public class MessagingController {
             txtMessageContent.clear();
             lblComposeStatus.setText("Message sent!");
 
-            loadConversationThread();
+            loadConversationThreadAsync();
 
         } catch (Exception e) {
             ErrorHandler.showErrorDialog("Send Error", "Failed to send message", e.getMessage());
@@ -434,7 +474,7 @@ public class MessagingController {
     @FXML
     void onRefreshConversations() {
         String previousPartnerId = selectedPartnerId;
-        refreshConversations();
+        refreshConversationsAsync();
 
         if (previousPartnerId != null && !previousPartnerId.isBlank()) {
             isLoadingThread = true;
@@ -455,5 +495,26 @@ public class MessagingController {
         btnSend.setDisable(false);
         txtSubject.setDisable(false);
         txtMessageContent.setDisable(false);
+    }
+
+    private static String otherParty(MessageApi.LegacyMessageJson m, String me) {
+        if (m.senderId != null && m.senderId.equals(me)) {
+            return m.receiverId;
+        }
+        return m.senderId;
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // Inner types
+    // ────────────────────────────────────────────────────────────
+
+    private static final class ConversationData {
+        final List<MessageApi.LegacyMessageJson> messages;
+        final Map<String, String> userNames;
+
+        ConversationData(List<MessageApi.LegacyMessageJson> messages, Map<String, String> userNames) {
+            this.messages = messages;
+            this.userNames = userNames;
+        }
     }
 }
