@@ -3,6 +3,7 @@ package com.sait.workshop05;
 import com.sait.workshop05.api.RewardTierApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.RewardTier;
+import com.sait.workshop05.util.ErrorHandler;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -32,6 +33,8 @@ public class RewardTierController {
     @FXML private TextField txtMaxPoints;
     @FXML private CheckBox chkUnlimited;
     @FXML private TextField txtDiscountRate;
+    @FXML private Button btnCreate;
+    @FXML private Button btnUpdate;
 
     private final ObservableList<RewardTier> master = FXCollections.observableArrayList();
     private FilteredList<RewardTier> filtered;
@@ -43,6 +46,14 @@ public class RewardTierController {
         setSearchFiltering();
         setupListeners();
         refreshTable();
+        updateButtonState(false);
+    }
+
+    private void updateButtonState(boolean hasSelection) {
+        btnCreate.setVisible(!hasSelection);
+        btnCreate.setManaged(!hasSelection);
+        btnUpdate.setVisible(hasSelection);
+        btnUpdate.setManaged(hasSelection);
     }
 
     private void setColumns() {
@@ -98,7 +109,11 @@ public class RewardTierController {
 
     private void setSelectionBinding() {
         tblRewardTiers.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> {
-            if (selected == null) return;
+            if (selected == null) {
+                updateButtonState(false);
+                return;
+            }
+            updateButtonState(true);
 
             txtTierId.setText(String.valueOf(selected.getRewardTierId()));
             txtTierName.setText(selected.getRewardTierName());
@@ -186,7 +201,7 @@ public class RewardTierController {
             LogData.logAction("READ", "RewardTier");
         } catch (Exception e) {
             LogData.handleException("READ_REWARD_TIERS", e);
-            showError("API Error", "Could not load reward tiers.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load reward tiers.", e.getMessage());
         }
     }
 
@@ -216,6 +231,7 @@ public class RewardTierController {
         chkUnlimited.setSelected(false);
         txtMaxPoints.setDisable(false);
         lblStatus.setText("Cleared");
+        updateButtonState(false);
     }
 
     @FXML
@@ -249,7 +265,7 @@ public class RewardTierController {
 
         } catch (Exception ex) {
             LogData.handleException("CREATE_REWARD_TIER", ex);
-            showError("Create Failed", "Could not create reward tier.", ex.getMessage());
+            ErrorHandler.showErrorDialog("Create Failed", "Could not create reward tier.", ex.getMessage());
         }
     }
 
@@ -286,7 +302,7 @@ public class RewardTierController {
             lblStatus.setText("Updated tier #" + tier.getRewardTierId());
         } catch (Exception ex) {
             LogData.handleException("UPDATE_REWARD_TIER", ex);
-            showError("Update Failed", "Could not update reward tier.", ex.getMessage());
+            ErrorHandler.showErrorDialog("Update Failed", "Could not update reward tier.", ex.getMessage());
         }
     }
 
@@ -314,7 +330,7 @@ public class RewardTierController {
             lblStatus.setText("Deleted tier #" + selected.getRewardTierId());
         } catch (Exception ex) {
             LogData.handleException("DELETE_REWARD_TIER", ex);
-            showError("Delete Failed", "Could not delete reward tier.", ex.getMessage());
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete reward tier.", ex.getMessage());
         }
     }
 
@@ -414,14 +430,6 @@ public class RewardTierController {
         Alert a = new Alert(Alert.AlertType.WARNING);
         a.setTitle(title);
         a.setHeaderText(null);
-        a.setContentText(content);
-        a.showAndWait();
-    }
-
-    private void showError(String title, String header, String content) {
-        Alert a = new Alert(Alert.AlertType.ERROR);
-        a.setTitle(title);
-        a.setHeaderText(header);
         a.setContentText(content);
         a.showAndWait();
     }

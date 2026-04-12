@@ -16,12 +16,12 @@ public final class OrderStatus {
 
     /** All statuses for ComboBox dropdowns (does not include "All"). */
     public static final List<String> ALL_STATUSES = List.of(
-            PENDING, PROCESSING, READY, OUT_FOR_DELIVERY, COMPLETED, DELIVERED, CANCELLED
+            PENDING, PROCESSING, READY, OUT_FOR_DELIVERY, DELIVERED, COMPLETED, CANCELLED
     );
 
     /** Statuses for filter dropdowns (includes "All" option). */
     public static final List<String> FILTER_STATUSES = List.of(
-            "All", PENDING, PROCESSING, READY, OUT_FOR_DELIVERY, COMPLETED, DELIVERED, CANCELLED
+            "All", PENDING, PROCESSING, READY, OUT_FOR_DELIVERY, DELIVERED, COMPLETED, CANCELLED
     );
 
     private OrderStatus() {} // utility class
