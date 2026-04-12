@@ -29,7 +29,7 @@ public final class ReferenceApi {
     }
 
     public static List<UserOption> loadAdminUsers() throws Exception {
-        HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/admin/users");
+        HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/admin/users/staff");
         if (res.statusCode() >= 400) {
             throw new RuntimeException("admin users failed: " + res.statusCode() + " " + res.body());
         }
@@ -126,7 +126,7 @@ public final class ReferenceApi {
                 "line1", t,
                 "line2", "",
                 "city", "Unknown",
-                "province", "Unknown",
+                "province", "AB",
                 "postalCode", "X0X0X0"
         );
         HttpResponse<String> res = ApiClient.getInstance().postAuthenticated("/api/v1/admin/addresses", body);
@@ -136,6 +136,6 @@ public final class ReferenceApi {
         @SuppressWarnings("unchecked")
         Map<String, Object> map = ApiClient.getInstance().getMapper().readValue(res.body(), Map.class);
         int id = ((Number) map.get("id")).intValue();
-        return new AddressOption(id, t, "Unknown", "Unknown", "X0X0X0");
+        return new AddressOption(id, t, "Unknown", "AB", "X0X0X0");
     }
 }

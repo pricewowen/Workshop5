@@ -69,7 +69,7 @@
                                             <fixedCellSize>28</fixedCellSize>
 
                                             <columns>
-                                                <TableColumn fx:id="colOrderId" text="ID" prefWidth="55"/>
+                                                <TableColumn fx:id="colOrderId" text="Order #" prefWidth="100"/>
                                                 <TableColumn fx:id="colOrderCustomer" text="Customer" prefWidth="140"/>
                                                 <TableColumn fx:id="colOrderBakery" text="Bakery" prefWidth="120"/>
                                                 <TableColumn fx:id="colOrderPlaced" text="Placed" prefWidth="130"/>

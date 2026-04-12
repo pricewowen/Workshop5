@@ -136,6 +136,7 @@ public final class OrderApi {
     public static Order toOrder(OrderJson j) {
         Order o = new Order();
         o.setOrderId(j.id);
+        o.setOrderNumber(j.orderNumber != null ? j.orderNumber : j.id);
         o.setCustomerId(j.customerId != null ? j.customerId : "");
         o.setBakeryId(j.bakeryId != null ? j.bakeryId : 0);
         o.setAddressId(j.addressId != null ? j.addressId : 0);
@@ -224,7 +225,7 @@ public final class OrderApi {
             throw new RuntimeException("checkout failed: " + res.statusCode() + " " + res.body());
         }
         OrderJson created = ApiClient.getInstance().getMapper().readValue(res.body(), OrderJson.class);
-        return created.id;
+        return created.orderNumber != null ? created.orderNumber : created.id;
     }
 
     private static LocalDateTime parseDt(String s) {

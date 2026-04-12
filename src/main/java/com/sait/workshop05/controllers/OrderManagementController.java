@@ -132,7 +132,7 @@ public class OrderManagementController {
 
     private void setupTab1() {
         // Column bindings
-        colOrderId.setCellValueFactory(new PropertyValueFactory<>("orderId"));
+        colOrderId.setCellValueFactory(new PropertyValueFactory<>("orderNumber"));
         colOrderCustomer.setCellValueFactory(new PropertyValueFactory<>("customerDisplay"));
         colOrderBakery.setCellValueFactory(new PropertyValueFactory<>("bakeryDisplay"));
         colOrderMethod.setCellValueFactory(new PropertyValueFactory<>("orderMethod"));
@@ -187,7 +187,7 @@ public class OrderManagementController {
                 return;
             }
 
-            lblOrderDetailTitle.setText("Order #" + selected.getOrderId()
+            lblOrderDetailTitle.setText("Order " + selected.getOrderNumber()
                     + " — " + selected.getCustomerDisplay());
             cboNewStatus.setValue(selected.getOrderStatus());
 
@@ -363,9 +363,9 @@ public class OrderManagementController {
         try {
             OrderApi.updateOrderStatus(selected.getOrderId(), newStatus);
             LogData.logAction("UPDATE_STATUS",
-                    "Order #" + selected.getOrderId() + ": " + currentStatus + " -> " + newStatus);
+                    "Order " + selected.getOrderNumber() + ": " + currentStatus + " -> " + newStatus);
             loadOrderData();
-            lblOrderStatus.setText("Updated order #" + selected.getOrderId() + " to " + newStatus);
+            lblOrderStatus.setText("Updated " + selected.getOrderNumber() + " to " + newStatus);
         } catch (Exception e) {
             LogData.handleException("UPDATE_ORDER_STATUS", e);
             ErrorHandler.showErrorDialog("Update Failed", "Could not update order status.", e.getMessage());

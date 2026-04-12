@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
  */
 public class Order {
     private final StringProperty orderId;
+    private final StringProperty orderNumber;
     private final StringProperty customerId;
     private final IntegerProperty bakeryId;
     private final IntegerProperty addressId;
@@ -32,6 +33,7 @@ public class Order {
      */
     public Order() {
         this.orderId = new SimpleStringProperty();
+        this.orderNumber = new SimpleStringProperty();
         this.customerId = new SimpleStringProperty();
         this.bakeryId = new SimpleIntegerProperty();
         this.addressId = new SimpleIntegerProperty();
@@ -59,6 +61,18 @@ public class Order {
 
     public void setOrderId(String orderId) {
         this.orderId.set(orderId);
+    }
+
+    public String getOrderNumber() {
+        return orderNumber.get();
+    }
+
+    public StringProperty orderNumberProperty() {
+        return orderNumber;
+    }
+
+    public void setOrderNumber(String orderNumber) {
+        this.orderNumber.set(orderNumber);
     }
 
     public String getCustomerId() {

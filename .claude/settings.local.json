@@ -4,7 +4,13 @@
       "Bash(mvn compile:*)",
       "Bash(where:*)",
       "Bash(grep:*)",
-      "Bash(cmd.exe:*)"
+      "Bash(cmd.exe:*)",
+      "Bash(mvnw.cmd compile:*)",
+      "Bash(powershell.exe -Command \"Set-Location 'H:\\\\School\\\\Workshops\\\\Phase 3\\\\Workshop5'; & '.\\\\mvnw.cmd' compile 2>&1\")",
+      "Bash(./mvnw.cmd compile:*)"
     ]
+  },
+  "remote": {
+    "defaultEnvironmentId": "env_011f4XDZUtMykJ9Fqh6TSRtk"
   }
 }
