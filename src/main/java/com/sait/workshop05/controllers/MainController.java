@@ -61,6 +61,9 @@ public class MainController {
     private Button btnRewardTier;
 
     @FXML
+    private Button btnUsers;
+
+    @FXML
     private Button btnLogout;
 
     @FXML
@@ -91,6 +94,7 @@ public class MainController {
         PAGE_TITLES.put(btnMessages,    "Messages");
         PAGE_TITLES.put(btnAnalytics,   "Analytics");
         PAGE_TITLES.put(btnActivityLog, "Activity Log");
+        PAGE_TITLES.put(btnUsers,       "Users");
 
         setUserLabels();
         applyRoleBasedVisibility();
@@ -131,6 +135,7 @@ public class MainController {
         if (session.isEmployee()) {
             hideButton(btnEmployees);
             hideButton(btnLocations);
+            hideButton(btnUsers);
 
             // Only hide analytics if the employee is NOT eligible.
             if (!session.canAccessAnalytics()) {
@@ -225,6 +230,12 @@ public class MainController {
     void onRewardTierClick(ActionEvent event) {
         setActiveButton(btnRewardTier);
         loadPage("reward-tier-view.fxml");
+    }
+
+    @FXML
+    void onUsersClick(ActionEvent event) {
+        setActiveButton(btnUsers);
+        loadPage("user-management-view.fxml");
     }
 
     /**

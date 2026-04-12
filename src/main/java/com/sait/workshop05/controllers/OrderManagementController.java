@@ -500,10 +500,11 @@ public class OrderManagementController {
             if (discount < 0) discount = 0;
         } catch (NumberFormatException ignored) {}
 
-        // Validation: discount cannot exceed subtotal (proposal rule)
-        if (discount > subtotal) {
-            ErrorHandler.showWarning("Validation", "Discount ($" + String.format("%.2f", discount)
-                    + ") cannot exceed subtotal ($" + String.format("%.2f", subtotal) + ").");
+        // Validation: discount cannot exceed 50% of subtotal
+        double maxDiscount = subtotal * 0.50;
+        if (discount > maxDiscount) {
+            ErrorHandler.showWarning("Validation", "Discount cannot exceed 50% of the subtotal. Maximum: $"
+                    + String.format("%.2f", maxDiscount) + ".");
             return;
         }
 
