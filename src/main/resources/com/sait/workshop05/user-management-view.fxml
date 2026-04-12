@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.sait.workshop05.controllers.UserManagementController"
+            prefWidth="1000" prefHeight="700"
+            styleClass="page-root">
+    <children>
+        <VBox spacing="12"
+              AnchorPane.topAnchor="0"
+              AnchorPane.bottomAnchor="0"
+              AnchorPane.leftAnchor="0"
+              AnchorPane.rightAnchor="0"
+              fillWidth="true">
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+
+            <!-- Header -->
+            <HBox spacing="12" alignment="CENTER_LEFT">
+                <Label text="User Management" styleClass="page-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Search:" style="-fx-font-size: 13px;"/>
+                <TextField fx:id="txtSearch"
+                           promptText="Search by username, email, or role"
+                           prefWidth="320"
+                           style="-fx-font-size: 13px;"/>
+                <Button text="Refresh" fx:id="btnRefresh"
+                        onAction="#onRefresh"
+                        prefWidth="90"
+                        styleClass="btn-muted"/>
+                <Button text="Add User" fx:id="btnNewUser"
+                        onAction="#onNewUser"
+                        prefWidth="100"
+                        styleClass="btn-accent"/>
+            </HBox>
+
+            <!-- Table -->
+            <TableView fx:id="tblUsers"
+                       VBox.vgrow="ALWAYS"
+                       style="-fx-font-size: 13px;">
+                <fixedCellSize>30</fixedCellSize>
+                <columns>
+                    <TableColumn fx:id="colUsername" text="Username"  prefWidth="160"/>
+                    <TableColumn fx:id="colEmail"    text="Email"     prefWidth="240"/>
+                    <TableColumn fx:id="colRole"     text="Role"      prefWidth="100"/>
+                    <TableColumn fx:id="colStatus"   text="Status"    prefWidth="90"/>
+                    <TableColumn fx:id="colActions"  text="Actions"   prefWidth="110"/>
+                </columns>
+            </TableView>
+
+            <Label fx:id="lblStatus"
+                   text="Loading..."
+                   style="-fx-text-fill: #444; -fx-font-size: 13px;"/>
+        </VBox>
+    </children>
+</AnchorPane>
