@@ -12,7 +12,6 @@ public class Product {
     private final StringProperty productDescription;
     private final DoubleProperty productBasePrice;
     private final StringProperty tagsDisplay;
-    private final StringProperty imageUrl;
 
     /**
      * Default constructor - initializes all properties
@@ -23,7 +22,6 @@ public class Product {
         this.productDescription = new SimpleStringProperty();
         this.productBasePrice = new SimpleDoubleProperty();
         this.tagsDisplay = new SimpleStringProperty();
-        this.imageUrl = new SimpleStringProperty();
     }
 
     /**
@@ -97,23 +95,6 @@ public class Product {
 
     public void setTagsDisplay(String tagsDisplay) {
         this.tagsDisplay.set(tagsDisplay);
-    }
-
-    public String getImageUrl() {
-        return imageUrl.get();
-    }
-
-    public StringProperty imageUrlProperty() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String url) {
-        this.imageUrl.set(url != null ? url : "");
-    }
-
-    public boolean hasImage() {
-        String url = imageUrl.get();
-        return url != null && !url.isBlank();
     }
 
     // Convenience methods for UI (aliases for consistency)

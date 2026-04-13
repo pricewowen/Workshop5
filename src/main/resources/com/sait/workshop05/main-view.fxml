@@ -9,130 +9,192 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane styleClass="app-root" xmlns="http://javafx.com/javafx/25"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.sait.workshop05.controllers.MainController">
+<AnchorPane styleClass="app-root" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.controllers.MainController">
 
-    <children>
+   <padding>
+      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+   </padding>
 
-        <!-- Sidebar: 220px wide, full height -->
-        <VBox prefWidth="220" styleClass="app-sidebar"
-              AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0">
+   <children>
 
-            <!-- Brand -->
-            <VBox>
-                <padding><Insets top="20" left="20" bottom="16" right="20"/></padding>
-                <ImageView fitHeight="36" fitWidth="160" pickOnBounds="true" preserveRatio="true">
-                    <image><Image smooth="true" url="@bakery_logo.png"/></image>
-                </ImageView>
-                <Label text="Management System" styleClass="sidebar-brand-subtitle">
-                    <VBox.margin><Insets top="4"/></VBox.margin>
-                </Label>
+      <VBox prefWidth="191.0" styleClass="app-sidebar" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0">
+
+         <children>
+
+            <VBox prefHeight="63.0" prefWidth="191.0">
+               <children>
+                  <ImageView fitHeight="44.0" fitWidth="160.0" pickOnBounds="true" preserveRatio="true">
+                     <image>
+                        <Image smooth="true" url="@bakery_logo.png" />
+                     </image>
+                  </ImageView>
+                  <Label text="Management System" styleClass="sidebar-brand-subtitle" />
+               </children>
+               <padding>
+                  <Insets left="20.0" top="15.0" />
+               </padding>
             </VBox>
 
-            <!-- Nav: Main -->
-            <VBox>
-                <padding><Insets top="16" bottom="8" left="12" right="12"/></padding>
-                <Label text="MAIN" styleClass="sidebar-section-title">
-                    <VBox.margin><Insets left="8" bottom="6"/></VBox.margin>
-                </Label>
-                <Button fx:id="btnDashboard" mnemonicParsing="false" onAction="#onDashboardClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Dashboard">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnOrders" mnemonicParsing="false" onAction="#onOrdersClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Orders">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
+            <VBox prefHeight="143.0" prefWidth="191.0">
+               <children>
+                  <Label text="Main" styleClass="sidebar-section-title">
+                     <VBox.margin>
+                        <Insets bottom="10.0" left="15.0" />
+                     </VBox.margin>
+                  </Label>
+
+                  <Button fx:id="btnDashboard" mnemonicParsing="false" onAction="#onDashboardClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Dashboard">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+
+                  <Button fx:id="btnOrders" mnemonicParsing="false" onAction="#onOrdersClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Orders">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+               </children>
+               <padding>
+                  <Insets bottom="15.0" top="15.0" />
+               </padding>
             </VBox>
 
-            <!-- Nav: Management -->
-            <VBox>
-                <padding><Insets top="8" bottom="8" left="12" right="12"/></padding>
-                <Label text="MANAGEMENT" styleClass="sidebar-section-title">
-                    <VBox.margin><Insets left="8" bottom="6"/></VBox.margin>
-                </Label>
-                <Button fx:id="btnProducts" mnemonicParsing="false" onAction="#onProductsClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Products">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnCustomers" mnemonicParsing="false" onAction="#onCustomersClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Customers">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnEmployees" mnemonicParsing="false" onAction="#onEmployeesClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Employees">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnLocations" mnemonicParsing="false" onAction="#onLocationsClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Locations">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
+            <VBox prefHeight="165.0" prefWidth="191.0">
+               <children>
+                  <Label text="Management" styleClass="sidebar-section-title">
+                     <VBox.margin>
+                        <Insets left="15.0" />
+                     </VBox.margin>
+                  </Label>
+
+                  <Button fx:id="btnProducts" mnemonicParsing="false" onAction="#onProductsClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Products">
+                     <VBox.margin>
+                        <Insets bottom="10.0" top="10.0" />
+                     </VBox.margin>
+                  </Button>
+
+                  <Button fx:id="btnCustomers" mnemonicParsing="false" onAction="#onCustomersClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Customers">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+
+                  <Button fx:id="btnEmployees" mnemonicParsing="false" onAction="#onEmployeesClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Employees">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+
+                  <Button fx:id="btnLocations" mnemonicParsing="false" onAction="#onLocationsClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Locations">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+
+               </children>
+               <padding>
+                  <Insets bottom="15.0" top="15.0" />
+               </padding>
             </VBox>
 
-            <!-- Nav: System -->
-            <VBox>
-                <padding><Insets top="8" bottom="8" left="12" right="12"/></padding>
-                <Label text="SYSTEM" styleClass="sidebar-section-title">
-                    <VBox.margin><Insets left="8" bottom="6"/></VBox.margin>
-                </Label>
-                <Button fx:id="btnRewards" mnemonicParsing="false" onAction="#onRewardsClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Rewards">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnRewardTier" mnemonicParsing="false" onAction="#onRewardTierClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Reward Tiers">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnMessages" mnemonicParsing="false" onAction="#onMessagesClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Messages">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnAnalytics" mnemonicParsing="false" onAction="#onAnalyticsClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Analytics">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnActivityLog" mnemonicParsing="false" onAction="#onActivityLogClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Activity Log">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
+            <VBox prefHeight="203.0" prefWidth="191.0">
+               <children>
+                  <Label text="System" styleClass="sidebar-section-title">
+                     <VBox.margin>
+                        <Insets left="15.0" />
+                     </VBox.margin>
+                  </Label>
+
+                  <Button fx:id="btnRewards" mnemonicParsing="false" onAction="#onRewardsClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Rewards">
+                     <VBox.margin>
+                        <Insets bottom="10.0" top="10.0" />
+                     </VBox.margin>
+                  </Button>
+
+                  <Button fx:id="btnRewardTier" mnemonicParsing="false" onAction="#onRewardTierClick"
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Reward Tiers">
+                     <VBox.margin>
+                        <Insets bottom="10.0"/>
+                     </VBox.margin>
+                  </Button>
+
+                  <Button fx:id="btnMessages" mnemonicParsing="false" onAction="#onMessagesClick"
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Messages">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+
+                  <Button fx:id="btnAnalytics" mnemonicParsing="false" onAction="#onAnalyticsClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Analytics">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+
+                  <Button fx:id="btnActivityLog" mnemonicParsing="false" onAction="#onActivityLogClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Activity Log">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+
+               </children>
+               <padding>
+                  <Insets bottom="15.0" top="15.0" />
+               </padding>
             </VBox>
 
-            <Region VBox.vgrow="ALWAYS"/>
+            <Region VBox.vgrow="ALWAYS" />
 
-            <!-- User info block -->
-            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="sidebar-user-block">
-                <Label fx:id="lblInitials" text="?" styleClass="sidebar-user-initials"/>
-                <VBox spacing="2">
-                    <Label fx:id="lblUsername" text="User" styleClass="sidebar-user-name"/>
-                    <Label fx:id="lblRole" text="Role" styleClass="sidebar-user-role"/>
-                </VBox>
-            </HBox>
-
-            <!-- Logout -->
-            <VBox>
-                <padding><Insets top="4" bottom="12" left="12" right="12"/></padding>
-                <Button id="btnLogout" fx:id="btnLogout" mnemonicParsing="false"
-                        onAction="#onLogoutClick" prefWidth="196"
-                        styleClass="sidebar_button" text="Log out"/>
+            <VBox prefWidth="191.0">
+               <children>
+                  <Button id="btnLogout" fx:id="btnLogout" mnemonicParsing="false" onAction="#onLogoutClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Logout">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+               </children>
+               <padding>
+                  <Insets bottom="15.0" top="5.0" />
+               </padding>
             </VBox>
 
-        </VBox>
+         </children>
+      </VBox>
 
-        <!-- Top bar: page title -->
-        <HBox alignment="CENTER_LEFT" styleClass="page-title-bar"
-              AnchorPane.leftAnchor="220" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
-            <padding><Insets left="24" right="24"/></padding>
-            <Label fx:id="lblPageTitle" text="Dashboard" styleClass="page-title-bar-title"/>
-        </HBox>
+      <HBox alignment="CENTER_RIGHT" prefHeight="61.0" prefWidth="1003.0" styleClass="app-top-bar" AnchorPane.leftAnchor="191.0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
 
-        <!-- Content area -->
-        <AnchorPane fx:id="contentArea" styleClass="app-content"
-                    AnchorPane.bottomAnchor="0"
-                    AnchorPane.leftAnchor="220"
-                    AnchorPane.rightAnchor="0"
-                    AnchorPane.topAnchor="56"/>
+         <children>
 
-    </children>
+            <VBox alignment="CENTER_RIGHT" prefHeight="57.0" prefWidth="311.0">
+               <HBox.margin>
+                  <Insets bottom="2.0" left="150.0" right="5.0" top="2.0" />
+               </HBox.margin>
+               <children>
+                  <Label fx:id="lblUsername">
+                     <font>
+                        <Font name="System Bold" size="14.0" />
+                     </font>
+                     <VBox.margin>
+                        <Insets bottom="3.0" />
+                     </VBox.margin></Label>
+                  <Label fx:id="lblRole">
+                     <VBox.margin>
+                        <Insets bottom="5.0" />
+                     </VBox.margin>
+                     <font>
+                        <Font name="System Italic" size="12.0" />
+                     </font></Label>
+               </children>
+               <padding>
+                  <Insets right="30.0" />
+               </padding>
+            </VBox>
+         </children>
+      </HBox>
+
+      <AnchorPane fx:id="contentArea" styleClass="app-content" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="191.0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="61.0" />
+   </children>
 </AnchorPane>

@@ -25,6 +25,6 @@ public class CustomerOption {
 
     @Override
     public String toString() {
-        return fullName;
+        return customerId + " \u2014 " + fullName;
     }
 }
