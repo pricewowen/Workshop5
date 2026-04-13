@@ -52,8 +52,8 @@ public class UserManagementController {
         setupColumns();
         setupActionsColumn();
         setupSearchFiltering();
-        tblUsers.setPlaceholder(new Label("No users match the current filter."));
         if (!UserSession.getInstance().isAdmin()) {
+            tblUsers.setPlaceholder(new Label("This page is only available to administrators."));
             tblUsers.setDisable(true);
             txtSearch.setDisable(true);
             if (btnRefresh != null) {
@@ -62,6 +62,7 @@ public class UserManagementController {
             lblStatus.setText("This page is only available to administrators.");
             return;
         }
+        tblUsers.setPlaceholder(new Label("Loading users…"));
         loadUsers();
     }
 
@@ -136,6 +137,7 @@ public class UserManagementController {
                         || StringUtil.containsIgnoreCase(u.getStatusDisplay(), q);
             });
             updateUserListStatusLabel();
+            updateUserTablePlaceholder();
         });
         SortedList<UserRow> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblUsers.comparatorProperty());
@@ -147,6 +149,18 @@ public class UserManagementController {
     // ────────────────────────────────────────────────────────────
     // Data
     // ────────────────────────────────────────────────────────────
+
+    private void updateUserTablePlaceholder() {
+        if (tblUsers == null || filtered == null) {
+            return;
+        }
+        if (filtered.isEmpty()) {
+            tblUsers.setPlaceholder(new Label(
+                    master.isEmpty()
+                            ? "No users to display."
+                            : "No users match the current filter."));
+        }
+    }
 
     private void updateUserListStatusLabel() {
         if (lblStatus == null || filtered == null) {
@@ -165,6 +179,9 @@ public class UserManagementController {
             return;
         }
         lblStatus.setText("Loading users…");
+        if (tblUsers != null) {
+            tblUsers.setPlaceholder(new Label("Loading users…"));
+        }
         if (btnRefresh != null) {
             btnRefresh.setDisable(true);
         }
@@ -195,6 +212,7 @@ public class UserManagementController {
                 master.add(new UserRow(u));
             }
             updateUserListStatusLabel();
+            updateUserTablePlaceholder();
             LogData.logAction("READ", "User");
         });
         task.setOnFailed(e -> {
@@ -210,6 +228,9 @@ public class UserManagementController {
             Throwable t = task.getException();
             LogData.handleException("READ_USERS", new RuntimeException(t));
             lblStatus.setText("Could not load users.");
+            if (tblUsers != null) {
+                tblUsers.setPlaceholder(new Label("Could not load users."));
+            }
             ErrorHandler.showErrorDialog("API Error", "Could not load users.", t);
         });
         Thread.ofVirtual().name("users-load").start(task);

@@ -19,15 +19,15 @@
                            prefWidth="300" prefHeight="36"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Button fx:id="btnNewCustomer" text="New Customer" onAction="#onNewCustomer"
-                        styleClass="btn-muted" prefHeight="36"/>
+                        styleClass="btn-accent toolbar-action"/>
                 <Button fx:id="btnOrderHistory" text="Order History"
                         onAction="#onViewOrderHistory"
-                        styleClass="btn-muted" prefHeight="36" disable="true"/>
+                        styleClass="btn-muted toolbar-action" disable="true"/>
                 <Button fx:id="btnAdjustPoints" text="Adjust Points"
                         onAction="#onAdjustPoints"
-                        styleClass="btn-muted" prefHeight="36" disable="true"/>
+                        styleClass="btn-muted toolbar-action" disable="true"/>
                 <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
-                        styleClass="btn-muted" prefHeight="36"/>
+                        styleClass="btn-muted toolbar-action"/>
             </HBox>
 
             <!-- Table -->

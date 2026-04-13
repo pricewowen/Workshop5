@@ -49,7 +49,7 @@
                     <Label text="Recent Orders" styleClass="section-title"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
-                            styleClass="btn-muted" prefHeight="32"/>
+                            styleClass="btn-muted toolbar-action"/>
                 </HBox>
                 <TableView fx:id="tbvRecentOrders" VBox.vgrow="ALWAYS">
                     <columns>

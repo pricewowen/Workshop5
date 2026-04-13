@@ -41,11 +41,12 @@
                             <Region HBox.hgrow="ALWAYS"/>
                             <Button text="New Message" fx:id="btnNewMessage"
                                     onAction="#onNewMessage"
-                                    styleClass="btn-accent"/>
+                                    styleClass="btn-accent toolbar-action"/>
                         </HBox>
 
                         <TextField fx:id="txtConversationSearch"
                                    promptText="Search conversations..."
+                                   prefHeight="36"
                                    style="-fx-font-size: 12px;"/>
 
                         <ListView fx:id="lstConversations" VBox.vgrow="ALWAYS"
@@ -54,7 +55,7 @@
                         <HBox spacing="8" alignment="CENTER_LEFT">
                             <Button text="Refresh" fx:id="btnRefreshConversations"
                                     onAction="#onRefreshConversations"
-                                    styleClass="btn-muted"/>
+                                    styleClass="btn-muted toolbar-action"/>
                             <Label fx:id="lblUnreadCount" text=""
                                    style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
                         </HBox>
@@ -111,8 +112,8 @@
                                 <Region HBox.hgrow="ALWAYS"/>
                                 <Button text="Send" fx:id="btnSend"
                                         onAction="#onSendMessage"
-                                        prefWidth="100" prefHeight="36"
-                                        styleClass="btn-accent"/>
+                                        prefWidth="100"
+                                        styleClass="btn-accent toolbar-action"/>
                             </HBox>
                         </VBox>
                     </VBox>

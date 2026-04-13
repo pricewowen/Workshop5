@@ -142,6 +142,18 @@ public class OrderManagementController {
     /** Ignores stale order-line responses when the table selection changes quickly. */
     private final AtomicInteger orderItemsLoadGeneration = new AtomicInteger();
 
+    /** Invalidates in-flight order-list loads (rapid refresh / leave page). */
+    private final AtomicInteger orderListLoadGeneration = new AtomicInteger();
+
+    /** Invalidates in-flight New Order reference loads (tab switch away from New Order). */
+    private final AtomicInteger tab2RefsLoadGeneration = new AtomicInteger();
+
+    /** Invalidates in-flight combined refresh tasks. */
+    private final AtomicInteger refreshAllLoadGeneration = new AtomicInteger();
+
+    private static final int TAB_ALL_ORDERS = 0;
+    private static final int TAB_NEW_ORDER = 1;
+
     // ════════════════════════════════════════════════════════════
     // Initialization
     // ════════════════════════════════════════════════════════════
@@ -150,8 +162,64 @@ public class OrderManagementController {
     void initialize() {
         setupTab1();
         setupTab2();
+        applyOrderPageButtonStyles();
+        setupTabPaneLoadingBehavior();
         loadOrderDataAsync();
+        if (tabPane != null && tabPane.getSelectionModel().getSelectedIndex() == TAB_NEW_ORDER) {
+            ensureTab2ReferencesLoadedAsync();
+        }
+    }
+
+    /**
+     * Loads catalog / combo data only when the New Order tab is shown, and cancels in-flight
+     * tab-2 loads when switching away so the FX thread is not buried applying huge lists off-tab.
+     */
+    private void setupTabPaneLoadingBehavior() {
+        if (tabPane == null) {
+            return;
+        }
+        tabPane.getSelectionModel().selectedIndexProperty().addListener((obs, oldIdx, newIdx) -> {
+            int oldI = oldIdx != null ? oldIdx.intValue() : -1;
+            int newI = newIdx != null ? newIdx.intValue() : -1;
+            if (oldI == TAB_NEW_ORDER && newI != TAB_NEW_ORDER) {
+                tab2RefsLoadGeneration.incrementAndGet();
+            }
+            if (newI == TAB_NEW_ORDER) {
+                ensureTab2ReferencesLoadedAsync();
+            }
+        });
+    }
+
+    private void ensureTab2ReferencesLoadedAsync() {
+        if (!catalogMaster.isEmpty()) {
+            return;
+        }
         loadTab2ReferencesAsync();
+    }
+
+    /** False after this controller's root is removed from the scene (user navigated to another page). */
+    private boolean isOrderViewAttached() {
+        return tblOrders != null && tblOrders.getScene() != null;
+    }
+
+    /**
+     * Ensures toolbar / action buttons pick up app styles (same gray {@code btn-muted} as Products).
+     * TabPane content can miss scene styles; the FXML root also loads {@code styles.css}.
+     */
+    private void applyOrderPageButtonStyles() {
+        styleMutedToolbar(btnRefreshOrders);
+        styleMutedToolbar(btnUpdateStatus);
+        styleMutedToolbar(btnAddToOrder);
+        styleMutedToolbar(btnRemoveFromOrder);
+        styleMutedToolbar(btnPlaceOrder);
+    }
+
+    private static void styleMutedToolbar(Button b) {
+        if (b == null) {
+            return;
+        }
+        b.getStyleClass().removeAll("btn-cta", "btn-accent-lg", "btn-accent", "btn-muted", "toolbar-action");
+        b.getStyleClass().addAll("btn-muted", "toolbar-action");
     }
 
     // ────────────────────────────────────────────────────────────
@@ -205,11 +273,14 @@ public class OrderManagementController {
         SortedList<Order> sorted = new SortedList<>(orderFiltered);
         sorted.comparatorProperty().bind(tblOrders.comparatorProperty());
         tblOrders.setItems(sorted);
+        tblOrders.setPlaceholder(new Label("Loading orders…"));
+        tblOrderItems.setPlaceholder(new Label("Select an order above to view line items."));
 
         // Selection binding -> load items
         tblOrders.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> {
             if (selected == null) {
                 tblOrderItems.getItems().clear();
+                tblOrderItems.setPlaceholder(new Label("Select an order above to view line items."));
                 lblOrderDetailTitle.setText("Select an order above to view details");
                 cboNewStatus.setValue(null);
                 return;
@@ -222,6 +293,7 @@ public class OrderManagementController {
 
             String orderId = selected.getOrderId();
             int gen = orderItemsLoadGeneration.incrementAndGet();
+            tblOrderItems.setPlaceholder(new Label("Loading line items…"));
             tblOrderItems.setItems(FXCollections.observableArrayList());
             Task<List<OrderItem>> itemsTask = new Task<>() {
                 @Override
@@ -233,14 +305,26 @@ public class OrderManagementController {
                 if (gen != orderItemsLoadGeneration.get()) {
                     return;
                 }
+                if (!isOrderViewAttached()) {
+                    return;
+                }
                 Order still = tblOrders.getSelectionModel().getSelectedItem();
                 if (still == null || !orderId.equals(still.getOrderId())) {
                     return;
                 }
-                tblOrderItems.setItems(FXCollections.observableArrayList(itemsTask.getValue()));
+                List<OrderItem> rows = itemsTask.getValue();
+                tblOrderItems.setItems(FXCollections.observableArrayList(rows));
+                if (rows == null || rows.isEmpty()) {
+                    tblOrderItems.setPlaceholder(new Label("No line items for this order."));
+                } else {
+                    tblOrderItems.setPlaceholder(null);
+                }
             });
             itemsTask.setOnFailed(e -> {
                 if (gen != orderItemsLoadGeneration.get()) {
+                    return;
+                }
+                if (!isOrderViewAttached()) {
                     return;
                 }
                 Order still = tblOrders.getSelectionModel().getSelectedItem();
@@ -248,6 +332,7 @@ public class OrderManagementController {
                     return;
                 }
                 tblOrderItems.getItems().clear();
+                tblOrderItems.setPlaceholder(new Label("Could not load line items."));
                 Throwable t = itemsTask.getException();
                 LogData.handleException("LOAD_ORDER_ITEMS", new RuntimeException(t));
                 ErrorHandler.showErrorDialog(
@@ -280,6 +365,12 @@ public class OrderManagementController {
         });
 
         lblOrderStatus.setText(orderFiltered.size() + " order(s) shown");
+        if (orderFiltered.isEmpty()) {
+            tblOrders.setPlaceholder(new Label(
+                    orderMaster.isEmpty()
+                            ? "No orders to display."
+                            : "No orders match the current filter."));
+        }
     }
 
     // ────────────────────────────────────────────────────────────
@@ -327,6 +418,7 @@ public class OrderManagementController {
         SortedList<Product> sortedCatalog = new SortedList<>(catalogFiltered);
         sortedCatalog.comparatorProperty().bind(tblCatalog.comparatorProperty());
         tblCatalog.setItems(sortedCatalog);
+        tblCatalog.setPlaceholder(new Label("Loading catalog…"));
 
         // Customer selection -> show reward balance
         cboNewCustomer.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -397,24 +489,49 @@ public class OrderManagementController {
     }
 
     private void applyTab2References(Tab2References d) {
-        cboNewCustomer.setItems(FXCollections.observableArrayList(d.customers()));
-        cboNewBakery.setItems(FXCollections.observableArrayList(d.bakeries()));
-        AddressInputHelper.setAddressItems(cboNewAddress, d.addresses());
-        catalogMaster.clear();
-        catalogMaster.addAll(d.products());
+        cboNewCustomer.setItems(FXCollections.observableArrayList(
+                d.customers() != null ? d.customers() : List.of()));
+        cboNewBakery.setItems(FXCollections.observableArrayList(
+                d.bakeries() != null ? d.bakeries() : List.of()));
+        AddressInputHelper.setAddressItems(cboNewAddress,
+                d.addresses() != null ? d.addresses() : List.of());
+        List<Product> products = d.products() != null ? d.products() : List.of();
+        catalogMaster.setAll(products);
+        if (products.isEmpty()) {
+            tblCatalog.setPlaceholder(new Label("No products available."));
+        } else {
+            tblCatalog.setPlaceholder(new Label("No products match the search filter."));
+        }
     }
 
     private void loadTab2ReferencesAsync() {
+        int myGen = tab2RefsLoadGeneration.incrementAndGet();
+        tblCatalog.setPlaceholder(new Label("Loading catalog…"));
         Task<Tab2References> task = new Task<>() {
             @Override
             protected Tab2References call() throws Exception {
                 return fetchTab2References();
             }
         };
-        task.setOnSucceeded(e -> applyTab2References(task.getValue()));
+        task.setOnSucceeded(e -> {
+            if (myGen != tab2RefsLoadGeneration.get()) {
+                return;
+            }
+            if (!isOrderViewAttached()) {
+                return;
+            }
+            applyTab2References(task.getValue());
+        });
         task.setOnFailed(e -> {
+            if (myGen != tab2RefsLoadGeneration.get()) {
+                return;
+            }
+            if (!isOrderViewAttached()) {
+                return;
+            }
             Throwable t = task.getException();
             LogData.handleException("LOAD_ORDER_TAB2_REF", new RuntimeException(t));
+            tblCatalog.setPlaceholder(new Label("Could not load catalog."));
             ErrorHandler.showErrorDialog(
                     "API Error",
                     "Could not load new-order lists or catalog.",
@@ -437,7 +554,9 @@ public class OrderManagementController {
     private record OrdersAndTab2(List<Order> orders, Tab2References tab2) {}
 
     private void loadOrderDataAsync() {
+        int myGen = orderListLoadGeneration.incrementAndGet();
         lblOrderStatus.setText("Loading orders…");
+        tblOrders.setPlaceholder(new Label("Loading orders…"));
         if (btnRefreshOrders != null) {
             btnRefreshOrders.setDisable(true);
         }
@@ -448,21 +567,35 @@ public class OrderManagementController {
             }
         };
         task.setOnSucceeded(e -> {
+            if (myGen != orderListLoadGeneration.get()) {
+                return;
+            }
+            if (!isOrderViewAttached()) {
+                return;
+            }
             if (btnRefreshOrders != null) {
                 btnRefreshOrders.setDisable(false);
             }
-            orderMaster.clear();
-            orderMaster.addAll(task.getValue());
+            List<Order> rows = task.getValue();
+            orderMaster.setAll(rows != null ? rows : List.of());
             lblOrderStatus.setText(orderMaster.size() + " order(s) loaded");
+            tblOrders.setPlaceholder(new Label("No orders to display."));
             LogData.logAction("READ", "Order");
         });
         task.setOnFailed(e -> {
+            if (myGen != orderListLoadGeneration.get()) {
+                return;
+            }
+            if (!isOrderViewAttached()) {
+                return;
+            }
             if (btnRefreshOrders != null) {
                 btnRefreshOrders.setDisable(false);
             }
             Throwable t = task.getException();
             LogData.handleException("READ_ORDERS", new RuntimeException(t));
             lblOrderStatus.setText("Could not load orders.");
+            tblOrders.setPlaceholder(new Label("Could not load orders."));
             ErrorHandler.showErrorDialog(
                     "API Error",
                     "Could not load orders.",
@@ -473,7 +606,12 @@ public class OrderManagementController {
 
     @FXML
     private void onRefreshOrders() {
+        orderListLoadGeneration.incrementAndGet();
+        tab2RefsLoadGeneration.incrementAndGet();
+        int myGen = refreshAllLoadGeneration.incrementAndGet();
+
         lblOrderStatus.setText("Refreshing…");
+        tblOrders.setPlaceholder(new Label("Loading orders…"));
         if (btnRefreshOrders != null) {
             btnRefreshOrders.setDisable(true);
         }
@@ -484,23 +622,37 @@ public class OrderManagementController {
             }
         };
         task.setOnSucceeded(e -> {
+            if (myGen != refreshAllLoadGeneration.get()) {
+                return;
+            }
+            if (!isOrderViewAttached()) {
+                return;
+            }
             if (btnRefreshOrders != null) {
                 btnRefreshOrders.setDisable(false);
             }
             OrdersAndTab2 pack = task.getValue();
-            orderMaster.clear();
-            orderMaster.addAll(pack.orders());
+            List<Order> orders = pack.orders() != null ? pack.orders() : List.of();
+            orderMaster.setAll(orders);
             applyTab2References(pack.tab2());
             lblOrderStatus.setText(orderMaster.size() + " order(s) loaded");
+            tblOrders.setPlaceholder(new Label("No orders to display."));
             LogData.logAction("READ", "Order");
         });
         task.setOnFailed(e -> {
+            if (myGen != refreshAllLoadGeneration.get()) {
+                return;
+            }
+            if (!isOrderViewAttached()) {
+                return;
+            }
             if (btnRefreshOrders != null) {
                 btnRefreshOrders.setDisable(false);
             }
             Throwable t = task.getException();
             LogData.handleException("REFRESH_ORDERS_PAGE", new RuntimeException(t));
             lblOrderStatus.setText("Refresh failed.");
+            tblOrders.setPlaceholder(new Label("Could not load orders."));
             ErrorHandler.showErrorDialog(
                     "API Error",
                     "Could not refresh orders or new-order data.",
@@ -906,6 +1058,9 @@ public class OrderManagementController {
                         : String.format("Delivery: $%.2f", est.deliveryFee));
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.getDialogPane().getStylesheets().add(
+                getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
+        confirm.getDialogPane().getStyleClass().add("modal-dialog-pane");
         confirm.setTitle("Confirm Order");
         confirm.setHeaderText("Place order for " + customer.getFullName() + "?");
         confirm.setContentText(String.format(

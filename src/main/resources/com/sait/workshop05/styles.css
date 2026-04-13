@@ -322,6 +322,32 @@
     -fx-border-width: 0;
 }
 
+/* Toolbar / header row — pair with btn-muted or btn-accent for consistent height */
+.toolbar-action {
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-max-height: 36;
+}
+
+/* Login: “Show” toggle attached to password field (right side rounded, same height as fields) */
+.btn-login-toggle {
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #4e342e;
+    -fx-border-color: #D4CCC4;
+    -fx-border-width: 1;
+    -fx-background-radius: 0 8 8 0;
+    -fx-border-radius: 0 8 8 0;
+    -fx-padding: 0 10;
+    -fx-cursor: hand;
+    -fx-min-height: 42;
+    -fx-pref-height: 42;
+    -fx-max-height: 42;
+}
+
+.btn-login-toggle:hover {
+    -fx-background-color: #FAF8F5;
+}
+
 .btn-accent {
     -fx-background-color: #E4B363;
     -fx-text-fill: #4e342e;
@@ -331,6 +357,29 @@
 
 .btn-accent:hover  { -fx-background-color: #D4A04A; }
 .btn-accent:pressed { -fx-background-color: #C4923F; }
+
+/* Full-width primary in forms (e.g. Place Order) — same gold family as btn-accent, taller tap target */
+.btn-accent-lg {
+    -fx-background-color: #E4B363;
+    -fx-text-fill: #4e342e;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 10;
+    -fx-padding: 12 24;
+    -fx-min-height: 44;
+    -fx-pref-height: 44;
+    -fx-max-height: 44;
+    -fx-cursor: hand;
+    -fx-border-width: 0;
+}
+
+.btn-accent-lg:hover {
+    -fx-background-color: #D4A04A;
+}
+
+.btn-accent-lg:pressed {
+    -fx-background-color: #C4923F;
+}
 
 .btn-muted {
     -fx-background-color: #FFFFFF;
@@ -342,6 +391,11 @@
 }
 
 .btn-muted:hover { -fx-background-color: #FAF8F5; }
+
+.btn-muted:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: default;
+}
 
 .btn-primary {
     -fx-background-color: #4e342e;
@@ -588,6 +642,38 @@
     -fx-padding: 12 24 16 24;
     -fx-border-color: #EDE8E2;
     -fx-border-width: 1 0 0 0;
+}
+
+/* Form dialogs: default = gold primary, cancel = muted outline (matches toolbar pattern) */
+.modal-dialog-pane .button:default {
+    -fx-background-color: #E4B363;
+    -fx-text-fill: #4e342e;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-border-width: 0;
+    -fx-padding: 8 20;
+}
+
+.modal-dialog-pane .button:default:hover {
+    -fx-background-color: #D4A04A;
+}
+
+.modal-dialog-pane .button:default:pressed {
+    -fx-background-color: #C4923F;
+}
+
+.modal-dialog-pane .button:cancel {
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #4e342e;
+    -fx-border-color: #D4CCC4;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-font-weight: normal;
+}
+
+.modal-dialog-pane .button:cancel:hover {
+    -fx-background-color: #FAF8F5;
 }
 
 .modal-section-title {

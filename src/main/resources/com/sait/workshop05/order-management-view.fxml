@@ -7,7 +7,8 @@
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.sait.workshop05.controllers.OrderManagementController"
             prefWidth="1200" prefHeight="800"
-            styleClass="page-root">
+            styleClass="page-root"
+            stylesheets="@styles.css">
 
     <children>
 
@@ -53,7 +54,7 @@
 
                                 <Button text="Refresh" fx:id="btnRefreshOrders"
                                         onAction="#onRefreshOrders"
-                                        prefWidth="100" styleClass="btn-muted"/>
+                                        prefWidth="100" styleClass="btn-muted toolbar-action"/>
                             </HBox>
 
                             <!-- Orders table + details split -->
@@ -103,7 +104,7 @@
                                                       style="-fx-font-size: 13px;"/>
                                             <Button text="Update Status" fx:id="btnUpdateStatus"
                                                     onAction="#onUpdateStatus"
-                                                    styleClass="btn-accent"/>
+                                                    styleClass="btn-muted toolbar-action"/>
                                         </HBox>
 
                                         <TableView fx:id="tblOrderItems"
@@ -222,7 +223,7 @@
                                                      style="-fx-font-size: 13px;"/>
                                             <Button text="Add to Order" fx:id="btnAddToOrder"
                                                     onAction="#onAddToOrder"
-                                                    styleClass="btn-accent"/>
+                                                    styleClass="btn-muted toolbar-action"/>
                                         </HBox>
                                     </VBox>
 
@@ -245,7 +246,7 @@
 
                                         <Button text="Remove Selected" fx:id="btnRemoveFromOrder"
                                                 onAction="#onRemoveFromOrder"
-                                                styleClass="btn-muted"/>
+                                                styleClass="btn-muted toolbar-action"/>
 
                                         <Separator/>
 
@@ -267,7 +268,7 @@
                                             <HBox spacing="8" alignment="CENTER_LEFT"
                                                    GridPane.rowIndex="1" GridPane.columnIndex="1">
                                                 <Spinner fx:id="spnDiscountPercent" prefWidth="76" editable="true"/>
-                                                <Label text="%" style="-fx-font-size: 13px;"/>
+                                                <Label text="\%" style="-fx-font-size: 13px;"/>
                                                 <Label text="→" style="-fx-font-size: 12px; -fx-text-fill: #8A8178;"/>
                                                 <TextField fx:id="txtDiscount" text="0.00"
                                                            prefWidth="88" style="-fx-font-size: 13px;"/>
@@ -305,8 +306,7 @@
 
                                         <Button text="Place Order" fx:id="btnPlaceOrder"
                                                 onAction="#onPlaceOrder"
-                                                prefHeight="42"
-                                                styleClass="btn-cta"
+                                                styleClass="btn-muted toolbar-action"
                                                 maxWidth="1.7976931348623157E308"/>
 
                                         <Label fx:id="lblNewOrderStatus" text=""

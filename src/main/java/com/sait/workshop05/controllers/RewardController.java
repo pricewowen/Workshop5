@@ -126,10 +126,24 @@ public class RewardController {
                         reward.getRewardTransactionDate().toString().toLowerCase().contains(q));
             });
             lblStatus.setText(filtered.size() + " reward(s) shown");
+            updateRewardsTablePlaceholder();
         });
         SortedList<Reward> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblRewards.comparatorProperty());
         tblRewards.setItems(sorted);
+        tblRewards.setPlaceholder(new Label("Loading rewards…"));
+    }
+
+    private void updateRewardsTablePlaceholder() {
+        if (tblRewards == null || filtered == null) {
+            return;
+        }
+        if (filtered.isEmpty()) {
+            tblRewards.setPlaceholder(new Label(
+                    master.isEmpty()
+                            ? "No reward transactions to display."
+                            : "No rewards match the search filter."));
+        }
     }
 
     private void loadCombos() {
@@ -157,13 +171,16 @@ public class RewardController {
     }
 
     private void refreshTable() {
+        tblRewards.setPlaceholder(new Label("Loading rewards…"));
         try {
             master.clear();
             master.addAll(RewardApi.listAll());
             lblStatus.setText(master.size() + " reward(s) loaded");
+            updateRewardsTablePlaceholder();
             LogData.logAction("READ", "Reward");
         } catch (Exception e) {
             LogData.handleException("READ_REWARDS", e);
+            tblRewards.setPlaceholder(new Label("Could not load rewards."));
             ErrorHandler.showErrorDialog("API Error", "Could not load rewards.", e);
         }
     }

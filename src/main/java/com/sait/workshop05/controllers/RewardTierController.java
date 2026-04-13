@@ -49,11 +49,20 @@ public class RewardTierController {
         updateButtonState(false);
     }
 
+    /**
+     * Create and Update stay visible; one is disabled when it does not apply (mirror Products-style UX).
+     */
     private void updateButtonState(boolean hasSelection) {
-        btnCreate.setVisible(!hasSelection);
-        btnCreate.setManaged(!hasSelection);
-        btnUpdate.setVisible(hasSelection);
-        btnUpdate.setManaged(hasSelection);
+        if (btnCreate != null) {
+            btnCreate.setVisible(true);
+            btnCreate.setManaged(true);
+            btnCreate.setDisable(hasSelection);
+        }
+        if (btnUpdate != null) {
+            btnUpdate.setVisible(true);
+            btnUpdate.setManaged(true);
+            btnUpdate.setDisable(!hasSelection);
+        }
     }
 
     private void setColumns() {
@@ -157,11 +166,25 @@ public class RewardTierController {
                         tier.getRewardTierDiscountRate().toString().contains(q));
             });
             lblStatus.setText(filtered.size() + " tier(s) shown");
+            updateRewardTierTablePlaceholder();
         });
 
         SortedList<RewardTier> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblRewardTiers.comparatorProperty());
         tblRewardTiers.setItems(sorted);
+        tblRewardTiers.setPlaceholder(new Label("Loading reward tiers…"));
+    }
+
+    private void updateRewardTierTablePlaceholder() {
+        if (tblRewardTiers == null || filtered == null) {
+            return;
+        }
+        if (filtered.isEmpty()) {
+            tblRewardTiers.setPlaceholder(new Label(
+                    master.isEmpty()
+                            ? "No reward tiers to display."
+                            : "No tiers match the search filter."));
+        }
     }
 
     private void setupListeners() {
@@ -192,15 +215,18 @@ public class RewardTierController {
     }
 
     private void refreshTable() {
+        tblRewardTiers.setPlaceholder(new Label("Loading reward tiers…"));
         try {
             master.clear();
             for (RewardTierApi.RewardTierJson j : RewardTierApi.list()) {
                 master.add(fromJson(j));
             }
             lblStatus.setText(master.size() + " tier(s) loaded");
+            updateRewardTierTablePlaceholder();
             LogData.logAction("READ", "RewardTier");
         } catch (Exception e) {
             LogData.handleException("READ_REWARD_TIERS", e);
+            tblRewardTiers.setPlaceholder(new Label("Could not load reward tiers."));
             ErrorHandler.showErrorDialog("API Error", "Could not load reward tiers.", e);
         }
     }
@@ -315,6 +341,9 @@ public class RewardTierController {
         }
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.getDialogPane().getStylesheets().add(
+                getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
+        confirm.getDialogPane().getStyleClass().add("modal-dialog-pane");
         confirm.setTitle("Confirm Delete");
         confirm.setHeaderText("Delete tier: " + selected.getRewardTierName());
         confirm.setContentText("This cannot be undone. Customers assigned to this tier will be affected.");

@@ -19,9 +19,9 @@
                            prefWidth="300" prefHeight="36"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
-                        styleClass="btn-muted" prefHeight="36"/>
+                        styleClass="btn-muted toolbar-action"/>
                 <Button fx:id="btnNewBakery" text="New Location" onAction="#onNewBakery"
-                        styleClass="btn-accent" prefHeight="36"/>
+                        styleClass="btn-accent toolbar-action"/>
             </HBox>
 
             <!-- Table -->
