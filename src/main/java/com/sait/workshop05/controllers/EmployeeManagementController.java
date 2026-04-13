@@ -71,7 +71,6 @@ public class EmployeeManagementController {
         setupColumns();
         setupActionsColumn();
         setupSearchFiltering();
-        tblEmployees.setPlaceholder(new Label("No employees match the current filter."));
         loadAllAsync();
     }
 
@@ -128,10 +127,24 @@ public class EmployeeManagementController {
                         || StringUtil.containsIgnoreCase(emp.getEmployeeId(), q);
             });
             lblStatus.setText(filtered.size() + " employee(s) shown");
+            updateEmployeeTablePlaceholder();
         });
         SortedList<Employee> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblEmployees.comparatorProperty());
         tblEmployees.setItems(sorted);
+        tblEmployees.setPlaceholder(new Label("Loading employees…"));
+    }
+
+    private void updateEmployeeTablePlaceholder() {
+        if (tblEmployees == null || filtered == null) {
+            return;
+        }
+        if (filtered.isEmpty()) {
+            tblEmployees.setPlaceholder(new Label(
+                    master.isEmpty()
+                            ? "No employees to display."
+                            : "No employees match the current filter."));
+        }
     }
 
     private record EmployeeBootstrapData(
@@ -144,6 +157,7 @@ public class EmployeeManagementController {
 
     private void loadAllAsync() {
         lblStatus.setText("Loading employees…");
+        tblEmployees.setPlaceholder(new Label("Loading employees…"));
         if (btnRefresh != null) {
             btnRefresh.setDisable(true);
         }
@@ -171,6 +185,7 @@ public class EmployeeManagementController {
             Throwable t = task.getException();
             LogData.handleException("READ_EMPLOYEES", new RuntimeException(t));
             lblStatus.setText("Could not load employees.");
+            tblEmployees.setPlaceholder(new Label("Could not load employees."));
             ErrorHandler.showErrorDialog("API Error", "Could not load employees.", t);
         });
         new Thread(task, "employees-load").start();
@@ -191,6 +206,7 @@ public class EmployeeManagementController {
             master.add(fromRow(row, addrMap));
         }
         lblStatus.setText(master.size() + " employee(s) loaded");
+        updateEmployeeTablePlaceholder();
     }
 
     private Employee fromRow(EmployeeApi.EmployeeRow row, Map<Integer, String> addrMap) {

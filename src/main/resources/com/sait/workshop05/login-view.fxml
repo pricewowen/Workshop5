@@ -67,8 +67,8 @@
                         <Button fx:id="togglePasswordBtn"
                                 text="Show"
                                 onAction="#handleTogglePassword"
-                                prefHeight="42" minWidth="88" prefWidth="88"
-                                style="-fx-background-radius: 0 8 8 0; -fx-border-radius: 0 8 8 0; -fx-background-color: #F5F3EF; -fx-border-color: #D4CCC4; -fx-border-width: 1; -fx-cursor: hand; -fx-padding: 0 10 0 10;"/>
+                                minWidth="88" prefWidth="88"
+                                styleClass="btn-login-toggle"/>
                     </HBox>
                 </VBox>
 

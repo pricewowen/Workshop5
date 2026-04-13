@@ -136,6 +136,7 @@ public class MessagingController {
     private void setupSearchFilter() {
         filteredConversations = new FilteredList<>(conversationList, p -> true);
         lstConversations.setItems(filteredConversations);
+        lstConversations.setPlaceholder(new Label("Loading conversations…"));
 
         txtConversationSearch.textProperty().addListener((obs, oldVal, newVal) -> {
             String filter = newVal == null ? "" : newVal.trim().toLowerCase();
@@ -143,7 +144,20 @@ public class MessagingController {
                 if (filter.isEmpty()) return true;
                 return cs.getPartnerUsername().toLowerCase().contains(filter);
             });
+            updateConversationListPlaceholder();
         });
+    }
+
+    private void updateConversationListPlaceholder() {
+        if (lstConversations == null || filteredConversations == null) {
+            return;
+        }
+        if (filteredConversations.isEmpty()) {
+            lstConversations.setPlaceholder(new Label(
+                    conversationList.isEmpty()
+                            ? "No conversations yet."
+                            : "No conversations match the search filter."));
+        }
     }
 
     private void setupSelectionBinding() {
@@ -177,7 +191,12 @@ public class MessagingController {
     // ────────────────────────────────────────────────────────────
 
     private void refreshConversationsAsync() {
-        if (currentUserUuid == null || currentUserUuid.isBlank()) return;
+        if (currentUserUuid == null || currentUserUuid.isBlank()) {
+            lstConversations.setPlaceholder(new Label("Sign in again to load conversations."));
+            return;
+        }
+
+        lstConversations.setPlaceholder(new Label("Loading conversations…"));
 
         Task<ConversationData> task = new Task<>() {
             @Override
@@ -193,6 +212,7 @@ public class MessagingController {
         task.setOnSucceeded(e -> applyConversations(task.getValue()));
         task.setOnFailed(e -> {
             Throwable t = task.getException();
+            lstConversations.setPlaceholder(new Label("Could not load conversations."));
             ErrorHandler.showErrorDialog("Load Error", "Could not load conversations", t);
             LogData.handleException("LOAD_CONVERSATIONS", new RuntimeException(t));
         });
@@ -228,6 +248,7 @@ public class MessagingController {
 
         int totalUnread = summaries.stream().mapToInt(ConversationSummary::getUnreadCount).sum();
         lblUnreadCount.setText(totalUnread > 0 ? totalUnread + " unread" : "No unread messages");
+        updateConversationListPlaceholder();
     }
 
     /**

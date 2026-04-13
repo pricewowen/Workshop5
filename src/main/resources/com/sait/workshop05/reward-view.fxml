@@ -14,8 +14,8 @@
                 <Label text="Reward Management" styleClass="page-title"/>
                 <Region HBox.hgrow="ALWAYS" />
                 <Label style="-fx-font-size: 13px;" text="Search:" />
-                <TextField fx:id="txtSearch" prefWidth="420" promptText="Search rewards..." style="-fx-font-size: 13px;" />
-                <Button fx:id="btnRefresh" onAction="#onRefresh" prefWidth="100" styleClass="btn-muted" text="Refresh" />
+                <TextField fx:id="txtSearch" prefWidth="420" prefHeight="36" promptText="Search rewards..." style="-fx-font-size: 13px;" />
+                <Button fx:id="btnRefresh" onAction="#onRefresh" prefWidth="100" styleClass="btn-muted toolbar-action" text="Refresh" />
             </HBox>
             <SplitPane dividerPositions="0.7" prefHeight="1.0" prefWidth="1.0" VBox.vgrow="ALWAYS">
                 <items>
@@ -67,7 +67,7 @@
                                 <Separator />
                                 <Label style="-fx-text-fill: #8A8178; -fx-font-size: 12px; -fx-wrap-text: true;"
                                        text="Reward transactions are read-only. Points are awarded automatically when orders are placed." />
-                                <Button fx:id="btnClear" maxWidth="1.7976931348623157E308" onAction="#onClear" prefHeight="38" styleClass="btn-muted" text="Clear Selection" />
+                                <Button fx:id="btnClear" maxWidth="1.7976931348623157E308" onAction="#onClear" styleClass="btn-muted toolbar-action" text="Clear Selection" />
                             </VBox>
                         </content>
                     </ScrollPane>

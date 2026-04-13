@@ -28,16 +28,16 @@
                     <Label text="Search:" style="-fx-font-size: 13px;"/>
                     <TextField fx:id="txtSearch"
                                promptText="Search username, email, role, or status"
-                               prefWidth="320"
+                               prefWidth="320" prefHeight="36"
                                style="-fx-font-size: 13px;"/>
                     <Button text="Refresh" fx:id="btnRefresh"
                             onAction="#onRefresh"
                             prefWidth="90"
-                            styleClass="btn-muted"/>
+                            styleClass="btn-muted toolbar-action"/>
                     <Button text="Add User" fx:id="btnNewUser"
                             onAction="#onNewUser"
                             prefWidth="100"
-                            styleClass="btn-accent"/>
+                            styleClass="btn-accent toolbar-action"/>
                 </HBox>
                 <Label fx:id="lblPolicy" wrapText="true" maxWidth="920"
                        style="-fx-text-fill: #8A8178; -fx-font-size: 12px;"

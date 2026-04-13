@@ -8,6 +8,7 @@ import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.User;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.StageSizing;
 import com.sait.workshop05.util.StageIconHelper;
 import io.sentry.Sentry;
 import javafx.fxml.FXML;
@@ -198,10 +199,7 @@ public class LoginController {
         stage.setScene(scene);
         stage.setTitle("Management System");
         StageIconHelper.setAppIcon(stage);
-        stage.setWidth(1400);
-        stage.setHeight(850);
-        stage.setMinWidth(1200);
-        stage.setMinHeight(750);
-        stage.centerOnScreen();
+        StageSizing.applyMainShellBounds(stage);
+        stage.setResizable(true);
     }
 }

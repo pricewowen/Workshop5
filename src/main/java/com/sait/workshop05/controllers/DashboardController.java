@@ -159,6 +159,7 @@ public class DashboardController {
         });
 
         tbvRecentOrders.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tbvRecentOrders.setPlaceholder(new Label("Loading recent orders…"));
     }
 
     // ───────────────────────────────────────────────
@@ -167,6 +168,7 @@ public class DashboardController {
 
     private void loadDashboard() {
         lblStatus.setText("Loading dashboard…");
+        tbvRecentOrders.setPlaceholder(new Label("Loading recent orders…"));
         Task<DashboardApi.SummaryResponse> task = new Task<>() {
             @Override
             protected DashboardApi.SummaryResponse call() throws Exception {
@@ -181,6 +183,7 @@ public class DashboardController {
             lblTotalCustomers.setText("0");
             lblActiveProducts.setText("0");
             tbvRecentOrders.setItems(FXCollections.observableArrayList());
+            tbvRecentOrders.setPlaceholder(new Label("Could not load recent orders."));
             lblStatus.setText("Could not load dashboard");
             LogData.handleException("LOAD_DASHBOARD", new RuntimeException(t));
         });
@@ -209,8 +212,12 @@ public class DashboardController {
                 }
             }
             tbvRecentOrders.setItems(FXCollections.observableArrayList(recent));
+            if (recent.isEmpty()) {
+                tbvRecentOrders.setPlaceholder(new Label("No recent orders to display."));
+            }
             lblStatus.setText(recent.size() + " recent order(s)");
         } catch (Exception ex) {
+            tbvRecentOrders.setPlaceholder(new Label("Could not load recent orders."));
             lblStatus.setText("Could not load dashboard");
             LogData.handleException("LOAD_DASHBOARD", ex);
         }
