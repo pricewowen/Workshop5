@@ -9,9 +9,6 @@ import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StageIconHelper;
 import io.sentry.Sentry;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -69,29 +66,10 @@ public class MainController {
     @FXML
     private Label lblRole;
 
-    @FXML
-    private Label lblInitials;
-
-    @FXML
-    private Label lblPageTitle;
-
     private Button activeButton;
-    private final Map<Button, String> PAGE_TITLES = new LinkedHashMap<>();
 
     @FXML
     void initialize() {
-        PAGE_TITLES.put(btnDashboard,   "Dashboard");
-        PAGE_TITLES.put(btnOrders,      "Orders");
-        PAGE_TITLES.put(btnProducts,    "Products");
-        PAGE_TITLES.put(btnCustomers,   "Customers");
-        PAGE_TITLES.put(btnEmployees,   "Employees");
-        PAGE_TITLES.put(btnLocations,   "Locations");
-        PAGE_TITLES.put(btnRewards,     "Rewards");
-        PAGE_TITLES.put(btnRewardTier,  "Reward Tiers");
-        PAGE_TITLES.put(btnMessages,    "Messages");
-        PAGE_TITLES.put(btnAnalytics,   "Analytics");
-        PAGE_TITLES.put(btnActivityLog, "Activity Log");
-
         setUserLabels();
         applyRoleBasedVisibility();
         showDashboard();
@@ -103,16 +81,16 @@ public class MainController {
     private void setUserLabels() {
         UserSession session = UserSession.getInstance();
 
-        String role = session.isEmployee() ? "Employee" : "Admin";
-        lblRole.setText(role);
+        if (session.isEmployee()) {
+            lblRole.setText("Employee");
+        } else {
+            lblRole.setText("Admin");
+        }
 
-        String username = session.getCurrentUser() != null
-                ? session.getCurrentUser().getUsername() : "Unknown";
-        lblUsername.setText(username);
-
-        if (lblInitials != null) {
-            lblInitials.setText(username.isEmpty() ? "?" :
-                    String.valueOf(username.charAt(0)).toUpperCase());
+        if (session.getCurrentUser() != null) {
+            lblUsername.setText(session.getCurrentUser().getUsername());
+        } else {
+            lblUsername.setText("Unknown");
         }
     }
 
@@ -263,11 +241,9 @@ public class MainController {
         if (activeButton != null) {
             activeButton.getStyleClass().remove("active");
         }
+
         button.getStyleClass().add("active");
         activeButton = button;
-        if (lblPageTitle != null) {
-            lblPageTitle.setText(PAGE_TITLES.getOrDefault(button, ""));
-        }
     }
 
     private void loadPage(String view) {

@@ -29,19 +29,4 @@ public final class ImageUploadApi {
             throw new RuntimeException("Upload product image failed: " + res.statusCode() + " " + res.body());
         }
     }
-
-    /**
-     * Uploads an image for a bakery location.
-     *
-     * @param bakeryId numeric bakery ID
-     * @param image    JPG or PNG file (max 5 MB)
-     * @throws Exception if the upload fails or the server returns an error status
-     */
-    public static void uploadBakeryImage(int bakeryId, File image) throws Exception {
-        HttpResponse<String> res = ApiClient.getInstance()
-                .postMultipart("/api/v1/bakeries/" + bakeryId + "/image", "image", image);
-        if (res.statusCode() >= 400) {
-            throw new RuntimeException("Upload bakery image failed: " + res.statusCode() + " " + res.body());
-        }
-    }
 }
