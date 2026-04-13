@@ -2,7 +2,10 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -10,64 +13,99 @@
             styleClass="dashboard-root page-root">
 
     <children>
-        <VBox spacing="20"
-              AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
-              AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
-            <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
 
-            <!-- Page subtitle -->
-            <Label text="Welcome back. Here's what's happening." styleClass="page-subtitle"/>
+        <VBox spacing="16"
+              AnchorPane.topAnchor="0"
+              AnchorPane.bottomAnchor="0"
+              AnchorPane.leftAnchor="0"
+              AnchorPane.rightAnchor="0"
+              fillWidth="true">
 
-            <!-- KPI cards -->
-            <HBox spacing="16" alignment="CENTER">
-                <VBox alignment="CENTER_LEFT" spacing="6" HBox.hgrow="ALWAYS"
-                      maxWidth="1.7976931348623157E308" styleClass="stat-card stat-revenue">
-                    <Label text="TOTAL REVENUE" styleClass="caption-label"/>
-                    <Label fx:id="lblTotalRevenu" text="" styleClass="value-label"/>
-                </VBox>
-                <VBox alignment="CENTER_LEFT" spacing="6" HBox.hgrow="ALWAYS"
-                      maxWidth="1.7976931348623157E308" styleClass="stat-card stat-orders">
-                    <Label text="TOTAL ORDERS" styleClass="caption-label"/>
-                    <Label fx:id="lblTotalOrders" text="0" styleClass="value-label"/>
-                </VBox>
-                <VBox alignment="CENTER_LEFT" spacing="6" HBox.hgrow="ALWAYS"
-                      maxWidth="1.7976931348623157E308" styleClass="stat-card stat-customers">
-                    <Label text="CUSTOMERS" styleClass="caption-label"/>
-                    <Label fx:id="lblTotalCustomers" text="0" styleClass="value-label"/>
-                </VBox>
-                <VBox alignment="CENTER_LEFT" spacing="6" HBox.hgrow="ALWAYS"
-                      maxWidth="1.7976931348623157E308" styleClass="stat-card stat-products">
-                    <Label text="PRODUCTS" styleClass="caption-label"/>
-                    <Label fx:id="lblActiveProducts" text="0" styleClass="value-label"/>
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="14">
+                <ImageView fitHeight="48.0" fitWidth="220.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image smooth="true" url="@bakery_logo.png"/>
+                    </image>
+                </ImageView>
+                <VBox spacing="2">
+                    <Label text="Dashboard Overview" styleClass="page-title"/>
+                    <Label text="Home / Dashboard" styleClass="breadcrumb"/>
                 </VBox>
             </HBox>
 
-            <!-- Recent Orders panel -->
-            <VBox spacing="0" VBox.vgrow="ALWAYS" styleClass="panel-card">
+            <HBox spacing="14" alignment="CENTER">
+
+                <VBox alignment="CENTER_LEFT" spacing="4"
+                      HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"
+                      styleClass="stat-card stat-revenue">
+                    <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
+                    <Label fx:id="lblTotalRevenu" text="\$0.00" styleClass="value-label"/>
+                    <Label text="Total Revenue" styleClass="caption-label"/>
+                </VBox>
+
+                <VBox alignment="CENTER_LEFT" spacing="4"
+                      HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"
+                      styleClass="stat-card stat-orders">
+                    <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
+                    <Label fx:id="lblTotalOrders" text="0" styleClass="value-label"/>
+                    <Label text="Total Orders" styleClass="caption-label"/>
+                </VBox>
+
+                <VBox alignment="CENTER_LEFT" spacing="4"
+                      HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"
+                      styleClass="stat-card stat-customers">
+                    <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
+                    <Label fx:id="lblTotalCustomers" text="0" styleClass="value-label"/>
+                    <Label text="Total Customers" styleClass="caption-label"/>
+                </VBox>
+
+                <VBox alignment="CENTER_LEFT" spacing="4"
+                      HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"
+                      styleClass="stat-card stat-products">
+                    <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
+                    <Label fx:id="lblActiveProducts" text="0" styleClass="value-label"/>
+                    <Label text="Active Products" styleClass="caption-label"/>
+                </VBox>
+
+            </HBox>
+
+            <VBox spacing="10" VBox.vgrow="ALWAYS"
+                  styleClass="panel-card">
+
+                <padding><Insets top="12" right="14" bottom="14" left="14"/></padding>
+
                 <HBox alignment="CENTER_LEFT" spacing="12">
-                    <padding><Insets top="16" right="16" bottom="14" left="16"/></padding>
                     <Label text="Recent Orders" styleClass="section-title"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
                             styleClass="btn-muted" prefHeight="32"/>
+                    <Button fx:id="btnNewOrder" text="+ New Order"
+                            styleClass="btn-accent" prefHeight="32"/>
                 </HBox>
+
                 <TableView fx:id="tbvRecentOrders" VBox.vgrow="ALWAYS">
                     <columns>
-                        <TableColumn fx:id="colOrderId" text="ORDER" prefWidth="80"/>
-                        <TableColumn fx:id="colCustomer" text="CUSTOMER" prefWidth="160"/>
-                        <TableColumn fx:id="colProducts" text="ITEMS" prefWidth="220"/>
-                        <TableColumn fx:id="colTotal" text="TOTAL" prefWidth="100"/>
-                        <TableColumn fx:id="colStatus" text="STATUS" prefWidth="110"/>
-                        <TableColumn fx:id="colDate" text="DATE" prefWidth="130"/>
-                        <TableColumn fx:id="colActions" text="" prefWidth="70"/>
+                        <TableColumn fx:id="colOrderId" text="ID" prefWidth="60"/>
+                        <TableColumn fx:id="colCustomer" text="Customer" prefWidth="140"/>
+                        <TableColumn fx:id="colProducts" text="Products" prefWidth="200"/>
+                        <TableColumn fx:id="colTotal" text="Total" prefWidth="90"/>
+                        <TableColumn fx:id="colStatus" text="Status" prefWidth="100"/>
+                        <TableColumn fx:id="colDate" text="Date" prefWidth="130"/>
+                        <TableColumn fx:id="colActions" text="" prefWidth="80"/>
                     </columns>
                 </TableView>
-                <Label fx:id="lblStatus" text="" styleClass="hint-label">
-                    <padding><Insets top="8" left="16" bottom="8"/></padding>
-                </Label>
+
+                <Label fx:id="lblStatus" text=""
+                       styleClass="hint-label"/>
+
             </VBox>
 
         </VBox>
+
     </children>
 
 </AnchorPane>
