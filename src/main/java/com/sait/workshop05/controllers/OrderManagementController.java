@@ -278,14 +278,8 @@ public class OrderManagementController {
             }
         });
 
-        // Discount field -> validate input and recalculate total
-        txtDiscount.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null && !newVal.matches("\\d*\\.?\\d{0,2}")) {
-                txtDiscount.setText(oldVal);
-            } else {
-                recalculateTotals();
-            }
-        });
+        // Discount field -> recalculate total
+        txtDiscount.textProperty().addListener((obs, o, n) -> recalculateTotals());
 
         // Load ComboBox data
         AddressInputHelper.configureEditableAddressCombo(cboNewAddress);
@@ -515,16 +509,14 @@ public class OrderManagementController {
         String timeStr = txtScheduledTime.getText() != null ? txtScheduledTime.getText().trim() : "";
 
         if (schedDate != null) {
-            if (timeStr.isEmpty()) {
-                ErrorHandler.showWarning("Validation", "Please enter a scheduled time (e.g., 14:30) for the selected date.");
-                return;
-            }
-            LocalTime schedTime;
-            try {
-                schedTime = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"));
-            } catch (DateTimeParseException e) {
-                ErrorHandler.showWarning("Validation", "Scheduled time format must be HH:mm (e.g., 14:30).");
-                return;
+            LocalTime schedTime = LocalTime.of(12, 0); // default noon
+            if (!timeStr.isEmpty()) {
+                try {
+                    schedTime = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"));
+                } catch (DateTimeParseException e) {
+                    ErrorHandler.showWarning("Validation", "Scheduled time format must be HH:mm (e.g., 14:30).");
+                    return;
+                }
             }
             scheduledDateTime = LocalDateTime.of(schedDate, schedTime);
 

@@ -22,7 +22,6 @@ public class AnalyticsController {
     @FXML private ComboBox<String> bakeryComboBox;
     @FXML private ComboBox<String> kpiComboBox;
     @FXML private ComboBox<String> chartTypeComboBox;
-    @FXML private CheckBox compressedViewCheckBox;
     @FXML private Label kpiValueLabel;
     @FXML private Label kpiTitleLabel;
     @FXML private Label secondaryValueLabel;
@@ -49,16 +48,8 @@ public class AnalyticsController {
 
         configureKpiOptions();
         configureChartOptions();
-
-        if (compressedViewCheckBox != null) {
-            compressedViewCheckBox.setSelected(true);
-            compressedViewCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
-                configureDatePickers(bakeryComboBox.getValue());
-                onRefresh();
-            });
-        }
-
         loadBakeryOptions();
+
         configureDatePickers(bakeryComboBox.getValue());
 
         bakeryComboBox.setOnAction(e -> {
@@ -112,7 +103,6 @@ public class AnalyticsController {
         if (bakeryComboBox != null) bakeryComboBox.setDisable(true);
         if (kpiComboBox != null) kpiComboBox.setDisable(true);
         if (chartTypeComboBox != null) chartTypeComboBox.setDisable(true);
-        if (compressedViewCheckBox != null) compressedViewCheckBox.setDisable(true);
         if (startDatePicker != null) startDatePicker.setDisable(true);
         if (endDatePicker != null) endDatePicker.setDisable(true);
 
@@ -261,10 +251,6 @@ public class AnalyticsController {
                 || type == KPIType.COMPLETION_RATE;
     }
 
-    private boolean isCompressedView() {
-        return compressedViewCheckBox == null || compressedViewCheckBox.isSelected();
-    }
-
     private double getSecondaryValue(KPIType type,
                                      LocalDate start,
                                      LocalDate end,
@@ -365,39 +351,6 @@ public class AnalyticsController {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
-
-        if (kpiType == KPIType.TOP_PRODUCTS) {
-            yAxis.setAutoRanging(false);
-
-            double maxValue = 0.0;
-            for (DataPoint dp : primaryData) {
-                maxValue = Math.max(maxValue, dp.getValue());
-            }
-            for (DataPoint dp : secondaryData) {
-                maxValue = Math.max(maxValue, dp.getValue());
-            }
-
-            int maxInt = Math.max(1, (int) Math.ceil(maxValue));
-
-            double tickUnit;
-            if (maxInt <= 8) {
-                tickUnit = 1;
-            } else if (maxInt <= 16) {
-                tickUnit = 2;
-            } else {
-                tickUnit = 5;
-            }
-
-            double upperBound = Math.ceil(maxInt / tickUnit) * tickUnit;
-
-            yAxis.setLowerBound(0);
-            yAxis.setUpperBound(upperBound);
-            yAxis.setTickUnit(tickUnit);
-            yAxis.setMinorTickCount(0);
-            yAxis.setForceZeroInRange(true);
-            yAxis.setTickLabelFormatter(new NumberAxis.DefaultFormatter(yAxis, "", ""));
-        }
-
         LineChart<String, Number> chart = new LineChart<>(xAxis, yAxis);
 
         XYChart.Series<String, Number> recognizedSeries = new XYChart.Series<>();
@@ -407,62 +360,47 @@ public class AnalyticsController {
         inProgressSeries.setName("In Progress");
 
         if (usesDateLabels(kpiType)) {
-            List<LocalDate> orderedDates = buildOrderedDateList(
-                    primaryData,
-                    secondaryData,
-                    startDatePicker.getValue(),
-                    endDatePicker.getValue(),
-                    isCompressedView()
-            );
-
-            List<String> orderedCategories = buildDisplayDateCategories(orderedDates);
-
             xAxis.setAutoRanging(false);
+
+            List<String> orderedCategories = buildOrderedDateCategories(primaryData, secondaryData);
             xAxis.setCategories(FXCollections.observableArrayList(orderedCategories));
-
-            maybeRotateAxisLabels(xAxis, orderedCategories, kpiType);
-
-            Map<String, Double> primaryDateMap = toIsoDateValueMap(primaryData);
-            Map<String, Double> secondaryDateMap = toIsoDateValueMap(secondaryData);
-
-            for (int i = 0; i < orderedDates.size(); i++) {
-                LocalDate date = orderedDates.get(i);
-                String category = orderedCategories.get(i);
-                String iso = date.toString();
-
-                recognizedSeries.getData().add(
-                        new XYChart.Data<>(category, primaryDateMap.getOrDefault(iso, 0.0))
-                );
-
-                inProgressSeries.getData().add(
-                        new XYChart.Data<>(category, secondaryDateMap.getOrDefault(iso, 0.0))
-                );
-            }
-        } else {
-            List<String> orderedCategories = buildOrderedCategoricalLabels(primaryData, secondaryData);
-
-            xAxis.setAutoRanging(false);
-            xAxis.setCategories(FXCollections.observableArrayList(orderedCategories));
-
-            maybeRotateAxisLabels(xAxis, orderedCategories, kpiType);
 
             Map<String, Double> primaryMap = toValueMap(primaryData);
             Map<String, Double> secondaryMap = toValueMap(secondaryData);
 
             for (String category : orderedCategories) {
-                recognizedSeries.getData().add(
-                        new XYChart.Data<>(category, primaryMap.getOrDefault(category, 0.0))
-                );
+                Double recognizedValue = primaryMap.get(category);
+                if (recognizedValue != null) {
+                    recognizedSeries.getData().add(new XYChart.Data<>(category, recognizedValue));
+                }
 
-                inProgressSeries.getData().add(
-                        new XYChart.Data<>(category, secondaryMap.getOrDefault(category, 0.0))
-                );
+                if (secondaryData != null && !secondaryData.isEmpty()) {
+                    Double inProgressValue = secondaryMap.get(category);
+                    if (inProgressValue != null) {
+                        inProgressSeries.getData().add(new XYChart.Data<>(category, inProgressValue));
+                    }
+                }
+            }
+        } else {
+            for (DataPoint dp : primaryData) {
+                recognizedSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+            }
+
+            if (secondaryData != null && !secondaryData.isEmpty()) {
+                for (DataPoint dp : secondaryData) {
+                    inProgressSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+                }
             }
         }
 
         chart.getData().add(recognizedSeries);
-        chart.getData().add(inProgressSeries);
-        chart.setLegendVisible(true);
+
+        if (secondaryData != null && !secondaryData.isEmpty()) {
+            chart.getData().add(inProgressSeries);
+            chart.setLegendVisible(true);
+        } else {
+            chart.setLegendVisible(false);
+        }
 
         chartContainer.getChildren().add(chart);
     }
@@ -473,39 +411,6 @@ public class AnalyticsController {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
-
-        if (kpiType == KPIType.TOP_PRODUCTS) {
-            yAxis.setAutoRanging(false);
-
-            double maxValue = 0.0;
-            for (DataPoint dp : primaryData) {
-                maxValue = Math.max(maxValue, dp.getValue());
-            }
-            for (DataPoint dp : secondaryData) {
-                maxValue = Math.max(maxValue, dp.getValue());
-            }
-
-            int maxInt = Math.max(1, (int) Math.ceil(maxValue));
-
-            double tickUnit;
-            if (maxInt <= 8) {
-                tickUnit = 1;
-            } else if (maxInt <= 16) {
-                tickUnit = 2;
-            } else {
-                tickUnit = 5;
-            }
-
-            double upperBound = Math.ceil(maxInt / tickUnit) * tickUnit;
-
-            yAxis.setLowerBound(0);
-            yAxis.setUpperBound(upperBound);
-            yAxis.setTickUnit(tickUnit);
-            yAxis.setMinorTickCount(0);
-            yAxis.setForceZeroInRange(true);
-            yAxis.setTickLabelFormatter(new NumberAxis.DefaultFormatter(yAxis, "", ""));
-        }
-
         BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
 
         XYChart.Series<String, Number> recognizedSeries = new XYChart.Series<>();
@@ -515,44 +420,10 @@ public class AnalyticsController {
         inProgressSeries.setName("In Progress");
 
         if (usesDateLabels(kpiType)) {
-            List<LocalDate> orderedDates = buildOrderedDateList(
-                    primaryData,
-                    secondaryData,
-                    startDatePicker.getValue(),
-                    endDatePicker.getValue(),
-                    isCompressedView()
-            );
-
-            List<String> orderedCategories = buildDisplayDateCategories(orderedDates);
-
             xAxis.setAutoRanging(false);
+
+            List<String> orderedCategories = buildOrderedDateCategories(primaryData, secondaryData);
             xAxis.setCategories(FXCollections.observableArrayList(orderedCategories));
-
-            maybeRotateAxisLabels(xAxis, orderedCategories, kpiType);
-
-            Map<String, Double> primaryDateMap = toIsoDateValueMap(primaryData);
-            Map<String, Double> secondaryDateMap = toIsoDateValueMap(secondaryData);
-
-            for (int i = 0; i < orderedDates.size(); i++) {
-                LocalDate date = orderedDates.get(i);
-                String category = orderedCategories.get(i);
-                String iso = date.toString();
-
-                recognizedSeries.getData().add(
-                        new XYChart.Data<>(category, primaryDateMap.getOrDefault(iso, 0.0))
-                );
-
-                inProgressSeries.getData().add(
-                        new XYChart.Data<>(category, secondaryDateMap.getOrDefault(iso, 0.0))
-                );
-            }
-        } else {
-            List<String> orderedCategories = buildOrderedCategoricalLabels(primaryData, secondaryData);
-
-            xAxis.setAutoRanging(false);
-            xAxis.setCategories(FXCollections.observableArrayList(orderedCategories));
-
-            maybeRotateAxisLabels(xAxis, orderedCategories, kpiType);
 
             Map<String, Double> primaryMap = toValueMap(primaryData);
             Map<String, Double> secondaryMap = toValueMap(secondaryData);
@@ -562,166 +433,62 @@ public class AnalyticsController {
                         new XYChart.Data<>(category, primaryMap.getOrDefault(category, 0.0))
                 );
 
-                inProgressSeries.getData().add(
-                        new XYChart.Data<>(category, secondaryMap.getOrDefault(category, 0.0))
-                );
+                if (secondaryData != null && !secondaryData.isEmpty()) {
+                    inProgressSeries.getData().add(
+                            new XYChart.Data<>(category, secondaryMap.getOrDefault(category, 0.0))
+                    );
+                }
+            }
+        } else {
+            for (DataPoint dp : primaryData) {
+                recognizedSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+            }
+
+            if (secondaryData != null && !secondaryData.isEmpty()) {
+                for (DataPoint dp : secondaryData) {
+                    inProgressSeries.getData().add(new XYChart.Data<>(dp.getLabel(), dp.getValue()));
+                }
             }
         }
 
         chart.getData().add(recognizedSeries);
-        chart.getData().add(inProgressSeries);
-        chart.setLegendVisible(true);
+
+        if (secondaryData != null && !secondaryData.isEmpty()) {
+            chart.getData().add(inProgressSeries);
+            chart.setLegendVisible(true);
+        } else {
+            chart.setLegendVisible(false);
+        }
 
         chartContainer.getChildren().add(chart);
     }
 
-    private void maybeRotateAxisLabels(CategoryAxis xAxis, List<String> categories, KPIType kpiType) {
-        if (kpiType == KPIType.REVENUE_BY_BAKERY) {
-            xAxis.setTickLabelRotation(0);
-            xAxis.setStyle("-fx-tick-label-rotation: 0;");
-            return;
-        }
+    private List<String> buildOrderedDateCategories(List<DataPoint> primaryData,
+                                                    List<DataPoint> secondaryData) {
 
-        if (categories == null || categories.isEmpty()) {
-            xAxis.setTickLabelRotation(0);
-            xAxis.setStyle("-fx-tick-label-rotation: 0;");
-            return;
-        }
-
-        int longestLabelLength = categories.stream()
-                .filter(Objects::nonNull)
-                .mapToInt(String::length)
-                .max()
-                .orElse(0);
-
-        boolean shouldRotate = categories.size() > 10 || longestLabelLength > 10;
-
-        if (shouldRotate) {
-            xAxis.setTickLabelRotation(45);
-            xAxis.setStyle("-fx-tick-label-rotation: 45;");
-        } else {
-            xAxis.setTickLabelRotation(0);
-            xAxis.setStyle("-fx-tick-label-rotation: 0;");
-        }
-    }
-
-    private String formatDateLabel(LocalDate date) {
-        return date.getMonthValue() + "/" + date.getDayOfMonth();
-    }
-
-    private List<LocalDate> buildOrderedDateList(List<DataPoint> primaryData,
-                                                 List<DataPoint> secondaryData,
-                                                 LocalDate start,
-                                                 LocalDate end,
-                                                 boolean compressedView) {
-
-        List<LocalDate> orderedDates = new ArrayList<>();
-
-        if (!compressedView && start != null && end != null) {
-            LocalDate current = start;
-            while (!current.isAfter(end)) {
-                orderedDates.add(current);
-                current = current.plusDays(1);
-            }
-        } else {
-            Set<LocalDate> dates = new TreeSet<>();
-
-            if (primaryData != null) {
-                for (DataPoint dp : primaryData) {
-                    dates.add(LocalDate.parse(dp.getLabel()));
-                }
-            }
-
-            if (secondaryData != null) {
-                for (DataPoint dp : secondaryData) {
-                    dates.add(LocalDate.parse(dp.getLabel()));
-                }
-            }
-
-            orderedDates.addAll(dates);
-        }
-
-        return orderedDates;
-    }
-
-    private List<String> buildDisplayDateCategories(List<LocalDate> orderedDates) {
-        int labelStride = 1;
-        int count = orderedDates.size();
-
-        if (count >= 29) {
-            labelStride = (int) Math.ceil(count / 28.0);
-        }
-
-        List<String> ordered = new ArrayList<>();
-        for (int i = 0; i < orderedDates.size(); i++) {
-            LocalDate date = orderedDates.get(i);
-
-            boolean isLast = i == orderedDates.size() - 1;
-            boolean showByStride = (labelStride == 1) || (i % labelStride == 0);
-            boolean showLastSafely = isLast && ((orderedDates.size() - 1) % labelStride != labelStride - 1);
-
-            if (showByStride || showLastSafely) {
-                ordered.add(formatDateLabel(date));
-            } else {
-                ordered.add(hiddenDateCategoryKey(i));
-            }
-        }
-
-        return ordered;
-    }
-
-    private String hiddenDateCategoryKey(int index) {
-        return "\u200B".repeat(index + 1);
-    }
-
-    private List<String> buildOrderedCategories(List<DataPoint> primaryData,
-                                                List<DataPoint> secondaryData,
-                                                KPIType kpiType,
-                                                LocalDate start,
-                                                LocalDate end,
-                                                boolean compressedView) {
-
-        if (usesDateLabels(kpiType)) {
-            List<LocalDate> orderedDates = buildOrderedDateList(primaryData, secondaryData, start, end, compressedView);
-            return buildDisplayDateCategories(orderedDates);
-        }
-
-        return buildOrderedCategoricalLabels(primaryData, secondaryData);
-    }
-
-    private List<String> buildOrderedCategoricalLabels(List<DataPoint> primaryData,
-                                                       List<DataPoint> secondaryData) {
-
-        LinkedHashSet<String> labels = new LinkedHashSet<>();
+        Set<LocalDate> dates = new TreeSet<>();
 
         if (primaryData != null) {
             for (DataPoint dp : primaryData) {
-                labels.add(dp.getLabel());
+                dates.add(LocalDate.parse(dp.getLabel()));
             }
         }
 
         if (secondaryData != null) {
             for (DataPoint dp : secondaryData) {
-                labels.add(dp.getLabel());
+                dates.add(LocalDate.parse(dp.getLabel()));
             }
         }
 
-        return new ArrayList<>(labels);
+        List<String> ordered = new ArrayList<>();
+        for (LocalDate date : dates) {
+            ordered.add(date.toString());
+        }
+
+        return ordered;
     }
 
     private Map<String, Double> toValueMap(List<DataPoint> data) {
-        Map<String, Double> map = new HashMap<>();
-
-        if (data != null) {
-            for (DataPoint dp : data) {
-                map.put(dp.getLabel(), dp.getValue());
-            }
-        }
-
-        return map;
-    }
-
-    private Map<String, Double> toIsoDateValueMap(List<DataPoint> data) {
         Map<String, Double> map = new HashMap<>();
 
         if (data != null) {
@@ -865,8 +632,6 @@ public class AnalyticsController {
             if (validDates.isEmpty()) {
                 startDatePicker.setValue(null);
                 endDatePicker.setValue(null);
-                startDatePicker.setDayCellFactory(null);
-                endDatePicker.setDayCellFactory(null);
                 return;
             }
 
@@ -880,42 +645,6 @@ public class AnalyticsController {
             }
             if (endDatePicker.getValue() == null) {
                 endDatePicker.setValue(last);
-            }
-
-            if (isCompressedView()) {
-                if (!validDates.contains(startDatePicker.getValue())) {
-                    startDatePicker.setValue(first);
-                }
-                if (!validDates.contains(endDatePicker.getValue())) {
-                    endDatePicker.setValue(last);
-                }
-
-                Set<LocalDate> validSet = new HashSet<>(validDates);
-
-                startDatePicker.setDayCellFactory(picker ->
-                        new DateCell() {
-                            @Override
-                            public void updateItem(LocalDate date, boolean empty) {
-                                super.updateItem(date, empty);
-                                if (empty || !validSet.contains(date)) {
-                                    setDisable(true);
-                                }
-                            }
-                        });
-
-                endDatePicker.setDayCellFactory(picker ->
-                        new DateCell() {
-                            @Override
-                            public void updateItem(LocalDate date, boolean empty) {
-                                super.updateItem(date, empty);
-                                if (empty || !validSet.contains(date)) {
-                                    setDisable(true);
-                                }
-                            }
-                        });
-            } else {
-                startDatePicker.setDayCellFactory(null);
-                endDatePicker.setDayCellFactory(null);
             }
 
         } catch (Exception e) {

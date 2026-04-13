@@ -107,7 +107,6 @@ public final class OrderApi {
         public String id;
         public String orderNumber;
         public String customerId;
-        public String customerName;
         public Integer bakeryId;
         public String bakeryName;
         public Integer addressId;
@@ -147,7 +146,7 @@ public final class OrderApi {
         o.setOrderTotal(j.orderTotal != null ? j.orderTotal.doubleValue() : 0);
         o.setOrderDiscount(j.orderDiscount != null ? j.orderDiscount.doubleValue() : 0);
         o.setOrderStatus(statusToDisplay(j.status));
-        o.setCustomerDisplay(j.customerName != null ? j.customerName : "");
+        o.setCustomerDisplay("");
         o.setBakeryDisplay(j.bakeryName != null ? j.bakeryName : "");
         o.setAddressDisplay("");
         return o;

@@ -54,7 +54,7 @@ public class DashboardController {
     void initialize() {
         setupColumns();
         loadDashboard();
-        if (btnNewOrder != null) btnNewOrder.setOnAction(e -> onNewOrder());
+        btnNewOrder.setOnAction(e -> onNewOrder());
     }
 
     // ───────────────────────────────────────────────

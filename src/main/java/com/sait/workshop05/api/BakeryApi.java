@@ -43,15 +43,12 @@ public final class BakeryApi {
         return s != null ? s : "";
     }
 
-    public static Bakery create(Bakery bakery) throws Exception {
+    public static void create(Bakery bakery) throws Exception {
         Map<String, Object> body = upsertBody(bakery);
         HttpResponse<String> res = ApiClient.getInstance().postAuthenticated("/api/v1/bakeries", body);
         if (res.statusCode() >= 400) {
             throw new RuntimeException("POST bakeries failed: " + res.statusCode() + " " + res.body());
         }
-        CatalogApi.BakeryResponse created = ApiClient.getInstance().getMapper()
-                .readValue(res.body(), CatalogApi.BakeryResponse.class);
-        return toBakery(created);
     }
 
     public static void update(int id, Bakery bakery) throws Exception {
