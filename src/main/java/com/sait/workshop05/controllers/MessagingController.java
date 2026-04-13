@@ -60,7 +60,7 @@ public class MessagingController {
     void initialize() {
         currentUserUuid = UserSession.getInstance().getApiUserId();
         if (currentUserUuid == null || currentUserUuid.isBlank()) {
-            ErrorHandler.showErrorDialog("Session", "Missing user id from login. Please log in again.", null);
+            ErrorHandler.showErrorDialog("Session", "Missing user id from login. Please log in again.");
         }
 
         setupConversationList();
@@ -193,7 +193,7 @@ public class MessagingController {
         task.setOnSucceeded(e -> applyConversations(task.getValue()));
         task.setOnFailed(e -> {
             Throwable t = task.getException();
-            ErrorHandler.showErrorDialog("Load Error", "Could not load conversations", t != null ? t.getMessage() : null);
+            ErrorHandler.showErrorDialog("Load Error", "Could not load conversations", t);
             LogData.handleException("LOAD_CONVERSATIONS", new RuntimeException(t));
         });
         new Thread(task).start();
@@ -307,7 +307,7 @@ public class MessagingController {
         task.setOnFailed(e -> {
             isLoadingThread = false;
             Throwable t = task.getException();
-            ErrorHandler.showErrorDialog("Load Error", "Could not load message thread", t != null ? t.getMessage() : null);
+            ErrorHandler.showErrorDialog("Load Error", "Could not load message thread", t);
             LogData.handleException("LOAD_THREAD", new RuntimeException(t));
         });
         new Thread(task).start();
@@ -420,7 +420,7 @@ public class MessagingController {
             });
 
         } catch (Exception e) {
-            ErrorHandler.showErrorDialog("Error", "Could not load staff users", e.getMessage());
+            ErrorHandler.showErrorDialog("Error", "Could not load staff users", e);
             LogData.handleException("LOAD_STAFF_USERS", e);
         }
     }
@@ -428,7 +428,7 @@ public class MessagingController {
     @FXML
     void onSendMessage() {
         if (selectedPartnerId == null || selectedPartnerId.isBlank()) {
-            ErrorHandler.showErrorDialog("No Recipient", "Please select a conversation or start a new message.", null);
+            ErrorHandler.showErrorDialog("No Recipient", "Please select a conversation or start a new message.");
             return;
         }
 
@@ -436,7 +436,7 @@ public class MessagingController {
         String content = txtMessageContent.getText() != null ? txtMessageContent.getText().trim() : "";
 
         if (content.isEmpty()) {
-            ErrorHandler.showErrorDialog("Validation Error", "Message content cannot be empty.", null);
+            ErrorHandler.showErrorDialog("Validation Error", "Message content cannot be empty.");
             txtMessageContent.requestFocus();
             return;
         }
@@ -446,12 +446,12 @@ public class MessagingController {
         }
 
         if (subject.length() > 255) {
-            ErrorHandler.showErrorDialog("Validation Error", "Subject must be 255 characters or less.", null);
+            ErrorHandler.showErrorDialog("Validation Error", "Subject must be 255 characters or less.");
             return;
         }
 
         if (content.length() > 2000) {
-            ErrorHandler.showErrorDialog("Validation Error", "Message content must be 2000 characters or less.", null);
+            ErrorHandler.showErrorDialog("Validation Error", "Message content must be 2000 characters or less.");
             return;
         }
 
@@ -466,7 +466,7 @@ public class MessagingController {
             loadConversationThreadAsync();
 
         } catch (Exception e) {
-            ErrorHandler.showErrorDialog("Send Error", "Failed to send message", e.getMessage());
+            ErrorHandler.showErrorDialog("Send Error", "Failed to send message", e);
             LogData.handleException("SEND_MESSAGE", e);
         }
     }

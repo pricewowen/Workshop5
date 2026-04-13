@@ -1,5 +1,6 @@
 package com.sait.workshop05.controllers;
 
+import com.sait.workshop05.api.ApiClient;
 import com.sait.workshop05.api.CatalogApi;
 import com.sait.workshop05.api.ImageUploadApi;
 import com.sait.workshop05.logging.LogData;
@@ -12,11 +13,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -85,16 +90,72 @@ public class ProductManagementController {
         });
 
         colImage.setCellValueFactory(new PropertyValueFactory<>("imageUrl"));
+        final int thumb = 40;
         colImage.setCellFactory(col -> new TableCell<>() {
+            private final ImageView imageView = new ImageView();
+
+            {
+                imageView.setFitWidth(thumb);
+                imageView.setFitHeight(thumb);
+                imageView.setPreserveRatio(true);
+                imageView.setSmooth(true);
+            }
+
             @Override
             protected void updateItem(String url, boolean empty) {
                 super.updateItem(url, empty);
-                if (empty) { setText(""); return; }
-                setText(url != null && !url.isBlank() ? "Yes" : "No");
+                setText(null);
+                setAlignment(Pos.CENTER_LEFT);
+                imageView.setImage(null);
+                if (empty) {
+                    setGraphic(null);
+                    return;
+                }
+                if (url == null || url.isBlank()) {
+                    Label none = new Label("No image");
+                    none.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 11px;");
+                    setGraphic(none);
+                    return;
+                }
+                String resolved = resolveProductImageUrl(url);
+                Label pending = new Label("…");
+                pending.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 12px;");
+                setGraphic(pending);
+
+                Image img = new Image(resolved, thumb, thumb, true, true, true);
+                Runnable apply = () -> {
+                    if (!url.equals(getItem())) {
+                        return;
+                    }
+                    if (img.isError()) {
+                        Label err = new Label("Can't load");
+                        err.setStyle("-fx-text-fill: #B85C4C; -fx-font-size: 10px; -fx-wrap-text: true;");
+                        err.setMaxWidth(thumb + 24);
+                        setGraphic(err);
+                    } else {
+                        imageView.setImage(img);
+                        setGraphic(imageView);
+                    }
+                };
+                if (img.getProgress() >= 1.0) {
+                    Platform.runLater(apply);
+                } else {
+                    img.progressProperty().addListener((obs, o, n) -> {
+                        if (n != null && n.doubleValue() >= 1.0) {
+                            Platform.runLater(apply);
+                        }
+                    });
+                    img.errorProperty().addListener((obs, o, isErr) -> {
+                        if (Boolean.TRUE.equals(isErr)) {
+                            Platform.runLater(apply);
+                        }
+                    });
+                }
             }
         });
 
         tblProducts.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tblProducts.setFixedCellSize(52);
     }
 
     private void setupActionsColumn() {
@@ -168,7 +229,7 @@ public class ProductManagementController {
         task.setOnFailed(e -> {
             Throwable t = task.getException();
             LogData.handleException("LOAD_PRODUCTS", new RuntimeException(t));
-            ErrorHandler.showErrorDialog("API Error", "Could not load products.", t != null ? t.getMessage() : null);
+            ErrorHandler.showErrorDialog("API Error", "Could not load products.", t);
         });
         new Thread(task).start();
     }
@@ -211,7 +272,7 @@ public class ProductManagementController {
         task.setOnFailed(e -> {
             Throwable t = task.getException();
             LogData.handleException("READ_PRODUCTS", new RuntimeException(t));
-            ErrorHandler.showErrorDialog("API Error", "Could not load products.", t != null ? t.getMessage() : null);
+            ErrorHandler.showErrorDialog("API Error", "Could not load products.", t);
         });
         new Thread(task).start();
     }
@@ -361,7 +422,9 @@ public class ProductManagementController {
             });
         });
 
-        ButtonType saveType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        ButtonType saveType = new ButtonType(
+                isNew ? "Create Product" : "Save Changes",
+                ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(saveType, ButtonType.CANCEL);
 
         Button saveBtn = (Button) dialog.getDialogPane().lookupButton(saveType);
@@ -390,44 +453,54 @@ public class ProductManagementController {
                     CatalogApi.ProductResponse created = CatalogApi.createProduct(name, desc, price, tagIds, "");
                     LogData.logAction("CREATE", "Product");
                     productId = created.id != null ? created.id : -1;
-                    int finalProductId = productId;
-                    refreshProductsOnlyAsync(() -> {
-                        if (finalProductId > 0) {
-                            selectProductById(finalProductId);
-                            lblStatus.setText("Created product #" + finalProductId);
-                        }
-                    });
                 } else {
                     CatalogApi.updateProduct(existing.getProductId(), name, desc, price, tagIds, "");
                     LogData.logAction("UPDATE", "Product");
                     productId = existing.getProductId();
-                    int finalProductId = productId;
-                    refreshProductsOnlyAsync(() -> {
-                        selectProductById(finalProductId);
-                        lblStatus.setText("Updated product #" + finalProductId);
-                    });
                 }
 
-                if (selectedImageFile[0] != null && productId > 0) {
-                    int finalProductId = productId;
+                final int finalProductId = productId;
+                final boolean uploadImageAfter = selectedImageFile[0] != null && finalProductId > 0;
+
+                refreshProductsOnlyAsync(() -> {
+                    if (finalProductId > 0) {
+                        selectProductById(finalProductId);
+                    }
+                    lblStatus.setText((isNew ? "Created" : "Updated") + " product #" + finalProductId);
+                    if (!uploadImageAfter) {
+                        String title = isNew ? "Product created" : "Product updated";
+                        String msg;
+                        if (isNew) {
+                            msg = finalProductId > 0
+                                    ? "\"" + name + "\" was saved as product #" + finalProductId + "."
+                                    : "\"" + name + "\" was created.";
+                        } else {
+                            msg = "\"" + name + "\" was updated successfully.";
+                        }
+                        ErrorHandler.showInfo(title, msg);
+                    }
+                });
+
+                if (uploadImageAfter) {
                     File imageFile = selectedImageFile[0];
-                    boolean wasNew = isNew;
                     try {
                         ImageUploadApi.uploadProductImage(finalProductId, imageFile);
                         LogData.logAction("UPLOAD_IMAGE", "Product #" + finalProductId);
                         refreshProductsOnlyAsync(() -> {
                             selectProductById(finalProductId);
-                            lblStatus.setText((wasNew ? "Created" : "Updated") + " product #" + finalProductId + " — image uploaded.");
+                            lblStatus.setText((isNew ? "Created" : "Updated") + " product #" + finalProductId + " — image uploaded.");
+                            String title = isNew ? "Product created" : "Product updated";
+                            ErrorHandler.showInfo(title, "\"" + name + "\" was saved and the image was uploaded.");
                         });
                     } catch (Exception uploadEx) {
                         LogData.handleException("UPLOAD_PRODUCT_IMAGE", uploadEx);
-                        ErrorHandler.showErrorDialog("Upload Failed", "Product saved but image upload failed.", uploadEx.getMessage());
+                        ErrorHandler.showErrorDialog("Upload Failed", "Product saved but image upload failed.", uploadEx);
                     }
                 }
             } catch (Exception ex) {
                 LogData.handleException(isNew ? "CREATE_PRODUCT" : "UPDATE_PRODUCT", ex);
                 ErrorHandler.showErrorDialog(isNew ? "Create Failed" : "Update Failed",
-                        "Could not save product.", ex.getMessage());
+                        "Could not save product.", ex);
             }
         });
     }
@@ -477,7 +550,7 @@ public class ProductManagementController {
             refreshProductsOnlyAsync(() -> lblStatus.setText("Deleted product #" + pid));
         } catch (Exception ex) {
             LogData.handleException("DELETE_PRODUCT", ex);
-            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete product.", ex.getMessage());
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete product.", ex);
         }
     }
 
@@ -515,6 +588,22 @@ public class ProductManagementController {
                 return;
             }
         }
+    }
+
+    /** Absolute URL for table thumbnails (API may return absolute or site-relative paths). */
+    private static String resolveProductImageUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return "";
+        }
+        String u = url.trim();
+        if (u.startsWith("http://") || u.startsWith("https://")) {
+            return u;
+        }
+        String base = ApiClient.getInstance().getBaseUrl();
+        if (u.startsWith("/")) {
+            return base + u;
+        }
+        return base + "/" + u;
     }
 
     /** Returns the filename portion of a URL, or a truncated URL if no path separator. */

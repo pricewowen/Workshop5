@@ -41,7 +41,7 @@
                             <HBox spacing="12" alignment="CENTER_LEFT">
                                 <Label text="Search:" style="-fx-font-size: 13px;"/>
                                 <TextField fx:id="txtOrderSearch"
-                                           promptText="Search order ID, customer, bakery, method, status"
+                                           promptText="Search order #, customer, bakery, method, status"
                                            prefWidth="360"
                                            style="-fx-font-size: 13px;"/>
 
@@ -262,23 +262,45 @@
                                                    style="-fx-font-size: 13px;"
                                                    GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
-                                            <Label text="Discount:" style="-fx-font-size: 13px;"
+                                            <Label text="Discount (% / $):" style="-fx-font-size: 13px;"
                                                    GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                                            <TextField fx:id="txtDiscount" text="0.00"
-                                                       prefWidth="100" style="-fx-font-size: 13px;"
-                                                       GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                                            <HBox spacing="8" alignment="CENTER_LEFT"
+                                                   GridPane.rowIndex="1" GridPane.columnIndex="1">
+                                                <Spinner fx:id="spnDiscountPercent" prefWidth="76" editable="true"/>
+                                                <Label text="%" style="-fx-font-size: 13px;"/>
+                                                <Label text="→" style="-fx-font-size: 12px; -fx-text-fill: #8A8178;"/>
+                                                <TextField fx:id="txtDiscount" text="0.00"
+                                                           prefWidth="88" style="-fx-font-size: 13px;"/>
+                                            </HBox>
 
-                                            <Label text="Reward Pts:" style="-fx-font-size: 13px;"
-                                                   GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                                            <Label fx:id="lblRewardInfo" text="Select a customer"
-                                                   style="-fx-font-size: 12px; -fx-text-fill: #666;"
+                                            <Label fx:id="lblDiscountCapHint" text=""
+                                                   wrapText="true" maxWidth="280"
+                                                   style="-fx-font-size: 11px; -fx-text-fill: #8A8178;"
                                                    GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
-                                            <Label text="Total:" style="-fx-font-size: 15px; -fx-font-weight: bold;"
+                                            <Label text="Tax (5%):" style="-fx-font-size: 13px;"
                                                    GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                            <Label fx:id="lblTax" text="\$0.00"
+                                                   style="-fx-font-size: 13px;"
+                                                   GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                                            <Label text="Delivery:" style="-fx-font-size: 13px;"
+                                                   GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                                            <Label fx:id="lblDelivery" text="—"
+                                                   style="-fx-font-size: 13px;"
+                                                   GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                                            <Label text="Reward Pts:" style="-fx-font-size: 13px;"
+                                                   GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                                            <Label fx:id="lblRewardInfo" text="Select a customer"
+                                                   style="-fx-font-size: 12px; -fx-text-fill: #666;"
+                                                   GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+                                            <Label text="Estimated total:" style="-fx-font-size: 15px; -fx-font-weight: bold;"
+                                                   GridPane.rowIndex="6" GridPane.columnIndex="0"/>
                                             <Label fx:id="lblTotal" text="\$0.00"
                                                    style="-fx-font-size: 15px; -fx-font-weight: bold;"
-                                                   GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                                                   GridPane.rowIndex="6" GridPane.columnIndex="1"/>
                                         </GridPane>
 
                                         <Button text="Place Order" fx:id="btnPlaceOrder"

@@ -11,10 +11,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.util.Callback;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -23,12 +28,24 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class OrderManagementController {
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private static final List<String> STATUS_FLOW = OrderStatus.ALL_STATUSES;
+
+    /**
+     * Staff checkout with manual discount — must match {@code OrderService} (tax on net after discount;
+     * delivery fee when method is delivery and net is under threshold).
+     */
+    private static final BigDecimal STAFF_CHECKOUT_TAX_PERCENT = new BigDecimal("5");
+    private static final BigDecimal DELIVERY_FEE = new BigDecimal("7.00");
+    private static final BigDecimal DELIVERY_FREE_THRESHOLD = new BigDecimal("50.00");
+
+    /** Maximum manual discount as a percent of cart subtotal (matches validation and UI hint). */
+    private static final double MAX_STAFF_DISCOUNT_PERCENT = 50.0;
 
     // ════════════════════════════════════════════════════════════
     // TAB 1: All Orders — FXML bindings
@@ -94,7 +111,11 @@ public class OrderManagementController {
 
     // Summary
     @FXML private Label lblSubtotal;
+    @FXML private Spinner<Integer> spnDiscountPercent;
     @FXML private TextField txtDiscount;
+    @FXML private Label lblDiscountCapHint;
+    @FXML private Label lblTax;
+    @FXML private Label lblDelivery;
     @FXML private Label lblRewardInfo;
     @FXML private Label lblTotal;
     @FXML private Button btnPlaceOrder;
@@ -115,6 +136,12 @@ public class OrderManagementController {
     // Tab 2 cart
     private final ObservableList<OrderItem> cartItems = FXCollections.observableArrayList();
 
+    /** Prevents discount $ field and % spinner from ping-ponging while syncing. */
+    private boolean suppressDiscountSync;
+
+    /** Ignores stale order-line responses when the table selection changes quickly. */
+    private final AtomicInteger orderItemsLoadGeneration = new AtomicInteger();
+
     // ════════════════════════════════════════════════════════════
     // Initialization
     // ════════════════════════════════════════════════════════════
@@ -123,7 +150,8 @@ public class OrderManagementController {
     void initialize() {
         setupTab1();
         setupTab2();
-        loadOrderData();
+        loadOrderDataAsync();
+        loadTab2ReferencesAsync();
     }
 
     // ────────────────────────────────────────────────────────────
@@ -166,7 +194,7 @@ public class OrderManagementController {
         cboStatusFilter.setValue("All");
 
         // Status update ComboBox
-        cboNewStatus.setItems(FXCollections.observableArrayList(OrderStatus.ALL_STATUSES));
+        cboNewStatus.setItems(FXCollections.observableArrayList(OrderStatus.STAFF_ASSIGNABLE_STATUSES));
 
         // Filtering
         orderFiltered = new FilteredList<>(orderMaster, o -> true);
@@ -189,15 +217,45 @@ public class OrderManagementController {
 
             lblOrderDetailTitle.setText("Order " + selected.getOrderNumber()
                     + " — " + selected.getCustomerDisplay());
-            cboNewStatus.setValue(selected.getOrderStatus());
+            String rowStatus = selected.getOrderStatus();
+            cboNewStatus.setValue(resolveStaffAssignableComboValue(rowStatus));
 
-            try {
-                List<OrderItem> items = OrderApi.getOrderItems(selected.getOrderId());
-                tblOrderItems.setItems(FXCollections.observableArrayList(items));
-            } catch (Exception e) {
-                LogData.handleException("LOAD_ORDER_ITEMS", e);
+            String orderId = selected.getOrderId();
+            int gen = orderItemsLoadGeneration.incrementAndGet();
+            tblOrderItems.setItems(FXCollections.observableArrayList());
+            Task<List<OrderItem>> itemsTask = new Task<>() {
+                @Override
+                protected List<OrderItem> call() throws Exception {
+                    return OrderApi.getOrderItems(orderId);
+                }
+            };
+            itemsTask.setOnSucceeded(e -> {
+                if (gen != orderItemsLoadGeneration.get()) {
+                    return;
+                }
+                Order still = tblOrders.getSelectionModel().getSelectedItem();
+                if (still == null || !orderId.equals(still.getOrderId())) {
+                    return;
+                }
+                tblOrderItems.setItems(FXCollections.observableArrayList(itemsTask.getValue()));
+            });
+            itemsTask.setOnFailed(e -> {
+                if (gen != orderItemsLoadGeneration.get()) {
+                    return;
+                }
+                Order still = tblOrders.getSelectionModel().getSelectedItem();
+                if (still == null || !orderId.equals(still.getOrderId())) {
+                    return;
+                }
                 tblOrderItems.getItems().clear();
-            }
+                Throwable t = itemsTask.getException();
+                LogData.handleException("LOAD_ORDER_ITEMS", new RuntimeException(t));
+                ErrorHandler.showErrorDialog(
+                        "API Error",
+                        "Could not load order line items.",
+                        t);
+            });
+            new Thread(itemsTask, "order-items-" + orderId).start();
         });
     }
 
@@ -217,7 +275,7 @@ public class OrderManagementController {
                     || contains(order.getOrderMethod(), q)
                     || contains(order.getOrderStatus(), q)
                     || contains(order.getAddressDisplay(), q)
-                    || String.valueOf(order.getOrderId()).contains(q)
+                    || contains(order.getOrderNumber(), q)
                     || String.format("%.2f", order.getOrderTotal()).contains(q);
         });
 
@@ -231,6 +289,7 @@ public class OrderManagementController {
     private void setupTab2() {
         // Method ComboBox
         cboNewMethod.setItems(FXCollections.observableArrayList("Pickup", "Delivery", "Dine-in"));
+        cboNewMethod.valueProperty().addListener((obs, o, n) -> recalculateTotals());
 
         // Spinner for quantity (1-99)
         spnQuantity.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 99, 1));
@@ -278,63 +337,176 @@ public class OrderManagementController {
             }
         });
 
-        // Discount field -> validate input and recalculate total
+        IntegerSpinnerValueFactory pctFactory =
+                new IntegerSpinnerValueFactory(0, (int) MAX_STAFF_DISCOUNT_PERCENT, 0);
+        spnDiscountPercent.setValueFactory(pctFactory);
+        spnDiscountPercent.setEditable(true);
+        pctFactory.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (suppressDiscountSync) {
+                return;
+            }
+            refreshDollarDiscountFromPercentOnly();
+        });
+
+        // Discount $ field (sync % spinner when user types dollars)
         txtDiscount.textProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null && !newVal.matches("\\d*\\.?\\d{0,2}")) {
                 txtDiscount.setText(oldVal);
             } else {
+                if (!suppressDiscountSync) {
+                    syncSpinnerFromDollarField();
+                }
                 recalculateTotals();
             }
         });
 
         // Load ComboBox data
         AddressInputHelper.configureEditableAddressCombo(cboNewAddress);
-        loadTab2Combos();
-        loadCatalog();
+        configureNewOrderCustomerCombo();
+        refreshDollarDiscountFromPercentOnly();
     }
 
-    private void loadTab2Combos() {
-        try {
-            cboNewCustomer.setItems(FXCollections.observableArrayList(ReferenceApi.loadCustomers()));
-            cboNewBakery.setItems(FXCollections.observableArrayList(ReferenceApi.loadBakeries()));
-            AddressInputHelper.setAddressItems(cboNewAddress, ReferenceApi.loadAddresses());
-        } catch (Exception e) {
-            LogData.handleException("LOAD_ORDER_COMBOS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load dropdown lists.", e.getMessage());
-        }
+    /** Show customer name only in the New Order picker (never the internal customer UUID). */
+    private void configureNewOrderCustomerCombo() {
+        Callback<ListView<CustomerOption>, ListCell<CustomerOption>> cellFactory =
+                lv -> new ListCell<>() {
+                    @Override
+                    protected void updateItem(CustomerOption item, boolean empty) {
+                        super.updateItem(item, empty);
+                        setText(empty || item == null ? null : item.getFullName());
+                    }
+                };
+        cboNewCustomer.setCellFactory(cellFactory);
+        cboNewCustomer.setButtonCell(cellFactory.call(null));
     }
 
-    private void loadCatalog() {
-        try {
-            catalogMaster.clear();
-            catalogMaster.addAll(ReferenceApi.loadProducts());
-        } catch (Exception e) {
-            LogData.handleException("LOAD_PRODUCT_CATALOG", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load product catalog.", e.getMessage());
-        }
+    private record Tab2References(
+            List<CustomerOption> customers,
+            List<BakeryOption> bakeries,
+            List<AddressOption> addresses,
+            List<Product> products
+    ) {}
+
+    private Tab2References fetchTab2References() throws Exception {
+        return new Tab2References(
+                ReferenceApi.loadCustomers(),
+                ReferenceApi.loadBakeries(),
+                ReferenceApi.loadAddresses(),
+                ReferenceApi.loadProducts()
+        );
+    }
+
+    private void applyTab2References(Tab2References d) {
+        cboNewCustomer.setItems(FXCollections.observableArrayList(d.customers()));
+        cboNewBakery.setItems(FXCollections.observableArrayList(d.bakeries()));
+        AddressInputHelper.setAddressItems(cboNewAddress, d.addresses());
+        catalogMaster.clear();
+        catalogMaster.addAll(d.products());
+    }
+
+    private void loadTab2ReferencesAsync() {
+        Task<Tab2References> task = new Task<>() {
+            @Override
+            protected Tab2References call() throws Exception {
+                return fetchTab2References();
+            }
+        };
+        task.setOnSucceeded(e -> applyTab2References(task.getValue()));
+        task.setOnFailed(e -> {
+            Throwable t = task.getException();
+            LogData.handleException("LOAD_ORDER_TAB2_REF", new RuntimeException(t));
+            ErrorHandler.showErrorDialog(
+                    "API Error",
+                    "Could not load new-order lists or catalog.",
+                    t);
+        });
+        new Thread(task, "orders-tab2-ref").start();
+    }
+
+    /**
+     * Used after creating an address from typed text so the new row appears before placing the order.
+     */
+    private void reloadTab2ReferencesSync() throws Exception {
+        applyTab2References(fetchTab2References());
     }
 
     // ════════════════════════════════════════════════════════════
     // TAB 1 Actions
     // ════════════════════════════════════════════════════════════
 
-    private void loadOrderData() {
-        try {
+    private record OrdersAndTab2(List<Order> orders, Tab2References tab2) {}
+
+    private void loadOrderDataAsync() {
+        lblOrderStatus.setText("Loading orders…");
+        if (btnRefreshOrders != null) {
+            btnRefreshOrders.setDisable(true);
+        }
+        Task<List<Order>> task = new Task<>() {
+            @Override
+            protected List<Order> call() throws Exception {
+                return OrderApi.listOrders();
+            }
+        };
+        task.setOnSucceeded(e -> {
+            if (btnRefreshOrders != null) {
+                btnRefreshOrders.setDisable(false);
+            }
             orderMaster.clear();
-            orderMaster.addAll(OrderApi.listOrders());
+            orderMaster.addAll(task.getValue());
             lblOrderStatus.setText(orderMaster.size() + " order(s) loaded");
             LogData.logAction("READ", "Order");
-        } catch (Exception e) {
-            LogData.handleException("READ_ORDERS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load orders.", e.getMessage());
-        }
+        });
+        task.setOnFailed(e -> {
+            if (btnRefreshOrders != null) {
+                btnRefreshOrders.setDisable(false);
+            }
+            Throwable t = task.getException();
+            LogData.handleException("READ_ORDERS", new RuntimeException(t));
+            lblOrderStatus.setText("Could not load orders.");
+            ErrorHandler.showErrorDialog(
+                    "API Error",
+                    "Could not load orders.",
+                    t);
+        });
+        new Thread(task, "orders-list").start();
     }
 
     @FXML
     private void onRefreshOrders() {
-        loadOrderData();
-        loadTab2Combos();
-        loadCatalog();
+        lblOrderStatus.setText("Refreshing…");
+        if (btnRefreshOrders != null) {
+            btnRefreshOrders.setDisable(true);
+        }
+        Task<OrdersAndTab2> task = new Task<>() {
+            @Override
+            protected OrdersAndTab2 call() throws Exception {
+                return new OrdersAndTab2(OrderApi.listOrders(), fetchTab2References());
+            }
+        };
+        task.setOnSucceeded(e -> {
+            if (btnRefreshOrders != null) {
+                btnRefreshOrders.setDisable(false);
+            }
+            OrdersAndTab2 pack = task.getValue();
+            orderMaster.clear();
+            orderMaster.addAll(pack.orders());
+            applyTab2References(pack.tab2());
+            lblOrderStatus.setText(orderMaster.size() + " order(s) loaded");
+            LogData.logAction("READ", "Order");
+        });
+        task.setOnFailed(e -> {
+            if (btnRefreshOrders != null) {
+                btnRefreshOrders.setDisable(false);
+            }
+            Throwable t = task.getException();
+            LogData.handleException("REFRESH_ORDERS_PAGE", new RuntimeException(t));
+            lblOrderStatus.setText("Refresh failed.");
+            ErrorHandler.showErrorDialog(
+                    "API Error",
+                    "Could not refresh orders or new-order data.",
+                    t);
+        });
+        new Thread(task, "orders-refresh-all").start();
     }
 
     @FXML
@@ -360,16 +532,46 @@ public class OrderManagementController {
             return;
         }
 
-        try {
-            OrderApi.updateOrderStatus(selected.getOrderId(), newStatus);
+        String orderNumber = selected.getOrderNumber();
+        String orderId = selected.getOrderId();
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                OrderApi.updateOrderStatus(orderId, newStatus);
+                return null;
+            }
+        };
+        task.setOnSucceeded(e -> {
             LogData.logAction("UPDATE_STATUS",
-                    "Order " + selected.getOrderNumber() + ": " + currentStatus + " -> " + newStatus);
-            loadOrderData();
-            lblOrderStatus.setText("Updated " + selected.getOrderNumber() + " to " + newStatus);
-        } catch (Exception e) {
-            LogData.handleException("UPDATE_ORDER_STATUS", e);
-            ErrorHandler.showErrorDialog("Update Failed", "Could not update order status.", e.getMessage());
+                    "Order " + orderNumber + ": " + currentStatus + " -> " + newStatus);
+            loadOrderDataAsync();
+            lblOrderStatus.setText("Updated " + orderNumber + " to " + newStatus);
+        });
+        task.setOnFailed(e -> {
+            Throwable t = task.getException();
+            LogData.handleException("UPDATE_ORDER_STATUS", new RuntimeException(t));
+            ErrorHandler.showErrorDialog(
+                    "Update Failed",
+                    "Could not update order status.",
+                    t);
+        });
+        new Thread(task, "order-status-update").start();
+    }
+
+    /**
+     * Binds the status combo only to values present in {@link OrderStatus#STAFF_ASSIGNABLE_STATUSES}
+     * (e.g. Completed/Cancelled rows leave the combo cleared).
+     */
+    private static String resolveStaffAssignableComboValue(String rowStatus) {
+        if (rowStatus == null || rowStatus.isBlank()) {
+            return null;
         }
+        for (String allowed : OrderStatus.STAFF_ASSIGNABLE_STATUSES) {
+            if (allowed.equalsIgnoreCase(rowStatus)) {
+                return allowed;
+            }
+        }
+        return null;
     }
 
     private boolean isValidStatusTransition(String current, String next) {
@@ -378,6 +580,9 @@ public class OrderManagementController {
 
         // Cancelled is always allowed (from any state)
         if (OrderStatus.CANCELLED.equalsIgnoreCase(next)) return true;
+
+        // Match mobile admin: staff never PATCHes "completed" (customer / system completes the order).
+        if (OrderStatus.COMPLETED.equalsIgnoreCase(next)) return false;
 
         // Cannot transition FROM Completed or Cancelled
         if (OrderStatus.COMPLETED.equalsIgnoreCase(current) || OrderStatus.CANCELLED.equalsIgnoreCase(current)) return false;
@@ -416,7 +621,7 @@ public class OrderManagementController {
                 item.setOrderItemQuantity(newQty);
                 item.setOrderItemLineTotal(newQty * item.getOrderItemUnitPriceAtTime());
                 tblCart.refresh();
-                recalculateTotals();
+                refreshDollarDiscountFromPercentOnly();
                 return;
             }
         }
@@ -430,7 +635,7 @@ public class OrderManagementController {
         item.setOrderItemLineTotal(qty * selected.getProductBasePrice());
 
         cartItems.add(item);
-        recalculateTotals();
+        refreshDollarDiscountFromPercentOnly();
     }
 
     @FXML
@@ -442,27 +647,177 @@ public class OrderManagementController {
         }
 
         cartItems.remove(selected);
-        recalculateTotals();
+        refreshDollarDiscountFromPercentOnly();
     }
 
-    private void recalculateTotals() {
+    private double cartSubtotalRaw() {
         double subtotal = 0;
         for (OrderItem item : cartItems) {
             subtotal += item.getOrderItemLineTotal();
         }
+        return subtotal;
+    }
 
+    /**
+     * Sets the dollar discount from the current % spinner and cart subtotal (max {@value #MAX_STAFF_DISCOUNT_PERCENT}%),
+     * then refreshes tax/total labels.
+     */
+    private void refreshDollarDiscountFromPercentOnly() {
+        if (spnDiscountPercent == null || txtDiscount == null) {
+            recalculateTotals();
+            return;
+        }
+        suppressDiscountSync = true;
+        try {
+            int pct = spnDiscountPercent.getValue();
+            BigDecimal sub = BigDecimal.valueOf(cartSubtotalRaw()).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal dollars = sub.multiply(BigDecimal.valueOf(pct))
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            txtDiscount.setText(String.format("%.2f", dollars.doubleValue()));
+        } finally {
+            suppressDiscountSync = false;
+        }
+        recalculateTotals();
+    }
+
+    /** Keeps the % spinner in range when the user edits the dollar discount field. */
+    private void syncSpinnerFromDollarField() {
+        if (spnDiscountPercent == null) {
+            return;
+        }
+        double sub = cartSubtotalRaw();
+        double disc = parseDiscountFieldRaw();
+        int pct;
+        if (sub <= 1e-9) {
+            pct = 0;
+        } else {
+            pct = (int) Math.round(disc / sub * 100.0);
+            if (pct < 0) {
+                pct = 0;
+            }
+            if (pct > (int) MAX_STAFF_DISCOUNT_PERCENT) {
+                pct = (int) MAX_STAFF_DISCOUNT_PERCENT;
+            }
+        }
+        IntegerSpinnerValueFactory f = (IntegerSpinnerValueFactory) spnDiscountPercent.getValueFactory();
+        if (f.getValue() != pct) {
+            suppressDiscountSync = true;
+            try {
+                f.setValue(pct);
+            } finally {
+                suppressDiscountSync = false;
+            }
+        }
+    }
+
+    private void recalculateTotals() {
+        NewOrderEstimate e = estimateNewOrderCheckout();
+        lblSubtotal.setText(String.format("$%.2f", e.subtotal));
+        lblTax.setText(String.format("$%.2f", e.tax));
+
+        boolean isDelivery = cboNewMethod.getValue() != null
+                && "Delivery".equalsIgnoreCase(cboNewMethod.getValue());
+        if (!isDelivery) {
+            lblDelivery.setText("—");
+        } else if (e.deliveryFee <= 0.001) {
+            lblDelivery.setText("$0.00 (free over $50)");
+        } else {
+            lblDelivery.setText(String.format("$%.2f", e.deliveryFee));
+        }
+
+        lblTotal.setText(String.format("$%.2f", e.grandTotal));
+
+        updateDiscountPercentHint(e.subtotal);
+    }
+
+    private void updateDiscountPercentHint(double subtotal) {
+        if (lblDiscountCapHint == null) {
+            return;
+        }
+        if (subtotal <= 0.001) {
+            lblDiscountCapHint.setText("");
+            lblDiscountCapHint.setManaged(false);
+            lblDiscountCapHint.setVisible(false);
+            return;
+        }
+        lblDiscountCapHint.setManaged(true);
+        lblDiscountCapHint.setVisible(true);
+        double raw = parseDiscountFieldRaw();
+        double maxD = subtotal * (MAX_STAFF_DISCOUNT_PERCENT / 100.0);
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Max %.0f%% off (≈ $%.2f)", MAX_STAFF_DISCOUNT_PERCENT, maxD));
+        if (raw > 0.001) {
+            sb.append(String.format(" · entered ≈ %.1f%% off subtotal", raw / subtotal * 100.0));
+        }
+        lblDiscountCapHint.setText(sb.toString());
+        if (raw > maxD + 0.001) {
+            lblDiscountCapHint.setStyle("-fx-font-size: 11px; -fx-text-fill: #B85C4C;");
+        } else {
+            lblDiscountCapHint.setStyle("-fx-font-size: 11px; -fx-text-fill: #8A8178;");
+        }
+    }
+
+    private static double parseDiscountFieldRaw(TextField field) {
+        if (field == null || field.getText() == null) {
+            return 0;
+        }
+        try {
+            double d = Double.parseDouble(field.getText().trim());
+            return d < 0 ? 0 : d;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private double parseDiscountFieldRaw() {
+        return parseDiscountFieldRaw(txtDiscount);
+    }
+
+    /**
+     * Mirrors backend staff order: list subtotal, manual discount capped at subtotal, tax 5% on net,
+     * delivery $7 when method is Delivery and net &lt; $50 (Pickup/Dine-in → no delivery line).
+     */
+    private NewOrderEstimate estimateNewOrderCheckout() {
+        double rawSubtotal = cartSubtotalRaw();
         double discount = 0;
         try {
             discount = Double.parseDouble(txtDiscount.getText().trim());
-            if (discount < 0) discount = 0;
-        } catch (NumberFormatException ignored) {}
+            if (discount < 0) {
+                discount = 0;
+            }
+        } catch (NumberFormatException e) {
+            discount = 0;
+        }
 
-        double total = subtotal - discount;
-        if (total < 0) total = 0;
+        BigDecimal listSubtotal = BigDecimal.valueOf(rawSubtotal).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal manual = BigDecimal.valueOf(discount).setScale(2, RoundingMode.HALF_UP);
+        if (manual.compareTo(listSubtotal) > 0) {
+            manual = listSubtotal;
+        }
+        BigDecimal afterDiscount = listSubtotal.subtract(manual).max(BigDecimal.ZERO);
 
-        lblSubtotal.setText(String.format("$%.2f", subtotal));
-        lblTotal.setText(String.format("$%.2f", total));
+        boolean isDelivery = cboNewMethod.getValue() != null
+                && "Delivery".equalsIgnoreCase(cboNewMethod.getValue());
+        BigDecimal delivery = BigDecimal.ZERO;
+        if (isDelivery && afterDiscount.compareTo(DELIVERY_FREE_THRESHOLD) < 0) {
+            delivery = DELIVERY_FEE;
+        }
+
+        BigDecimal tax = afterDiscount.multiply(STAFF_CHECKOUT_TAX_PERCENT)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal grandTotal = afterDiscount.add(tax).add(delivery).setScale(2, RoundingMode.HALF_UP);
+
+        return new NewOrderEstimate(
+                listSubtotal.doubleValue(),
+                manual.doubleValue(),
+                afterDiscount.doubleValue(),
+                tax.doubleValue(),
+                delivery.doubleValue(),
+                grandTotal.doubleValue());
     }
+
+    private record NewOrderEstimate(double subtotal, double discount, double afterDiscount,
+                                    double tax, double deliveryFee, double grandTotal) {}
 
     @FXML
     private void onPlaceOrder() {
@@ -488,27 +843,17 @@ public class OrderManagementController {
             return;
         }
 
-        // Calculate totals
-        double subtotal = 0;
-        for (OrderItem item : cartItems) {
-            subtotal += item.getOrderItemLineTotal();
-        }
+        NewOrderEstimate est = estimateNewOrderCheckout();
 
-        double discount = 0;
-        try {
-            discount = Double.parseDouble(txtDiscount.getText().trim());
-            if (discount < 0) discount = 0;
-        } catch (NumberFormatException ignored) {}
-
-        // Validation: discount cannot exceed 50% of subtotal
-        double maxDiscount = subtotal * 0.50;
-        if (discount > maxDiscount) {
-            ErrorHandler.showWarning("Validation", "Discount cannot exceed 50% of the subtotal. Maximum: $"
-                    + String.format("%.2f", maxDiscount) + ".");
+        // Validation: discount cannot exceed MAX_STAFF_DISCOUNT_PERCENT of subtotal (dollar cap = same rule)
+        double maxDiscount = est.subtotal * (MAX_STAFF_DISCOUNT_PERCENT / 100.0);
+        if (est.discount > maxDiscount + 0.0001) {
+            double pctEntered = est.subtotal > 1e-9 ? (est.discount / est.subtotal) * 100.0 : 0;
+            ErrorHandler.showWarning("Validation", String.format(
+                    "Discount cannot exceed %.0f%% of the subtotal (about $%.2f max). You entered about %.1f%% ($%.2f).",
+                    MAX_STAFF_DISCOUNT_PERCENT, maxDiscount, pctEntered, est.discount));
             return;
         }
-
-        double total = subtotal - discount;
 
         // Parse scheduled date/time
         LocalDateTime scheduledDateTime = null;
@@ -541,48 +886,95 @@ public class OrderManagementController {
         try {
             address = resolveAddressSelection(false);
         } catch (IllegalArgumentException ex) {
-            ErrorHandler.showWarning("Validation", ex.getMessage());
+            String v = ErrorHandler.userFacingMessage(ex);
+            ErrorHandler.showWarning("Validation",
+                    v != null && !v.isBlank() ? v : "Check your address and order details.");
             return;
         } catch (Exception ex) {
             LogData.handleException("CREATE_ORDER_ADDRESS", ex);
-            ErrorHandler.showErrorDialog("API Error", "Could not resolve address.", ex.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not resolve address.", ex);
             return;
         }
 
         List<OrderItem> items = new ArrayList<>(cartItems);
 
+        boolean isDelivery = "Delivery".equalsIgnoreCase(method);
+        String deliveryLine = !isDelivery
+                ? "Delivery: —"
+                : (est.deliveryFee <= 0.001
+                        ? "Delivery: $0.00 (free over $50)"
+                        : String.format("Delivery: $%.2f", est.deliveryFee));
+
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirm Order");
         confirm.setHeaderText("Place order for " + customer.getFullName() + "?");
-        confirm.setContentText(items.size() + " item(s), Total: $" + String.format("%.2f", total));
+        confirm.setContentText(String.format(
+                "%d item(s)%nSubtotal $%.2f · Discount $%.2f · Tax (5%%) $%.2f%n%s%nEstimated total: $%.2f",
+                items.size(), est.subtotal, est.discount, est.tax, deliveryLine, est.grandTotal));
 
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
-        try {
-            String newOrderId = OrderApi.placeStaffOrder(
-                    customer.getCustomerId(),
-                    bakery.getBakeryId(),
-                    method,
-                    address != null ? address.getAddressId() : null,
-                    txtNewComment.getText() != null ? txtNewComment.getText().trim() : null,
-                    scheduledDateTime,
-                    discount,
-                    items
-            );
+        if (btnPlaceOrder != null) {
+            btnPlaceOrder.setDisable(true);
+        }
+        lblNewOrderStatus.setText("Placing order…");
+
+        String customerId = customer.getCustomerId();
+        int bakeryId = bakery.getBakeryId();
+        Integer addressId = address != null ? address.getAddressId() : null;
+        String comment = txtNewComment.getText() != null ? txtNewComment.getText().trim() : null;
+        final LocalDateTime scheduledForApi = scheduledDateTime;
+        final double discountForApi = est.discount;
+
+        Task<String> placeTask = new Task<>() {
+            @Override
+            protected String call() throws Exception {
+                return OrderApi.placeStaffOrder(
+                        customerId,
+                        bakeryId,
+                        method,
+                        addressId,
+                        comment,
+                        scheduledForApi,
+                        discountForApi,
+                        items
+                );
+            }
+        };
+        placeTask.setOnSucceeded(e -> {
+            if (btnPlaceOrder != null) {
+                btnPlaceOrder.setDisable(false);
+            }
+            String newOrderId = placeTask.getValue();
+            String statusRef = "placed".equals(newOrderId)
+                    ? "order placed"
+                    : "Order #" + newOrderId;
             LogData.logAction("CREATE_ORDER",
-                    "Order #" + newOrderId + " for " + customer.getFullName()
-                            + " ($" + String.format("%.2f", total) + ")");
+                    statusRef + " for " + customer.getFullName()
+                            + " (est. total $" + String.format("%.2f", est.grandTotal) + ")");
 
             clearNewOrderForm();
-            lblNewOrderStatus.setText("Order #" + newOrderId + " placed successfully!");
+            lblNewOrderStatus.setText("placed".equals(newOrderId)
+                    ? "Order placed successfully!"
+                    : "Order #" + newOrderId + " placed successfully!");
 
-            loadOrderData();
-
-        } catch (Exception e) {
-            LogData.handleException("CREATE_ORDER", e);
-            ErrorHandler.showErrorDialog("Order Failed", "Could not place order.", e.getMessage());
-        }
+            ReferenceApi.invalidateCustomersCache();
+            loadOrderDataAsync();
+        });
+        placeTask.setOnFailed(e -> {
+            if (btnPlaceOrder != null) {
+                btnPlaceOrder.setDisable(false);
+            }
+            lblNewOrderStatus.setText("");
+            Throwable t = placeTask.getException();
+            LogData.handleException("CREATE_ORDER", new RuntimeException(t));
+            ErrorHandler.showErrorDialog(
+                    "Order Failed",
+                    "Could not place order.",
+                    t);
+        });
+        new Thread(placeTask, "order-place-staff").start();
     }
 
     private void clearNewOrderForm() {
@@ -595,6 +987,14 @@ public class OrderManagementController {
         txtNewComment.clear();
         cartItems.clear();
         txtDiscount.setText("0.00");
+        if (spnDiscountPercent != null && spnDiscountPercent.getValueFactory() instanceof IntegerSpinnerValueFactory f) {
+            suppressDiscountSync = true;
+            try {
+                f.setValue(0);
+            } finally {
+                suppressDiscountSync = false;
+            }
+        }
         spnQuantity.getValueFactory().setValue(1);
         recalculateTotals();
     }
@@ -643,7 +1043,7 @@ public class OrderManagementController {
         }
 
         AddressOption resolved = ReferenceApi.createAddressFromTyped(typed);
-        loadTab2Combos();
+        reloadTab2ReferencesSync();
         AddressInputHelper.selectAddressById(cboNewAddress, resolved.getAddressId());
         return resolved;
     }

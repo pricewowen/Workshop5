@@ -71,6 +71,11 @@ public class ApiClient {
         this.jwtToken = null;
     }
 
+    /** Base URL from {@code API_URL} in {@code .env.local} (no trailing slash). */
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
     /**
      * POST with a body object serialized to JSON. No auth header (used for login).
      */

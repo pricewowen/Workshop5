@@ -4,6 +4,9 @@ import com.sait.workshop05.logging.LogData;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextArea;
 
+import java.net.ConnectException;
+import java.net.UnknownHostException;
+import java.net.http.HttpTimeoutException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -20,7 +23,7 @@ public class ErrorHandler {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
         alert.setHeaderText(null);
-        alert.setContentText(message);
+        alert.setContentText(message != null ? sanitizeApiError(message) : null);
         alert.showAndWait();
     }
 
@@ -34,6 +37,28 @@ public class ErrorHandler {
         alert.setHeaderText(header);
         alert.setContentText(content != null ? sanitizeApiError(content) : null);
         alert.showAndWait();
+    }
+
+    /**
+     * Same as {@link #showErrorDialog(String, String, String)} but derives a short, user-safe
+     * detail line from {@code cause} (HTTP codes, JSON {@code message}, SQL states, stack-trace trim).
+     */
+    public static void showErrorDialog(String title, String header, Throwable cause) {
+        if (cause == null) {
+            showErrorDialog(title, header, (String) null);
+            return;
+        }
+        showErrorDialog(title, header, friendlyMessage(cause));
+    }
+
+    /**
+     * Short detail text for inline labels or custom dialogs (no UI).
+     */
+    public static String userFacingMessage(Throwable t) {
+        if (t == null) {
+            return null;
+        }
+        return friendlyMessage(t);
     }
 
     /**
@@ -120,7 +145,10 @@ public class ErrorHandler {
         }
 
         String original = ex.getMessage();
-        return (original == null || original.isBlank()) ? "Unknown database error." : original;
+        if (original == null || original.isBlank()) {
+            return "Unknown database error.";
+        }
+        return sanitizeApiError(original);
     }
 
     /**
@@ -131,19 +159,55 @@ public class ErrorHandler {
         showErrorDialog("Error", context, friendlyMessage(e));
     }
 
-    /**
-     * Get a friendly message from any exception.
-     */
-    private static String friendlyMessage(Exception e) {
+    private static String friendlyMessage(Throwable e) {
+        if (causeChainContains(e, UnknownHostException.class) || causeChainContains(e, ConnectException.class)) {
+            return "Could not reach the server. Check your internet connection.";
+        }
+        if (causeChainContains(e, HttpTimeoutException.class)) {
+            return "The request timed out. Please try again.";
+        }
         if (e instanceof SQLException) {
             return friendlyDbMessage((SQLException) e);
         }
         String msg = e.getMessage();
-        if (msg == null) return "An unexpected error occurred.";
+        if (msg == null || msg.isBlank()) {
+            return "An unexpected error occurred.";
+        }
         return sanitizeApiError(msg);
     }
 
+    private static boolean causeChainContains(Throwable e, Class<? extends Throwable> type) {
+        Throwable t = e;
+        int depth = 0;
+        while (t != null && depth++ < 12) {
+            if (type.isInstance(t)) {
+                return true;
+            }
+            Throwable next = t.getCause();
+            if (next == t) {
+                break;
+            }
+            t = next;
+        }
+        return false;
+    }
+
     private static String sanitizeApiError(String message) {
+        if (message == null || message.isBlank()) {
+            return "Something went wrong. Please try again.";
+        }
+        message = message.trim();
+        int nl = message.indexOf('\n');
+        if (nl > 0 && (message.contains("\tat ") || message.length() > 400)) {
+            message = message.substring(0, nl).trim();
+        }
+        message = message.replaceFirst("(?i)^java\\.lang\\.runtimeexception:\\s*", "");
+        message = message.replaceFirst("(?i)^java\\.lang\\.exception:\\s*", "");
+        message = message.replaceFirst("(?i)^java\\.io\\.ioexception:\\s*", "");
+        String extracted = tryExtractJsonMessage(message);
+        if (extracted != null && !extracted.isBlank()) {
+            message = extracted;
+        }
         if (message.matches("(?s).*(failed|error): \\d{3}.*")) {
             int code = extractHttpStatusCode(message);
             if (code == 401 || code == 403) return "You do not have permission to perform this action.";
@@ -154,6 +218,42 @@ public class ErrorHandler {
         }
         if (message.length() > 200) return message.substring(0, 200) + "...";
         return message;
+    }
+
+    /**
+     * Pull a short server message out of JSON error bodies (e.g. Spring {@code {"message":"..."}}).
+     */
+    private static String tryExtractJsonMessage(String raw) {
+        int i = raw.indexOf('{');
+        if (i < 0) return null;
+        String json = raw.substring(i);
+        for (String key : new String[] {"\"message\"", "\"detail\"", "\"error\""}) {
+            int k = json.indexOf(key);
+            if (k < 0) continue;
+            int colon = json.indexOf(':', k + key.length());
+            if (colon < 0) continue;
+            int start = colon + 1;
+            while (start < json.length() && Character.isWhitespace(json.charAt(start))) {
+                start++;
+            }
+            if (start >= json.length()) continue;
+            if (json.charAt(start) == '"') {
+                StringBuilder sb = new StringBuilder();
+                for (int p = start + 1; p < json.length(); p++) {
+                    char c = json.charAt(p);
+                    if (c == '\\' && p + 1 < json.length()) {
+                        sb.append(json.charAt(p + 1));
+                        p++;
+                        continue;
+                    }
+                    if (c == '"') break;
+                    sb.append(c);
+                }
+                String s = sb.toString().trim();
+                if (!s.isEmpty()) return s;
+            }
+        }
+        return null;
     }
 
     private static int extractHttpStatusCode(String message) {

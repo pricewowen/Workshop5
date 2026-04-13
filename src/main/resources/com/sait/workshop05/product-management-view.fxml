@@ -32,7 +32,7 @@
                     <TableColumn fx:id="colDescription" text="DESCRIPTION" prefWidth="280"/>
                     <TableColumn fx:id="colBasePrice" text="PRICE" prefWidth="90"/>
                     <TableColumn fx:id="colTags" text="TAGS" prefWidth="140"/>
-                    <TableColumn fx:id="colImage" text="IMAGE" prefWidth="80"/>
+                    <TableColumn fx:id="colImage" text="IMAGE" prefWidth="100" minWidth="88"/>
                     <TableColumn fx:id="colActions" text="" prefWidth="130"/>
                 </columns>
             </TableView>

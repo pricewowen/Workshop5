@@ -39,3 +39,4 @@ build/
 
 # Environment variables (local only)
 .env.local
+Log.txt
