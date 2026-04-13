@@ -12,8 +12,11 @@ public class OrderOption {
     public String getOrderId() { return orderId; }
     public String getOrderInfo() { return orderInfo; }
 
+    /**
+     * ComboBox / list display only — never expose internal {@code orderId} (often a UUID) in the UI.
+     */
     @Override
     public String toString() {
-        return orderId + " - " + orderInfo;
+        return orderInfo != null ? orderInfo : "";
     }
 }

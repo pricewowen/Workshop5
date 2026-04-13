@@ -167,7 +167,7 @@ public class BakeryLocationsController {
             LogData.logAction("READ", "Bakeries");
         } catch (Exception e) {
             LogData.handleException("READ_BAKERIES", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load bakeries.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load bakeries.", e);
         }
     }
 
@@ -270,7 +270,9 @@ public class BakeryLocationsController {
             });
         });
 
-        ButtonType saveType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        ButtonType saveType = new ButtonType(
+                isNew ? "Create Location" : "Save Changes",
+                ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(saveType, ButtonType.CANCEL);
 
         Button saveBtn = (Button) dialog.getDialogPane().lookupButton(saveType);
@@ -323,13 +325,13 @@ public class BakeryLocationsController {
                         LogData.logAction("UPLOAD_IMAGE", "Bakery #" + savedBakeryId);
                     } catch (Exception uploadEx) {
                         LogData.handleException("UPLOAD_BAKERY_IMAGE", uploadEx);
-                        ErrorHandler.showErrorDialog("Upload Failed", "Location saved but image upload failed.", uploadEx.getMessage());
+                        ErrorHandler.showErrorDialog("Upload Failed", "Location saved but image upload failed.", uploadEx);
                     }
                 }
             } catch (Exception ex) {
                 LogData.handleException(isNew ? "CREATE_BAKERY" : "UPDATE_BAKERY", ex);
                 ErrorHandler.showErrorDialog(isNew ? "Create Failed" : "Update Failed",
-                        "Could not save location.", ex.getMessage());
+                        "Could not save location.", ex);
             }
         });
     }
@@ -383,7 +385,7 @@ public class BakeryLocationsController {
         } catch (Exception ex) {
             LogData.handleException("DELETE_BAKERY", ex);
             ErrorHandler.showErrorDialog("Delete Failed",
-                    "This bakery cannot be deleted as it may be referenced by other records.", ex.getMessage());
+                    "This bakery cannot be deleted as it may be referenced by other records.", ex);
         }
     }
 

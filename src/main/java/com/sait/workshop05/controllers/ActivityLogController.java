@@ -3,7 +3,10 @@ package com.sait.workshop05.controllers;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Log;
 import com.sait.workshop05.session.UserSession;
+import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 
 import java.io.BufferedReader;
@@ -19,30 +22,48 @@ public class ActivityLogController {
 
     @FXML
     void initialize() {
+        if (lstLogs != null) {
+            lstLogs.setPlaceholder(new Label("Loading activity log…"));
+            lstLogs.setItems(FXCollections.observableArrayList());
+        }
         UserSession session = UserSession.getInstance();
-        if(session.isAdmin()) {
-            showLogs();
-        } else if (session.isEmployee()){
-            showEmpLogs();
+        if (session.isAdmin()) {
+            loadLogsAsync(true, null);
+        } else if (session.isEmployee()) {
+            String username = session.getCurrentUser() != null
+                    ? session.getCurrentUser().getUsername()
+                    : "";
+            loadLogsAsync(false, username);
         }
     }
 
-    /**
-     * Displays logs according to logged-in user
-     */
-    public void showEmpLogs() {
-        UserSession session = UserSession.getInstance();
-        String username = session.getCurrentUser().getUsername();
-
-        ArrayList<String> listLogs = readEmpLogs(username);
-
-        // reverse logs so newest are on top
-        Collections.reverse(listLogs);
-
-        // display the logs in the ListView
-        for (String log : listLogs) {
-            lstLogs.getItems().add(log);
-        }
+    private void loadLogsAsync(boolean admin, String employeeUsername) {
+        Task<ArrayList<String>> task = new Task<>() {
+            @Override
+            protected ArrayList<String> call() {
+                ArrayList<String> lines = admin
+                        ? readLogs()
+                        : readEmpLogs(employeeUsername);
+                Collections.reverse(lines);
+                return lines;
+            }
+        };
+        task.setOnSucceeded(e -> {
+            if (lstLogs != null) {
+                lstLogs.getItems().setAll(task.getValue());
+                lstLogs.setPlaceholder(new Label("No log entries to show."));
+            }
+        });
+        task.setOnFailed(e -> {
+            if (lstLogs != null) {
+                lstLogs.getItems().clear();
+                lstLogs.setPlaceholder(new Label("Could not read activity log."));
+            }
+            Throwable t = task.getException();
+            Exception wrapped = t instanceof Exception cause ? cause : new Exception("log load failed", t);
+            LogData.handleException("GET_LOGS", wrapped);
+        });
+        Thread.ofVirtual().name("activity-log-read").start(task);
     }
 
     /**
@@ -76,21 +97,6 @@ public class ActivityLogController {
         }
 
         return logs;
-    }
-
-    /**
-     * Displays all logs
-     */
-    public void showLogs() {
-        ArrayList<String> listLogs = readLogs();
-
-        // reverse logs so newest are on top
-        Collections.reverse(listLogs);
-
-        // display the logs in the ListView
-        for (String log : listLogs) {
-            lstLogs.getItems().add(log);
-        }
     }
 
     /**

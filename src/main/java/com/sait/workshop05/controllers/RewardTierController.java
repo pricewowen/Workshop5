@@ -201,7 +201,7 @@ public class RewardTierController {
             LogData.logAction("READ", "RewardTier");
         } catch (Exception e) {
             LogData.handleException("READ_REWARD_TIERS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load reward tiers.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load reward tiers.", e);
         }
     }
 
@@ -265,7 +265,7 @@ public class RewardTierController {
 
         } catch (Exception ex) {
             LogData.handleException("CREATE_REWARD_TIER", ex);
-            ErrorHandler.showErrorDialog("Create Failed", "Could not create reward tier.", ex.getMessage());
+            ErrorHandler.showErrorDialog("Create Failed", "Could not create reward tier.", ex);
         }
     }
 
@@ -302,7 +302,7 @@ public class RewardTierController {
             lblStatus.setText("Updated tier #" + tier.getRewardTierId());
         } catch (Exception ex) {
             LogData.handleException("UPDATE_REWARD_TIER", ex);
-            ErrorHandler.showErrorDialog("Update Failed", "Could not update reward tier.", ex.getMessage());
+            ErrorHandler.showErrorDialog("Update Failed", "Could not update reward tier.", ex);
         }
     }
 
@@ -330,7 +330,7 @@ public class RewardTierController {
             lblStatus.setText("Deleted tier #" + selected.getRewardTierId());
         } catch (Exception ex) {
             LogData.handleException("DELETE_REWARD_TIER", ex);
-            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete reward tier.", ex.getMessage());
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete reward tier.", ex);
         }
     }
 

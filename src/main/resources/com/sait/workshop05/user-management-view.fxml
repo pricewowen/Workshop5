@@ -21,23 +21,28 @@
             </padding>
 
             <!-- Header -->
-            <HBox spacing="12" alignment="CENTER_LEFT">
-                <Label text="User Management" styleClass="page-title"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <Label text="Search:" style="-fx-font-size: 13px;"/>
-                <TextField fx:id="txtSearch"
-                           promptText="Search by username, email, or role"
-                           prefWidth="320"
-                           style="-fx-font-size: 13px;"/>
-                <Button text="Refresh" fx:id="btnRefresh"
-                        onAction="#onRefresh"
-                        prefWidth="90"
-                        styleClass="btn-muted"/>
-                <Button text="Add User" fx:id="btnNewUser"
-                        onAction="#onNewUser"
-                        prefWidth="100"
-                        styleClass="btn-accent"/>
-            </HBox>
+            <VBox spacing="6">
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <Label text="User Management" styleClass="page-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label text="Search:" style="-fx-font-size: 13px;"/>
+                    <TextField fx:id="txtSearch"
+                               promptText="Search username, email, role, or status"
+                               prefWidth="320"
+                               style="-fx-font-size: 13px;"/>
+                    <Button text="Refresh" fx:id="btnRefresh"
+                            onAction="#onRefresh"
+                            prefWidth="90"
+                            styleClass="btn-muted"/>
+                    <Button text="Add User" fx:id="btnNewUser"
+                            onAction="#onNewUser"
+                            prefWidth="100"
+                            styleClass="btn-accent"/>
+                </HBox>
+                <Label fx:id="lblPolicy" wrapText="true" maxWidth="920"
+                       style="-fx-text-fill: #8A8178; -fx-font-size: 12px;"
+                       text=""/>
+            </VBox>
 
             <!-- Table -->
             <TableView fx:id="tblUsers"
