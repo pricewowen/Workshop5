@@ -103,6 +103,71 @@ public final class CatalogApi {
         }
     }
 
+    /**
+     * Returns all rows from the product specials API ({@code GET /api/v1/product-specials/all}).
+     * Each entry contains full product details plus the date it is featured and its discount
+     * percentage. The internal primary key is present in the raw response but is not surfaced
+     * in the desktop UI.
+     */
+    public static List<ProductSpecialResponse> fetchProductSpecials() throws Exception {
+        HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/product-specials/all");
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("GET /api/v1/product-specials/all failed: "
+                    + res.statusCode() + " " + res.body());
+        }
+        return readList(ApiClient.getInstance().getMapper(), res.body(), ProductSpecialResponse.class);
+    }
+
+    /**
+     * Creates a new product special ({@code POST /api/v1/product-specials}).
+     * Returns the created entry with its server-assigned primary key.
+     */
+    public static ProductSpecialResponse createProductSpecial(int productId, String featuredOn,
+                                                              double discountPercent) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("productId", productId);
+        body.put("featuredOn", featuredOn);
+        body.put("discountPercent", java.math.BigDecimal.valueOf(discountPercent));
+        HttpResponse<String> res = ApiClient.getInstance().postAuthenticated("/api/v1/product-specials", body);
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("POST /api/v1/product-specials failed: "
+                    + res.statusCode() + " " + res.body());
+        }
+        return ApiClient.getInstance().getMapper().readValue(res.body(), ProductSpecialResponse.class);
+    }
+
+    /**
+     * Replaces all mutable fields on an existing product special
+     * ({@code PUT /api/v1/product-specials/{id}}).
+     */
+    public static ProductSpecialResponse updateProductSpecial(int productSpecialId, int productId,
+                                                              String featuredOn,
+                                                              double discountPercent) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("productId", productId);
+        body.put("featuredOn", featuredOn);
+        body.put("discountPercent", java.math.BigDecimal.valueOf(discountPercent));
+        HttpResponse<String> res = ApiClient.getInstance().put(
+                "/api/v1/product-specials/" + productSpecialId, body);
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("PUT /api/v1/product-specials/" + productSpecialId
+                    + " failed: " + res.statusCode() + " " + res.body());
+        }
+        return ApiClient.getInstance().getMapper().readValue(res.body(), ProductSpecialResponse.class);
+    }
+
+    /**
+     * Permanently removes a product special ({@code DELETE /api/v1/product-specials/{id}}).
+     */
+    public static void deleteProductSpecial(int productSpecialId) throws Exception {
+        HttpResponse<String> res = ApiClient.getInstance().delete(
+                "/api/v1/product-specials/" + productSpecialId);
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("DELETE /api/v1/product-specials/" + productSpecialId
+                    + " failed: " + res.statusCode() + " " + res.body());
+        }
+    }
+
     /** tag name → id for admin product form */
     public static Map<String, Integer> tagNameToIdMap() throws Exception {
         List<TagResponse> tags = fetchTags();
@@ -151,5 +216,18 @@ public final class CatalogApi {
     public static class TagResponse {
         public Integer id;
         public String name;
+    }
+
+    /** JSON shape for GET /api/v1/product-specials/all. */
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    public static class ProductSpecialResponse {
+        public Integer productSpecialId;   // present in JSON but not shown in the UI
+        public String featuredOn;
+        public java.math.BigDecimal discountPercent;
+        public Integer productId;
+        public String productName;
+        public String productDescription;
+        public java.math.BigDecimal productBasePrice;
+        public String productImageUrl;
     }
 }
