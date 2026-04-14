@@ -26,13 +26,13 @@
                 <Label text="Search:" style="-fx-font-size: 13px;"/>
                 <TextField fx:id="txtSearch"
                            promptText="Search tiers..."
-                           prefWidth="420"
+                           prefWidth="420" prefHeight="36"
                            style="-fx-font-size: 13px;"/>
                 <Button text="Refresh"
                         fx:id="btnRefresh"
                         onAction="#onRefresh"
                         prefWidth="100"
-                        styleClass="btn-muted"/>
+                        styleClass="btn-muted toolbar-action"/>
             </HBox>
 
             <!-- Main Content -->
@@ -146,26 +146,22 @@
                                     </rowConstraints>
                                     <Button text="Create" fx:id="btnCreate"
                                             onAction="#onCreate"
-                                            prefHeight="38"
-                                            styleClass="btn-accent"
+                                            styleClass="btn-muted toolbar-action"
                                             maxWidth="1.7976931348623157E308"
                                             GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
                                     <Button text="Update" fx:id="btnUpdate"
                                             onAction="#onUpdate"
-                                            prefHeight="38"
-                                            styleClass="btn-accent"
+                                            styleClass="btn-muted toolbar-action"
                                             maxWidth="1.7976931348623157E308"
                                             GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
                                     <Button text="Delete" fx:id="btnDelete"
                                             onAction="#onDelete"
-                                            prefHeight="38"
-                                            styleClass="danger-button"
+                                            styleClass="danger-button toolbar-action"
                                             maxWidth="1.7976931348623157E308"
                                             GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
                                     <Button text="Clear" fx:id="btnClear"
                                             onAction="#onClear"
-                                            prefHeight="38"
-                                            styleClass="btn-muted"
+                                            styleClass="btn-muted toolbar-action"
                                             maxWidth="1.7976931348623157E308"
                                             GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
                                 </GridPane>

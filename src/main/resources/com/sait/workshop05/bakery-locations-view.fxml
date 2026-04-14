@@ -22,6 +22,20 @@
 <AnchorPane prefHeight="800" prefWidth="1200" styleClass="page-root" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.controllers.BakeryLocationsController">
 
     <children>
+        <VBox spacing="16" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+              AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+            <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+
+            <!-- Toolbar -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="txtSearch" promptText="Search bakeries..."
+                           prefWidth="300" prefHeight="36"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
+                        styleClass="btn-muted toolbar-action"/>
+                <Button fx:id="btnNewBakery" text="New Location" onAction="#onNewBakery"
+                        styleClass="btn-accent toolbar-action"/>
+            </HBox>
 
         <VBox fillWidth="true" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
 

@@ -8,6 +8,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
@@ -62,42 +63,36 @@
                </padding>
             </VBox>
 
-            <VBox prefHeight="165.0" prefWidth="191.0">
-               <children>
-                  <Label text="Management" styleClass="sidebar-section-title">
-                     <VBox.margin>
-                        <Insets left="15.0" />
-                     </VBox.margin>
-                  </Label>
-
-                  <Button fx:id="btnProducts" mnemonicParsing="false" onAction="#onProductsClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Products">
-                     <VBox.margin>
-                        <Insets bottom="10.0" top="10.0" />
-                     </VBox.margin>
-                  </Button>
-
-                  <Button fx:id="btnCustomers" mnemonicParsing="false" onAction="#onCustomersClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Customers">
-                     <VBox.margin>
-                        <Insets bottom="10.0" />
-                     </VBox.margin>
-                  </Button>
-
-                  <Button fx:id="btnEmployees" mnemonicParsing="false" onAction="#onEmployeesClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Employees">
-                     <VBox.margin>
-                        <Insets bottom="10.0" />
-                     </VBox.margin>
-                  </Button>
-
-                  <Button fx:id="btnLocations" mnemonicParsing="false" onAction="#onLocationsClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Locations">
-                     <VBox.margin>
-                        <Insets bottom="10.0" />
-                     </VBox.margin>
-                  </Button>
-
-               </children>
-               <padding>
-                  <Insets bottom="15.0" top="15.0" />
-               </padding>
+            <!-- Nav: Management -->
+            <VBox>
+                <padding><Insets top="8" bottom="8" left="12" right="12"/></padding>
+                <Label text="MANAGEMENT" styleClass="sidebar-section-title">
+                    <VBox.margin><Insets left="8" bottom="6"/></VBox.margin>
+                </Label>
+                <Button fx:id="btnProducts" mnemonicParsing="false" onAction="#onProductsClick"
+                        prefWidth="196" styleClass="sidebar_button" text="Products">
+                    <VBox.margin><Insets bottom="2"/></VBox.margin>
+                </Button>
+                <Button fx:id="btnProductSpecials" mnemonicParsing="false" onAction="#onProductSpecialsClick"
+                        prefWidth="196" styleClass="sidebar_button" text="Product Specials">
+                    <VBox.margin><Insets bottom="2"/></VBox.margin>
+                </Button>
+                <Button fx:id="btnCustomers" mnemonicParsing="false" onAction="#onCustomersClick"
+                        prefWidth="196" styleClass="sidebar_button" text="Customers">
+                    <VBox.margin><Insets bottom="2"/></VBox.margin>
+                </Button>
+                <Button fx:id="btnEmployees" mnemonicParsing="false" onAction="#onEmployeesClick"
+                        prefWidth="196" styleClass="sidebar_button" text="Employees">
+                    <VBox.margin><Insets bottom="2"/></VBox.margin>
+                </Button>
+                <Button fx:id="btnLocations" mnemonicParsing="false" onAction="#onLocationsClick"
+                        prefWidth="196" styleClass="sidebar_button" text="Locations">
+                    <VBox.margin><Insets bottom="2"/></VBox.margin>
+                </Button>
+                <Button fx:id="btnUsers" mnemonicParsing="false" onAction="#onUsersClick"
+                        prefWidth="196" styleClass="sidebar_button" text="Users">
+                    <VBox.margin><Insets bottom="2"/></VBox.margin>
+                </Button>
             </VBox>
 
             <VBox prefHeight="203.0" prefWidth="191.0">
@@ -146,19 +141,27 @@
                </padding>
             </VBox>
 
-            <Region VBox.vgrow="ALWAYS" />
+            <Region VBox.vgrow="ALWAYS"/>
 
-            <VBox prefWidth="191.0">
-               <children>
-                  <Button id="btnLogout" fx:id="btnLogout" mnemonicParsing="false" onAction="#onLogoutClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Logout">
-                     <VBox.margin>
-                        <Insets bottom="10.0" />
-                     </VBox.margin>
-                  </Button>
-               </children>
-               <padding>
-                  <Insets bottom="15.0" top="5.0" />
-               </padding>
+            <!-- User info block -->
+            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="sidebar-user-block">
+                <StackPane minWidth="36" minHeight="36" maxWidth="36" maxHeight="36" styleClass="sidebar-user-avatar-wrap">
+                    <ImageView fx:id="imgUserAvatar" fitWidth="36" fitHeight="36" pickOnBounds="true" preserveRatio="true"
+                               visible="false" managed="false"/>
+                    <Label fx:id="lblInitials" text="?" styleClass="sidebar-user-initials"/>
+                </StackPane>
+                <VBox spacing="2">
+                    <Label fx:id="lblUsername" text="User" styleClass="sidebar-user-name"/>
+                    <Label fx:id="lblRole" text="Role" styleClass="sidebar-user-role"/>
+                </VBox>
+            </HBox>
+
+            <!-- Logout -->
+            <VBox>
+                <padding><Insets top="4" bottom="12" left="12" right="12"/></padding>
+                <Button id="btnLogout" fx:id="btnLogout" mnemonicParsing="false"
+                        onAction="#onLogoutClick" prefWidth="196"
+                        styleClass="sidebar_button" text="Log out"/>
             </VBox>
 
          </children>

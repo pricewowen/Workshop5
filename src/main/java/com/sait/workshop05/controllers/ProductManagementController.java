@@ -1,21 +1,32 @@
 package com.sait.workshop05.controllers;
 
+import com.sait.workshop05.api.ApiClient;
 import com.sait.workshop05.api.CatalogApi;
 import com.sait.workshop05.api.ImageUploadApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Product;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
-import com.sait.workshop05.util.ValidationResult;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 
 import java.io.File;
@@ -35,41 +46,21 @@ public class ProductManagementController {
     @FXML private TableColumn<Product, String> colDescription;
     @FXML private TableColumn<Product, Double> colBasePrice;
     @FXML private TableColumn<Product, String> colTags;
+    @FXML private TableColumn<Product, String> colImage;
+    @FXML private TableColumn<Product, Void> colActions;
 
-    // ── Search & status ────────────────────────────────────────
+    // ── Toolbar ────────────────────────────────────────────────
     @FXML private TextField txtSearch;
     @FXML private Label lblStatus;
     @FXML private Button btnRefresh;
-
-    // ── Form fields ────────────────────────────────────────────
-    @FXML private TextField txtProductId;
-    @FXML private TextField txtProductName;
-    @FXML private TextArea txtDescription;
-    @FXML private TextField txtBasePrice;
-    @FXML private ComboBox<String> cboTag;
-
-    // ── Image picker ───────────────────────────────────────────
-    @FXML private Label lblImageFile;
-
-    // ── Tag assignment ─────────────────────────────────────────
-    @FXML private ListView<String> lstAssignedTags;
-    @FXML private Button btnAddTag;
-    @FXML private Button btnRemoveTag;
-
-    // ── CRUD buttons ───────────────────────────────────────────
-    @FXML private Button btnCreate;
-    @FXML private Button btnUpdate;
-    @FXML private Button btnDelete;
-    @FXML private Button btnClear;
+    @FXML private Button btnNewProduct;
 
     private final ObservableList<Product> master = FXCollections.observableArrayList();
     private FilteredList<Product> filtered;
 
-    // Tags currently assigned in the form
-    private final ObservableList<String> assignedTags = FXCollections.observableArrayList();
-
-    // Image file selected via the file picker (null = no file chosen)
-    private File selectedImageFile;
+    // Cached tag name→id map for dialogs
+    private Map<String, Integer> tagNameToId = Map.of();
+    private List<String> allTagNames = new ArrayList<>();
 
     // ────────────────────────────────────────────────────────────
     // Initialization
@@ -78,11 +69,9 @@ public class ProductManagementController {
     @FXML
     void initialize() {
         setupColumns();
-        setupTagOptions();
-        setupSelectionBinding();
+        setupActionsColumn();
         setupSearchFiltering();
-        lstAssignedTags.setItems(assignedTags);
-        refreshTable();
+        loadAllAsync();
     }
 
     private void setupColumns() {
@@ -92,7 +81,6 @@ public class ProductManagementController {
         colBasePrice.setCellValueFactory(new PropertyValueFactory<>("productBasePrice"));
         colTags.setCellValueFactory(new PropertyValueFactory<>("tagsDisplay"));
 
-        // Format price column to show 2 decimal places
         colBasePrice.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(Double price, boolean empty) {
@@ -101,52 +89,100 @@ public class ProductManagementController {
             }
         });
 
-        tblProducts.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-    }
+        colImage.setCellValueFactory(new PropertyValueFactory<>("imageUrl"));
+        final int thumb = 40;
+        colImage.setCellFactory(col -> new TableCell<>() {
+            private final ImageView imageView = new ImageView();
 
-    private void setupTagOptions() {
-        try {
-            List<CatalogApi.TagResponse> tags = CatalogApi.fetchTags();
-            List<String> names = tags.stream().map(t -> t.name).collect(Collectors.toList());
-            cboTag.setItems(FXCollections.observableArrayList(names));
-        } catch (Exception e) {
-            LogData.handleException("LOAD_TAG_OPTIONS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load tag options.", e.getMessage());
-        }
-    }
-
-    private void setupSelectionBinding() {
-        tblProducts.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> {
-            if (selected == null) return;
-
-            txtProductId.setText(String.valueOf(selected.getProductId()));
-            txtProductName.setText(StringUtil.nz(selected.getProductName()));
-            txtDescription.setText(StringUtil.nz(selected.getProductDescription()));
-            txtBasePrice.setText(String.format("%.2f", selected.getProductBasePrice()));
-
-            // Load assigned tags for this product
-            loadAssignedTags(selected.getProductId());
-        });
-    }
-
-    private void loadAssignedTags(int productId) {
-        try {
-            CatalogApi.ProductResponse p = CatalogApi.fetchProduct(productId);
-            Map<Integer, String> idToName = CatalogApi.fetchTags().stream()
-                    .collect(Collectors.toMap(t -> t.id, t -> t.name));
-            if (p.tagIds == null || p.tagIds.isEmpty()) {
-                assignedTags.clear();
-                return;
+            {
+                imageView.setFitWidth(thumb);
+                imageView.setFitHeight(thumb);
+                imageView.setPreserveRatio(true);
+                imageView.setSmooth(true);
             }
-            List<String> names = p.tagIds.stream()
-                    .map(idToName::get)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            assignedTags.setAll(names);
-        } catch (Exception e) {
-            LogData.handleException("LOAD_PRODUCT_TAGS", e);
-            assignedTags.clear();
-        }
+
+            @Override
+            protected void updateItem(String url, boolean empty) {
+                super.updateItem(url, empty);
+                setText(null);
+                setAlignment(Pos.CENTER_LEFT);
+                imageView.setImage(null);
+                if (empty) {
+                    setGraphic(null);
+                    return;
+                }
+                if (url == null || url.isBlank()) {
+                    Label none = new Label("No image");
+                    none.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 11px;");
+                    setGraphic(none);
+                    return;
+                }
+                String resolved = resolveProductImageUrl(url);
+                Label pending = new Label("…");
+                pending.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 12px;");
+                setGraphic(pending);
+
+                Image img = new Image(resolved, thumb, thumb, true, true, true);
+                Runnable apply = () -> {
+                    if (!url.equals(getItem())) {
+                        return;
+                    }
+                    if (img.isError()) {
+                        Label err = new Label("Can't load");
+                        err.setStyle("-fx-text-fill: #B85C4C; -fx-font-size: 10px; -fx-wrap-text: true;");
+                        err.setMaxWidth(thumb + 24);
+                        setGraphic(err);
+                    } else {
+                        imageView.setImage(img);
+                        setGraphic(imageView);
+                    }
+                };
+                if (img.getProgress() >= 1.0) {
+                    Platform.runLater(apply);
+                } else {
+                    img.progressProperty().addListener((obs, o, n) -> {
+                        if (n != null && n.doubleValue() >= 1.0) {
+                            Platform.runLater(apply);
+                        }
+                    });
+                    img.errorProperty().addListener((obs, o, isErr) -> {
+                        if (Boolean.TRUE.equals(isErr)) {
+                            Platform.runLater(apply);
+                        }
+                    });
+                }
+            }
+        });
+
+        tblProducts.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tblProducts.setFixedCellSize(52);
+    }
+
+    private void setupActionsColumn() {
+        colActions.setCellFactory(col -> new TableCell<>() {
+            private final Button editBtn = new Button("Edit");
+            private final Button deleteBtn = new Button("Delete");
+            private final HBox box = new HBox(6, editBtn, deleteBtn);
+
+            {
+                editBtn.getStyleClass().add("btn-icon-edit");
+                deleteBtn.getStyleClass().add("btn-icon-delete");
+                editBtn.setOnAction(e -> {
+                    Product p = getTableView().getItems().get(getIndex());
+                    showProductDialog(p);
+                });
+                deleteBtn.setOnAction(e -> {
+                    Product p = getTableView().getItems().get(getIndex());
+                    handleDeleteProduct(p);
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : box);
+            }
+        });
     }
 
     private void setupSearchFiltering() {
@@ -154,17 +190,14 @@ public class ProductManagementController {
 
         txtSearch.textProperty().addListener((obs, oldText, newText) -> {
             String q = (newText == null) ? "" : newText.trim().toLowerCase();
-
             filtered.setPredicate(prod -> {
                 if (q.isEmpty()) return true;
-
                 return StringUtil.containsIgnoreCase(prod.getProductName(), q)
                         || StringUtil.containsIgnoreCase(prod.getProductDescription(), q)
                         || StringUtil.containsIgnoreCase(prod.getTagsDisplay(), q)
                         || String.valueOf(prod.getProductId()).contains(q)
                         || String.format("%.2f", prod.getProductBasePrice()).contains(q);
             });
-
             lblStatus.setText(filtered.size() + " product(s) shown");
         });
 
@@ -174,310 +207,377 @@ public class ProductManagementController {
     }
 
     // ────────────────────────────────────────────────────────────
-    // Refresh
+    // Async data loading
     // ────────────────────────────────────────────────────────────
 
-    private void refreshTable() {
-        try {
-            List<CatalogApi.ProductResponse> rows = CatalogApi.fetchProducts(null, null);
-            Map<Integer, String> idToName = CatalogApi.fetchTags().stream()
-                    .collect(Collectors.toMap(t -> t.id, t -> t.name));
+    /**
+     * Fetches tags and products together in one background task.
+     * Replaces the old loadTagOptions() + refreshTable() pair that fetched tags
+     * twice (once each) and blocked the FX thread.
+     */
+    private void loadAllAsync() {
+        lblStatus.setText("Loading...");
+        Task<ProductLoadData> task = new Task<>() {
+            @Override
+            protected ProductLoadData call() throws Exception {
+                List<CatalogApi.TagResponse> tags = CatalogApi.fetchTags();
+                List<CatalogApi.ProductResponse> products = CatalogApi.fetchProducts(null, null);
+                return new ProductLoadData(tags, products);
+            }
+        };
+        task.setOnSucceeded(e -> applyData(task.getValue()));
+        task.setOnFailed(e -> {
+            Throwable t = task.getException();
+            LogData.handleException("LOAD_PRODUCTS", new RuntimeException(t));
+            ErrorHandler.showErrorDialog("API Error", "Could not load products.", t);
+        });
+        new Thread(task).start();
+    }
+
+    private void applyData(ProductLoadData d) {
+        allTagNames = d.tags.stream().map(t -> t.name).collect(Collectors.toList());
+        tagNameToId = d.tags.stream().collect(Collectors.toMap(t -> t.name, t -> t.id));
+        Map<Integer, String> idToName = d.tags.stream().collect(Collectors.toMap(t -> t.id, t -> t.name));
+
+        master.clear();
+        for (CatalogApi.ProductResponse p : d.products) {
+            master.add(toProduct(p, idToName));
+        }
+        lblStatus.setText(master.size() + " product(s) loaded");
+        LogData.logAction("READ", "Product");
+    }
+
+    /**
+     * Re-fetches only the product list after a mutation, reusing the cached
+     * tagNameToId map to avoid an extra tags API call.
+     */
+    private void refreshProductsOnlyAsync(Runnable afterRefresh) {
+        Task<List<CatalogApi.ProductResponse>> task = new Task<>() {
+            @Override
+            protected List<CatalogApi.ProductResponse> call() throws Exception {
+                return CatalogApi.fetchProducts(null, null);
+            }
+        };
+        task.setOnSucceeded(e -> {
+            Map<Integer, String> idToName = tagNameToId.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
             master.clear();
-            for (CatalogApi.ProductResponse p : rows) {
+            for (CatalogApi.ProductResponse p : task.getValue()) {
                 master.add(toProduct(p, idToName));
             }
             lblStatus.setText(master.size() + " product(s) loaded");
             LogData.logAction("READ", "Product");
-        } catch (Exception e) {
-            LogData.handleException("READ_PRODUCTS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load products.", e.getMessage());
-        }
+            if (afterRefresh != null) afterRefresh.run();
+        });
+        task.setOnFailed(e -> {
+            Throwable t = task.getException();
+            LogData.handleException("READ_PRODUCTS", new RuntimeException(t));
+            ErrorHandler.showErrorDialog("API Error", "Could not load products.", t);
+        });
+        new Thread(task).start();
     }
 
     private Product toProduct(CatalogApi.ProductResponse p, Map<Integer, String> idToName) {
         Product pr = new Product();
-        if (p.id != null) {
-            pr.setProductId(p.id);
-        }
+        if (p.id != null) pr.setProductId(p.id);
         pr.setProductName(p.name != null ? p.name : "");
         pr.setProductDescription(p.description != null ? p.description : "");
         pr.setProductBasePrice(p.basePrice != null ? p.basePrice.doubleValue() : 0);
         if (p.tagIds != null && !p.tagIds.isEmpty()) {
-            String disp = p.tagIds.stream()
-                    .map(idToName::get)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.joining(", "));
-            pr.setTagsDisplay(disp);
+            pr.setTagsDisplay(p.tagIds.stream().map(idToName::get).filter(Objects::nonNull).collect(Collectors.joining(", ")));
         } else {
             pr.setTagsDisplay("");
         }
+        pr.setImageUrl(p.imageUrl);
         return pr;
     }
 
     @FXML
     private void onRefresh() {
-        setupTagOptions();
-        refreshTable();
+        loadAllAsync();
     }
 
     // ────────────────────────────────────────────────────────────
-    // Image picker
+    // Create / Edit Dialog
     // ────────────────────────────────────────────────────────────
 
     @FXML
-    private void onBrowseImage() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Select Product Image");
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Image files (JPG, PNG)", "*.jpg", "*.jpeg", "*.png"));
-        File file = chooser.showOpenDialog(lblImageFile.getScene().getWindow());
-        if (file != null) {
-            selectedImageFile = file;
-            lblImageFile.setText(file.getName());
-        }
+    private void onNewProduct() {
+        showProductDialog(null);
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Tag management (Add / Remove in form)
-    // ────────────────────────────────────────────────────────────
+    private void showProductDialog(Product existing) {
+        boolean isNew = existing == null;
 
-    @FXML
-    private void onAddTag() {
-        String selectedTag = cboTag.getValue();
-        if (selectedTag == null || selectedTag.isBlank()) {
-            ErrorHandler.showWarning("Tag", "Select a tag from the dropdown first.");
-            return;
+        // Load existing tags for edit
+        ObservableList<String> assignedTags = FXCollections.observableArrayList();
+        if (!isNew) {
+            try {
+                CatalogApi.ProductResponse p = CatalogApi.fetchProduct(existing.getProductId());
+                Map<Integer, String> idToName = tagNameToId.entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+                if (p.tagIds != null) {
+                    p.tagIds.stream().map(idToName::get).filter(Objects::nonNull).forEach(assignedTags::add);
+                }
+            } catch (Exception e) {
+                LogData.handleException("LOAD_PRODUCT_TAGS", e);
+            }
         }
-        if (assignedTags.contains(selectedTag)) {
-            ErrorHandler.showWarning("Tag", "This tag is already assigned.");
-            return;
-        }
-        assignedTags.add(selectedTag);
+
+        // Form fields
+        TextField tfName = new TextField(isNew ? "" : StringUtil.nz(existing.getProductName()));
+        TextArea taDescription = new TextArea(isNew ? "" : StringUtil.nz(existing.getProductDescription()));
+        taDescription.setPrefRowCount(3);
+        taDescription.setWrapText(true);
+        TextField tfPrice = new TextField(isNew ? "" : String.format("%.2f", existing.getProductBasePrice()));
+
+        // Tag management
+        ComboBox<String> cbTag = new ComboBox<>(FXCollections.observableArrayList(allTagNames));
+        cbTag.setMaxWidth(Double.MAX_VALUE);
+        ListView<String> lstTags = new ListView<>(assignedTags);
+        lstTags.setPrefHeight(100);
+
+        Button btnAdd = new Button("Add Tag");
+        btnAdd.getStyleClass().add("btn-muted");
+        btnAdd.setOnAction(e -> {
+            String sel = cbTag.getValue();
+            if (sel != null && !sel.isBlank() && !assignedTags.contains(sel)) assignedTags.add(sel);
+        });
+
+        Button btnRemove = new Button("Remove Selected");
+        btnRemove.getStyleClass().add("btn-muted");
+        btnRemove.setOnAction(e -> {
+            String sel = lstTags.getSelectionModel().getSelectedItem();
+            if (sel != null) assignedTags.remove(sel);
+        });
+
+        HBox tagControls = new HBox(6, cbTag, btnAdd, btnRemove);
+        HBox.setHgrow(cbTag, Priority.ALWAYS);
+
+        // Image picker
+        File[] selectedImageFile = {null};
+        boolean existingHasImage = !isNew && existing.hasImage();
+        String currentImageText = existingHasImage
+                ? "Current: " + imageFilename(existing.getImageUrl())
+                : "No image";
+        Label lblImage = new Label(isNew ? "No file selected" : currentImageText);
+        lblImage.setStyle(existingHasImage
+                ? "-fx-text-fill: #3A7A3A; -fx-font-size: 12px;"
+                : "-fx-text-fill: #888; -fx-font-size: 12px;");
+        Button btnBrowse = new Button("Browse Image...");
+        btnBrowse.getStyleClass().add("btn-muted");
+        HBox imageRow = new HBox(8, btnBrowse, lblImage);
+        imageRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        Label lblError = new Label();
+        lblError.setStyle("-fx-text-fill: #B85C4C; -fx-font-size: 12px;");
+        lblError.setVisible(false);
+        lblError.setManaged(false);
+
+        // Build layout
+        GridPane grid = buildFormGrid();
+        int row = 0;
+        addRow(grid, row++, "Product Name *", tfName);
+        addRow(grid, row++, "Description *", taDescription);
+        addRow(grid, row++, "Base Price *", tfPrice);
+
+        Label tagsLabel = new Label("Tags");
+        tagsLabel.getStyleClass().add("form-label");
+        VBox tagsBox = new VBox(6, tagControls, lstTags);
+        grid.add(tagsLabel, 0, row);
+        grid.add(tagsBox, 1, row);
+        row++;
+
+        Label imgLabel = new Label("Image");
+        imgLabel.getStyleClass().add("form-label");
+        grid.add(imgLabel, 0, row);
+        grid.add(imageRow, 1, row);
+
+        VBox content = new VBox(12, grid, lblError);
+        content.setPadding(new Insets(20, 24, 8, 24));
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle(isNew ? "New Product" : "Edit Product");
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefWidth(520);
+        dialog.getDialogPane().getStylesheets().add(
+                getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
+        dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
+        dialog.setResizable(true);
+
+        // Wire image browse after dialog is shown (needs window reference)
+        dialog.getDialogPane().sceneProperty().addListener((obs, old, scene) -> {
+            if (scene == null) return;
+            btnBrowse.setOnAction(e -> {
+                FileChooser chooser = new FileChooser();
+                chooser.setTitle("Select Product Image");
+                chooser.getExtensionFilters().add(
+                        new FileChooser.ExtensionFilter("Image files (JPG, PNG)", "*.jpg", "*.jpeg", "*.png"));
+                File file = chooser.showOpenDialog(scene.getWindow());
+                if (file != null) {
+                    selectedImageFile[0] = file;
+                    lblImage.setText(file.getName());
+                    lblImage.setStyle("-fx-text-fill: #2C6AA0; -fx-font-size: 12px;");
+                }
+            });
+        });
+
+        ButtonType saveType = new ButtonType(
+                isNew ? "Create Product" : "Save Changes",
+                ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveType, ButtonType.CANCEL);
+
+        Button saveBtn = (Button) dialog.getDialogPane().lookupButton(saveType);
+        saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            String err = validateDialog(tfName, taDescription, tfPrice);
+            if (err != null) {
+                lblError.setText(err);
+                lblError.setVisible(true);
+                lblError.setManaged(true);
+                event.consume();
+            }
+        });
+
+        dialog.showAndWait().ifPresent(result -> {
+            if (result.getButtonData() != ButtonBar.ButtonData.OK_DONE) return;
+
+            String name = tfName.getText().trim();
+            String desc = taDescription.getText().trim();
+            double price = Double.parseDouble(tfPrice.getText().trim());
+            List<Integer> tagIds = assignedTags.stream()
+                    .map(tagNameToId::get).filter(Objects::nonNull).collect(Collectors.toList());
+
+            try {
+                int productId;
+                if (isNew) {
+                    CatalogApi.ProductResponse created = CatalogApi.createProduct(name, desc, price, tagIds, "");
+                    LogData.logAction("CREATE", "Product");
+                    productId = created.id != null ? created.id : -1;
+                } else {
+                    CatalogApi.updateProduct(existing.getProductId(), name, desc, price, tagIds, "");
+                    LogData.logAction("UPDATE", "Product");
+                    productId = existing.getProductId();
+                }
+
+                final int finalProductId = productId;
+                final boolean uploadImageAfter = selectedImageFile[0] != null && finalProductId > 0;
+
+                refreshProductsOnlyAsync(() -> {
+                    if (finalProductId > 0) {
+                        selectProductById(finalProductId);
+                    }
+                    lblStatus.setText((isNew ? "Created" : "Updated") + " product #" + finalProductId);
+                    if (!uploadImageAfter) {
+                        String title = isNew ? "Product created" : "Product updated";
+                        String msg;
+                        if (isNew) {
+                            msg = finalProductId > 0
+                                    ? "\"" + name + "\" was saved as product #" + finalProductId + "."
+                                    : "\"" + name + "\" was created.";
+                        } else {
+                            msg = "\"" + name + "\" was updated successfully.";
+                        }
+                        ErrorHandler.showInfo(title, msg);
+                    }
+                });
+
+                if (uploadImageAfter) {
+                    File imageFile = selectedImageFile[0];
+                    try {
+                        ImageUploadApi.uploadProductImage(finalProductId, imageFile);
+                        LogData.logAction("UPLOAD_IMAGE", "Product #" + finalProductId);
+                        refreshProductsOnlyAsync(() -> {
+                            selectProductById(finalProductId);
+                            lblStatus.setText((isNew ? "Created" : "Updated") + " product #" + finalProductId + " — image uploaded.");
+                            String title = isNew ? "Product created" : "Product updated";
+                            ErrorHandler.showInfo(title, "\"" + name + "\" was saved and the image was uploaded.");
+                        });
+                    } catch (Exception uploadEx) {
+                        LogData.handleException("UPLOAD_PRODUCT_IMAGE", uploadEx);
+                        ErrorHandler.showErrorDialog("Upload Failed", "Product saved but image upload failed.", uploadEx);
+                    }
+                }
+            } catch (Exception ex) {
+                LogData.handleException(isNew ? "CREATE_PRODUCT" : "UPDATE_PRODUCT", ex);
+                ErrorHandler.showErrorDialog(isNew ? "Create Failed" : "Update Failed",
+                        "Could not save product.", ex);
+            }
+        });
     }
 
-    @FXML
-    private void onRemoveTag() {
-        String selected = lstAssignedTags.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            ErrorHandler.showWarning("Tag", "Select a tag from the list to remove.");
-            return;
-        }
-        assignedTags.remove(selected);
-    }
-
-    // ────────────────────────────────────────────────────────────
-    // CRUD operations
-    // ────────────────────────────────────────────────────────────
-
-    @FXML
-    private void onCreate() {
-        ValidationResult vr = validateForm(false);
-        if (!vr.isOk()) {
-            LogData.logAction("VALIDATION_FAILED", "Product");
-            ErrorHandler.showWarning("Validation", vr.getMessage());
-            return;
-        }
-
-        Product p = buildFromForm(false);
-
+    private String validateDialog(TextField tfName, TextArea taDesc, TextField tfPrice) {
+        String name = StringUtil.safe(tfName.getText());
+        String desc = StringUtil.safe(taDesc.getText());
+        String price = StringUtil.safe(tfPrice.getText());
+        if (name.isBlank()) return "Product name is required.";
+        if (name.length() > 120) return "Product name must be 120 characters or less.";
+        if (desc.isBlank()) return "Description is required.";
+        if (desc.length() > 1000) return "Description must be 1000 characters or less.";
+        if (price.isBlank()) return "Base price is required.";
         try {
-            Map<String, Integer> nameToId = CatalogApi.tagNameToIdMap();
-            List<Integer> tagIds = new ArrayList<>();
-            for (String tagName : assignedTags) {
-                Integer tid = nameToId.get(tagName);
-                if (tid != null) tagIds.add(tid);
-            }
-            CatalogApi.ProductResponse created = CatalogApi.createProduct(
-                    p.getProductName(),
-                    p.getProductDescription(),
-                    p.getProductBasePrice(),
-                    tagIds,
-                    ""
-            );
-
-            LogData.logAction("CREATE", "Product");
-
-            // Upload image if one was selected
-            if (selectedImageFile != null && created.id != null) {
-                try {
-                    ImageUploadApi.uploadProductImage(created.id, selectedImageFile);
-                    LogData.logAction("UPLOAD_IMAGE", "Product #" + created.id);
-                } catch (Exception uploadEx) {
-                    LogData.handleException("UPLOAD_PRODUCT_IMAGE", uploadEx);
-                    ErrorHandler.showErrorDialog("Upload Failed", "Product created but image upload failed.", uploadEx.getMessage());
-                }
-            }
-
-            refreshTable();
-
-            if (created.id != null) {
-                selectProductById(created.id);
-                lblStatus.setText("Created product #" + created.id);
-            } else {
-                lblStatus.setText("Created product");
-            }
-
-        } catch (Exception ex) {
-            LogData.handleException("CREATE_PRODUCT", ex);
-            ErrorHandler.showErrorDialog("Create Failed", "Could not create product.", ex.getMessage());
+            double p = Double.parseDouble(price);
+            if (p < 0) return "Base price cannot be negative.";
+        } catch (NumberFormatException e) {
+            return "Base price must be a valid number (e.g., 4.99).";
         }
+        return null;
     }
 
-    @FXML
-    private void onUpdate() {
-        if (txtProductId.getText() == null || txtProductId.getText().trim().isEmpty()) {
-            ErrorHandler.showWarning("Update", "Select a product row to update.");
-            return;
-        }
+    // ────────────────────────────────────────────────────────────
+    // Delete
+    // ────────────────────────────────────────────────────────────
 
-        ValidationResult vr = validateForm(true);
-        if (!vr.isOk()) {
-            LogData.logAction("VALIDATION_FAILED", "Product");
-            ErrorHandler.showWarning("Validation", vr.getMessage());
-            return;
-        }
-
-        Product p = buildFromForm(true);
-
-        try {
-            Map<String, Integer> nameToId = CatalogApi.tagNameToIdMap();
-            List<Integer> tagIds = new ArrayList<>();
-            for (String tagName : assignedTags) {
-                Integer tid = nameToId.get(tagName);
-                if (tid != null) {
-                    tagIds.add(tid);
-                }
-            }
-            CatalogApi.updateProduct(
-                    p.getProductId(),
-                    p.getProductName(),
-                    p.getProductDescription(),
-                    p.getProductBasePrice(),
-                    tagIds,
-                    ""
-            );
-
-            LogData.logAction("UPDATE", "Product");
-
-            // Upload image if one was selected
-            if (selectedImageFile != null) {
-                try {
-                    ImageUploadApi.uploadProductImage(p.getProductId(), selectedImageFile);
-                    LogData.logAction("UPLOAD_IMAGE", "Product #" + p.getProductId());
-                } catch (Exception uploadEx) {
-                    LogData.handleException("UPLOAD_PRODUCT_IMAGE", uploadEx);
-                    ErrorHandler.showErrorDialog("Upload Failed", "Product updated but image upload failed.", uploadEx.getMessage());
-                }
-            }
-
-            refreshTable();
-            selectProductById(p.getProductId());
-            lblStatus.setText("Updated product #" + p.getProductId());
-        } catch (Exception ex) {
-            LogData.handleException("UPDATE_PRODUCT", ex);
-            ErrorHandler.showErrorDialog("Update Failed", "Could not update product.", ex.getMessage());
-        }
-    }
-
-    @FXML
-    private void onDelete() {
-        Product selected = tblProducts.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            ErrorHandler.showWarning("Delete", "Select a product row to delete.");
-            return;
-        }
-
+    private void handleDeleteProduct(Product p) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirm Delete");
-        confirm.setHeaderText("Delete product #" + selected.getProductId() + " (" + selected.getProductName() + ")?");
+        confirm.setHeaderText("Delete product #" + p.getProductId() + " (" + p.getProductName() + ")?");
         confirm.setContentText("This will also remove all tag associations. This cannot be undone.");
+        confirm.getDialogPane().getStylesheets().add(
+                getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
 
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
         try {
-            CatalogApi.deleteProduct(selected.getProductId());
+            CatalogApi.deleteProduct(p.getProductId());
             LogData.logAction("DELETE", "Product");
             Sentry.withScope(scope -> {
                 scope.setTag("action", "DELETE");
                 scope.setTag("entity", "product");
-                Sentry.captureMessage("Deleted product #" + selected.getProductId() + " (" + selected.getProductName() + ")", SentryLevel.WARNING);
+                Sentry.captureMessage("Deleted product #" + p.getProductId() + " (" + p.getProductName() + ")", SentryLevel.WARNING);
             });
-            refreshTable();
-            onClear();
-            lblStatus.setText("Deleted product #" + selected.getProductId());
+            int pid = p.getProductId();
+            refreshProductsOnlyAsync(() -> lblStatus.setText("Deleted product #" + pid));
         } catch (Exception ex) {
             LogData.handleException("DELETE_PRODUCT", ex);
-            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete product.", ex.getMessage());
+            ErrorHandler.showErrorDialog("Delete Failed", "Could not delete product.", ex);
         }
-    }
-
-    @FXML
-    private void onClear() {
-        tblProducts.getSelectionModel().clearSelection();
-        txtProductId.clear();
-        txtProductName.clear();
-        txtDescription.clear();
-        txtBasePrice.clear();
-        cboTag.setValue(null);
-        assignedTags.clear();
-        selectedImageFile = null;
-        lblImageFile.setText("No file selected");
-        lblStatus.setText("Cleared");
     }
 
     // ────────────────────────────────────────────────────────────
     // Helpers
     // ────────────────────────────────────────────────────────────
 
-    private Product buildFromForm(boolean includeId) {
-        Product p = new Product();
-
-        if (includeId) {
-            p.setProductId(Integer.parseInt(txtProductId.getText().trim()));
-        }
-
-        p.setProductName(txtProductName.getText().trim());
-        p.setProductDescription(txtDescription.getText().trim());
-        p.setProductBasePrice(Double.parseDouble(txtBasePrice.getText().trim()));
-
-        return p;
+    private GridPane buildFormGrid() {
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(10);
+        ColumnConstraints c0 = new ColumnConstraints();
+        c0.setMinWidth(120);
+        c0.setHgrow(Priority.NEVER);
+        ColumnConstraints c1 = new ColumnConstraints();
+        c1.setHgrow(Priority.ALWAYS);
+        c1.setMaxWidth(Double.MAX_VALUE);
+        grid.getColumnConstraints().addAll(c0, c1);
+        return grid;
     }
 
-    private ValidationResult validateForm(boolean isUpdate) {
-        String name = StringUtil.safe(txtProductName.getText());
-        String description = StringUtil.safe(txtDescription.getText());
-        String priceStr = StringUtil.safe(txtBasePrice.getText());
-
-        if (isUpdate) {
-            String id = StringUtil.safe(txtProductId.getText());
-            if (id.isBlank()) return ValidationResult.fail("Product ID is missing (select a row first).");
-            try {
-                Integer.parseInt(id);
-            } catch (NumberFormatException ex) {
-                return ValidationResult.fail("Product ID is invalid.");
-            }
-        }
-
-        // Name validation
-        if (name.isBlank()) return ValidationResult.fail("Product name is required.");
-        if (name.length() > 120) return ValidationResult.fail("Product name must be 120 characters or less.");
-
-        // Description validation
-        if (description.isBlank()) return ValidationResult.fail("Product description is required.");
-        if (description.length() > 1000) return ValidationResult.fail("Description must be 1000 characters or less.");
-
-        // Price validation
-        if (priceStr.isBlank()) return ValidationResult.fail("Base price is required.");
-        double price;
-        try {
-            price = Double.parseDouble(priceStr);
-        } catch (NumberFormatException ex) {
-            return ValidationResult.fail("Base price must be a valid number (e.g., 4.99).");
-        }
-        if (price < 0) return ValidationResult.fail("Base price cannot be negative.");
-
-        return ValidationResult.ok();
+    private void addRow(GridPane grid, int row, String labelText, Control control) {
+        Label lbl = new Label(labelText);
+        lbl.getStyleClass().add("form-label");
+        control.setMaxWidth(Double.MAX_VALUE);
+        grid.add(lbl, 0, row);
+        grid.add(control, 1, row);
     }
 
     private void selectProductById(int id) {
@@ -487,6 +587,44 @@ public class ProductManagementController {
                 tblProducts.scrollTo(p);
                 return;
             }
+        }
+    }
+
+    /** Absolute URL for table thumbnails (API may return absolute or site-relative paths). */
+    private static String resolveProductImageUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return "";
+        }
+        String u = url.trim();
+        if (u.startsWith("http://") || u.startsWith("https://")) {
+            return u;
+        }
+        String base = ApiClient.getInstance().getBaseUrl();
+        if (u.startsWith("/")) {
+            return base + u;
+        }
+        return base + "/" + u;
+    }
+
+    /** Returns the filename portion of a URL, or a truncated URL if no path separator. */
+    private static String imageFilename(String url) {
+        if (url == null || url.isBlank()) return "none";
+        int slash = url.lastIndexOf('/');
+        String name = slash >= 0 ? url.substring(slash + 1) : url;
+        return name.length() > 40 ? name.substring(0, 40) + "…" : name;
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // Inner types
+    // ────────────────────────────────────────────────────────────
+
+    private static final class ProductLoadData {
+        final List<CatalogApi.TagResponse> tags;
+        final List<CatalogApi.ProductResponse> products;
+
+        ProductLoadData(List<CatalogApi.TagResponse> tags, List<CatalogApi.ProductResponse> products) {
+            this.tags = tags;
+            this.products = products;
         }
     }
 }

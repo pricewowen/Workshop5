@@ -28,6 +28,11 @@ public class UserSession {
     private String employeeProfileId;
     private List<Integer> accessibleBakeryIds;  // empty means no scope
 
+    /** From login {@code AuthResponse} — for sidebar avatar / initials. */
+    private String profilePhotoUrl;
+    private String profileFirstName;
+    private String profileLastName;
+
     private UserSession() {
         this.isAuthenticated = false;
         this.accessibleBakeryIds = new ArrayList<>();
@@ -54,6 +59,35 @@ public class UserSession {
         this.accessibleBakeryIds = new ArrayList<>();
     }
 
+    /**
+     * Stores display hints for the main UI (photo URL from object storage, employee names when present).
+     */
+    public void setProfileDisplayHints(String firstName, String lastName, String profilePhotoPath) {
+        this.profileFirstName = firstName != null ? firstName.trim() : null;
+        if (this.profileFirstName != null && this.profileFirstName.isEmpty()) {
+            this.profileFirstName = null;
+        }
+        this.profileLastName = lastName != null ? lastName.trim() : null;
+        if (this.profileLastName != null && this.profileLastName.isEmpty()) {
+            this.profileLastName = null;
+        }
+        this.profilePhotoUrl = profilePhotoPath != null && !profilePhotoPath.isBlank()
+                ? profilePhotoPath.trim()
+                : null;
+    }
+
+    public String getProfilePhotoUrl() {
+        return profilePhotoUrl;
+    }
+
+    public String getProfileFirstName() {
+        return profileFirstName;
+    }
+
+    public String getProfileLastName() {
+        return profileLastName;
+    }
+
     public void clearSession() {
         this.currentUser = null;
         this.jwtToken = null;
@@ -64,6 +98,9 @@ public class UserSession {
 
         this.employeeProfileId = null;
         this.accessibleBakeryIds = new ArrayList<>();
+        this.profilePhotoUrl = null;
+        this.profileFirstName = null;
+        this.profileLastName = null;
     }
 
     public String getJwtToken() {

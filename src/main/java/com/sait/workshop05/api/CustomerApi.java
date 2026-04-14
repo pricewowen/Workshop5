@@ -19,6 +19,8 @@ public final class CustomerApi {
     public static class CustomerRow {
         public String id;
         public String userId;
+        /** Login username for the linked account, when present. */
+        public String username;
         public Integer rewardTierId;
         public String firstName;
         public String middleInitial;
@@ -42,6 +44,15 @@ public final class CustomerApi {
         if (res.statusCode() >= 400) {
             throw new RuntimeException("PATCH admin/customers failed: " + res.statusCode() + " " + res.body());
         }
+    }
+
+    /** Admin-only: create a linked or guest customer; response body is parsed as {@link CustomerRow}. */
+    public static CustomerRow create(Map<String, Object> body) throws Exception {
+        HttpResponse<String> res = ApiClient.getInstance().postAuthenticated("/api/v1/admin/customers", body);
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("POST admin/customers failed: " + res.statusCode() + " " + res.body());
+        }
+        return ApiClient.getInstance().getMapper().readValue(res.body(), CustomerRow.class);
     }
 
     public static Map<String, Object> patchBodyForProfile(

@@ -17,8 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.sait.workshop05.models.CustomerOption;
 import com.sait.workshop05.models.Order;
 import com.sait.workshop05.models.OrderItem;
+import com.sait.workshop05.util.UiPrivacy;
 
 /**
  * Orders API: list, items, status patch, checkout (staff).
@@ -79,7 +81,83 @@ public final class OrderApi {
         for (OrderJson j : rows) {
             out.add(toOrder(j));
         }
+        enrichCustomerDisplays(out);
         return out;
+    }
+
+    /**
+     * Fills in customer names from the admin customer directory when the order list JSON omits
+     * {@code customerName} (or leaves it blank). No-op if every row already has a display name.
+     */
+    static void enrichCustomerDisplays(List<Order> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return;
+        }
+        boolean needEnrichment = false;
+        for (Order o : orders) {
+            if (!orderHasResolvedCustomerDisplay(o)) {
+                needEnrichment = true;
+                break;
+            }
+        }
+        if (!needEnrichment) {
+            return;
+        }
+        Map<String, String> nameByCustomerId;
+        try {
+            nameByCustomerId = loadCustomerDisplayNameMap();
+        } catch (Exception e) {
+            nameByCustomerId = Map.of();
+        }
+        for (Order o : orders) {
+            if (orderHasResolvedCustomerDisplay(o)) {
+                continue;
+            }
+            String id = o.getCustomerId();
+            if (id == null || id.isBlank()) {
+                o.setCustomerDisplay(UiPrivacy.customerDisplayFallback(null));
+                continue;
+            }
+            String resolved = nameByCustomerId.get(id);
+            if (resolved != null && !resolved.isBlank()) {
+                o.setCustomerDisplay(resolved);
+            } else {
+                o.setCustomerDisplay(UiPrivacy.customerDisplayFallback(id));
+            }
+        }
+    }
+
+    /**
+     * {@code true} when the label is fit to show as-is (including {@code Guest} with no customer id).
+     * {@code false} when we should try the customer directory or keep a generic fallback.
+     */
+    private static boolean orderHasResolvedCustomerDisplay(Order o) {
+        String d = o.getCustomerDisplay();
+        if (d == null || d.isBlank() || "—".equals(d)) {
+            return false;
+        }
+        String id = o.getCustomerId();
+        if (id == null || id.isBlank()) {
+            return true;
+        }
+        return !d.equals(UiPrivacy.customerDisplayFallback(id));
+    }
+
+    private static Map<String, String> loadCustomerDisplayNameMap() throws Exception {
+        List<CustomerOption> customers = ReferenceApi.loadCustomers();
+        Map<String, String> map = new HashMap<>();
+        for (CustomerOption c : customers) {
+            if (c.getCustomerId() == null || c.getCustomerId().isBlank()) {
+                continue;
+            }
+            String name = c.getFullName() != null ? c.getFullName().trim() : "";
+            if (name.isEmpty() || "(customer)".equalsIgnoreCase(name)) {
+                map.put(c.getCustomerId(), "Customer");
+            } else {
+                map.put(c.getCustomerId(), name);
+            }
+        }
+        return map;
     }
 
     public static List<OrderItem> getOrderItems(String orderId) throws Exception {
@@ -135,6 +213,7 @@ public final class OrderApi {
     public static Order toOrder(OrderJson j) {
         Order o = new Order();
         o.setOrderId(j.id);
+        o.setOrderNumber(UiPrivacy.friendlyOrderNumber(j.orderNumber, j.id));
         o.setCustomerId(j.customerId != null ? j.customerId : "");
         o.setBakeryId(j.bakeryId != null ? j.bakeryId : 0);
         o.setAddressId(j.addressId != null ? j.addressId : 0);
@@ -146,7 +225,14 @@ public final class OrderApi {
         o.setOrderTotal(j.orderTotal != null ? j.orderTotal.doubleValue() : 0);
         o.setOrderDiscount(j.orderDiscount != null ? j.orderDiscount.doubleValue() : 0);
         o.setOrderStatus(statusToDisplay(j.status));
-        o.setCustomerDisplay("");
+
+        String custName = j.customerName != null ? j.customerName.trim() : "";
+        if (!custName.isEmpty()) {
+            o.setCustomerDisplay(custName);
+        } else {
+            o.setCustomerDisplay("");
+        }
+
         o.setBakeryDisplay(j.bakeryName != null ? j.bakeryName : "");
         o.setAddressDisplay("");
         return o;
@@ -223,7 +309,12 @@ public final class OrderApi {
             throw new RuntimeException("checkout failed: " + res.statusCode() + " " + res.body());
         }
         OrderJson created = ApiClient.getInstance().getMapper().readValue(res.body(), OrderJson.class);
-        return created.id;
+        return checkoutResultLabel(created);
+    }
+
+    /** Visible order ref for success messages — never returns a raw UUID. */
+    private static String checkoutResultLabel(OrderJson created) {
+        return UiPrivacy.friendlyOrderNumber(created.orderNumber, created.id);
     }
 
     private static LocalDateTime parseDt(String s) {
