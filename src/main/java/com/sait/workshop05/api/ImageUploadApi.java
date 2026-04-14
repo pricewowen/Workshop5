@@ -29,4 +29,12 @@ public final class ImageUploadApi {
             throw new RuntimeException("Upload product image failed: " + res.statusCode() + " " + res.body());
         }
     }
+
+    public static void uploadBakeryImage(int bakeryId, File image) throws Exception {
+        HttpResponse<String> res = ApiClient.getInstance()
+                .postMultipart("/api/v1/bakeries/" + bakeryId + "/image", "image", image);
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("Upload bakery image failed: " + res.statusCode() + " " + res.body());
+        }
+    }
 }

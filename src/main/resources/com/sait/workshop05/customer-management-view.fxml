@@ -27,6 +27,8 @@
                 <Label text="Customer Management" styleClass="page-title"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
+                <TextField fx:id="txtSearch" promptText="Search customers..."
+                           prefWidth="260" styleClass="toolbar-search"/>
                 <Button fx:id="btnNewCustomer" text="New Customer" onAction="#onNewCustomer"
                         styleClass="btn-accent toolbar-action"/>
                 <Button fx:id="btnOrderHistory" text="Order History"

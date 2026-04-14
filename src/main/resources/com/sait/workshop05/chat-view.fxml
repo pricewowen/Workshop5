@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.sait.workshop05.controllers.ChatController"
+            styleClass="page-root">
+
+    <children>
+
+        <HBox spacing="0"
+              AnchorPane.topAnchor="0"
+              AnchorPane.bottomAnchor="0"
+              AnchorPane.leftAnchor="0"
+              AnchorPane.rightAnchor="0">
+
+            <!-- ── Left panel: inbox ─────────────────────────────── -->
+            <VBox prefWidth="300" minWidth="260" styleClass="chat-inbox"
+                  style="-fx-background-color: #FFFFFF; -fx-border-color: #E6DCCF; -fx-border-width: 0 1 0 0;">
+
+                <!-- Inbox header -->
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="chat-inbox-header"
+                      style="-fx-background-color: #FAF7F2; -fx-border-color: #E6DCCF; -fx-border-width: 0 0 1 0;">
+                    <padding><Insets top="12" right="12" bottom="12" left="14"/></padding>
+                    <Label text="Support Inbox" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2C1A0E;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblThreadCount" text="0 threads"
+                           style="-fx-font-size: 11px; -fx-text-fill: #8A8178;"/>
+                    <Button fx:id="btnRefreshThreads" text="↻"
+                            style="-fx-background-color: transparent; -fx-text-fill: #2C1A0E; -fx-font-size: 14px; -fx-cursor: hand;"/>
+                </HBox>
+
+                <!-- Category tabs -->
+                <FlowPane hgap="4" vgap="4" prefWrapLength="280"
+                          style="-fx-background-color: #FAF7F2; -fx-border-color: #E6DCCF; -fx-border-width: 0 0 1 0;">
+                    <padding><Insets top="8" right="10" bottom="8" left="10"/></padding>
+                    <ToggleButton fx:id="tabAll" text="All" styleClass="chat-tab"/>
+                    <ToggleButton fx:id="tabGeneral" text="General" styleClass="chat-tab"/>
+                    <ToggleButton fx:id="tabOrderIssue" text="Order Issue" styleClass="chat-tab"/>
+                    <ToggleButton fx:id="tabAccountHelp" text="Account Help" styleClass="chat-tab"/>
+                    <ToggleButton fx:id="tabFeedback" text="Feedback" styleClass="chat-tab"/>
+                    <ToggleButton fx:id="tabArchived" text="Archived" styleClass="chat-tab"/>
+                </FlowPane>
+
+                <!-- Thread list -->
+                <ListView fx:id="lstThreads" VBox.vgrow="ALWAYS"
+                          style="-fx-background-color: transparent; -fx-background-insets: 0;"/>
+            </VBox>
+
+            <!-- ── Right panel: conversation ────────────────────── -->
+            <VBox HBox.hgrow="ALWAYS"
+                  style="-fx-background-color: #FAF7F2;">
+
+                <!-- Thread header -->
+                <HBox alignment="CENTER_LEFT" spacing="12" minHeight="64"
+                      style="-fx-background-color: #FFFFFF; -fx-border-color: #E6DCCF; -fx-border-width: 0 0 1 0;">
+                    <padding><Insets top="10" right="16" bottom="10" left="20"/></padding>
+                    <VBox spacing="2">
+                        <Label fx:id="lblHeaderName" text="Select a conversation"
+                               style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2C1A0E;"/>
+                        <HBox spacing="8" alignment="CENTER_LEFT">
+                            <Label fx:id="lblHeaderCategory" text=""
+                                   style="-fx-font-size: 11px; -fx-text-fill: #8A8178;"/>
+                            <Label fx:id="lblHeaderStatus" text=""
+                                   style="-fx-font-size: 11px; -fx-text-fill: #8A9E7F; -fx-font-weight: bold;"/>
+                        </HBox>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblActionError" text=""
+                           style="-fx-font-size: 11px; -fx-text-fill: #B85C4C;"/>
+                    <Button fx:id="btnAssign" text="Assign to me"
+                            style="-fx-background-color: #8A9E7F; -fx-text-fill: white; -fx-font-size: 12px; -fx-background-radius: 8; -fx-padding: 6 12 6 12; -fx-cursor: hand;"/>
+                    <Button fx:id="btnClose" text="Close thread"
+                            style="-fx-background-color: #C4714A; -fx-text-fill: white; -fx-font-size: 12px; -fx-background-radius: 8; -fx-padding: 6 12 6 12; -fx-cursor: hand;"/>
+                </HBox>
+
+                <!-- Messages -->
+                <ScrollPane fx:id="scrollMessages" fitToWidth="true" VBox.vgrow="ALWAYS"
+                            style="-fx-background-color: transparent; -fx-background: #FAF7F2;">
+                    <content>
+                        <VBox fx:id="vboxMessages" spacing="6" alignment="TOP_LEFT"
+                              style="-fx-background-color: #FAF7F2;">
+                            <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+                        </VBox>
+                    </content>
+                </ScrollPane>
+
+                <!-- Closed banner -->
+                <Label fx:id="lblClosedBanner" text="This conversation has been ended."
+                       maxWidth="1.7976931348623157E308"
+                       alignment="CENTER" textAlignment="CENTER"
+                       visible="false" managed="false"
+                       style="-fx-background-color: rgba(196,113,74,0.12); -fx-text-fill: #C4714A; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 12 16 12 16;"/>
+
+                <!-- Composer -->
+                <HBox fx:id="composerBox" spacing="8" alignment="CENTER"
+                      style="-fx-background-color: #FFFFFF; -fx-border-color: #E6DCCF; -fx-border-width: 1 0 0 0;">
+                    <padding><Insets top="10" right="12" bottom="10" left="12"/></padding>
+                    <TextArea fx:id="txtComposer"
+                              promptText="Type a message... (Enter to send, Shift+Enter for newline)"
+                              wrapText="true"
+                              prefRowCount="2"
+                              HBox.hgrow="ALWAYS"
+                              style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-font-size: 13px;"/>
+                    <Button fx:id="btnSend" text="Send"
+                            minHeight="52"
+                            style="-fx-background-color: #2C1A0E; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 10 18 10 18; -fx-cursor: hand;"/>
+                </HBox>
+            </VBox>
+        </HBox>
+    </children>
+</AnchorPane>

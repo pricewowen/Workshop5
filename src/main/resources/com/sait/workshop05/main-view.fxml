@@ -117,7 +117,7 @@
                   </Button>
 
                   <Button fx:id="btnMessages" mnemonicParsing="false" onAction="#onMessagesClick"
-                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Messages">
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Support Chat">
                      <VBox.margin>
                         <Insets bottom="10.0" />
                      </VBox.margin>
@@ -167,34 +167,12 @@
          </children>
       </VBox>
 
-      <HBox alignment="CENTER_RIGHT" prefHeight="61.0" prefWidth="1003.0" styleClass="app-top-bar" AnchorPane.leftAnchor="191.0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
-
+      <HBox alignment="CENTER_LEFT" prefHeight="61.0" styleClass="app-top-bar" AnchorPane.leftAnchor="191.0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+         <padding>
+            <Insets left="24.0" right="24.0"/>
+         </padding>
          <children>
-
-            <VBox alignment="CENTER_RIGHT" prefHeight="57.0" prefWidth="311.0">
-               <HBox.margin>
-                  <Insets bottom="2.0" left="150.0" right="5.0" top="2.0" />
-               </HBox.margin>
-               <children>
-                  <Label fx:id="lblUsername">
-                     <font>
-                        <Font name="System Bold" size="14.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets bottom="3.0" />
-                     </VBox.margin></Label>
-                  <Label fx:id="lblRole">
-                     <VBox.margin>
-                        <Insets bottom="5.0" />
-                     </VBox.margin>
-                     <font>
-                        <Font name="System Italic" size="12.0" />
-                     </font></Label>
-               </children>
-               <padding>
-                  <Insets right="30.0" />
-               </padding>
-            </VBox>
+            <Label fx:id="lblPageTitle" styleClass="app-page-title" text="Dashboard"/>
          </children>
       </HBox>
 
