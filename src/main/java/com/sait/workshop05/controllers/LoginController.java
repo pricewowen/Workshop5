@@ -186,16 +186,20 @@ public class LoginController {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/sait/workshop05/main-view.fxml"));
         Scene scene = new Scene(loader.load());
 
-        scene.getStylesheets().add(this.getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
+        scene.getStylesheets().add(
+                this.getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm()
+        );
 
         Stage stage = (Stage) loginButton.getScene().getWindow();
         stage.setScene(scene);
         stage.setTitle("Management System");
         StageIconHelper.setAppIcon(stage);
-        stage.setWidth(1400);
-        stage.setHeight(850);
-        stage.setMinWidth(1200);
-        stage.setMinHeight(750);
-        stage.centerOnScreen();
+
+        stage.show();
+
+        // 🔥 THIS is the only behavior change
+        javafx.application.Platform.runLater(() -> {
+            stage.setMaximized(true);
+        });
     }
 }
