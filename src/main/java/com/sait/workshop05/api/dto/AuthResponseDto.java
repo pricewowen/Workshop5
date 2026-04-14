@@ -20,6 +20,8 @@ public class AuthResponseDto {
     private boolean photoApprovalPending;
     private String token;
     private String role;
+    /** Sign-in email from API when present. */
+    private String email;
 
     public AuthResponseDto() {}
 
@@ -70,5 +72,8 @@ public class AuthResponseDto {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
 }

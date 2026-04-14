@@ -8,6 +8,7 @@ import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
@@ -214,11 +215,30 @@ public class AnalyticsController {
             double primaryValue = handler.getPrimaryValue(start, end, bakerySelection, scopeBakeryIds);
             double secondaryValue = getSecondaryValue(type, start, end, bakerySelection, scopeBakeryIds);
 
+            if (type == KPIType.COMPLETION_RATE) {
+                double sum = primaryValue + secondaryValue;
+                if (sum > 1e-9) {
+                    primaryValue = primaryValue / sum * 100.0;
+                    secondaryValue = secondaryValue / sum * 100.0;
+                }
+            }
+
             kpiValueLabel.setText(formatValueForType(type, primaryValue));
-            kpiTitleLabel.setText(handler.getTitle() + " (Recognized)");
+            kpiTitleLabel.setText(primaryKpiTitle(type, handler));
 
             secondaryValueLabel.setText(formatValueForType(type, secondaryValue));
             secondaryTitleLabel.setText(getSecondaryTitle(type));
+
+            if (type == KPIType.COMPLETION_RATE) {
+                Tooltip completionSplitTip = new Tooltip(
+                        "Both values use the same orders in this date range. "
+                                + "Completed and in progress shares add to 100%.");
+                kpiValueLabel.setTooltip(completionSplitTip);
+                secondaryValueLabel.setTooltip(completionSplitTip);
+            } else {
+                kpiValueLabel.setTooltip(null);
+                secondaryValueLabel.setTooltip(null);
+            }
 
             ChartType chartType = ChartType.fromDisplayName(chartTypeComboBox.getValue());
 
@@ -227,6 +247,34 @@ public class AnalyticsController {
 
             List<DataPoint> secondaryData =
                     getSecondaryChartData(type, start, end, bakerySelection, scopeBakeryIds);
+
+            TimeSeriesGranularity chartGranularity = TimeSeriesGranularity.DAILY;
+            if (usesDateLabels(type)) {
+                long inclusiveDays = AnalyticsTimeSeriesCompressor.inclusiveDayCount(start, end);
+                chartGranularity = isCompressedView()
+                        ? TimeSeriesGranularity.forCompressedRange(inclusiveDays)
+                        : TimeSeriesGranularity.DAILY;
+                if (isCompressedView() && chartGranularity != TimeSeriesGranularity.DAILY) {
+                    primaryData = AnalyticsTimeSeriesCompressor.compress(
+                            type,
+                            true,
+                            primaryData,
+                            start,
+                            end,
+                            chartGranularity,
+                            bakerySelection
+                    );
+                    secondaryData = AnalyticsTimeSeriesCompressor.compress(
+                            type,
+                            false,
+                            secondaryData,
+                            start,
+                            end,
+                            chartGranularity,
+                            bakerySelection
+                    );
+                }
+            }
 
             if (usesDateLabels(type)) {
                 Comparator<DataPoint> byDate =
@@ -242,7 +290,8 @@ public class AnalyticsController {
                     type,
                     chartType,
                     primaryValue,
-                    secondaryValue
+                    secondaryValue,
+                    chartGranularity
             );
 
         } catch (Exception e) {
@@ -253,6 +302,13 @@ public class AnalyticsController {
             secondaryTitleLabel.setText("Failed to load KPI");
             chartContainer.getChildren().clear();
         }
+    }
+
+    private String primaryKpiTitle(KPIType type, KPIHandler handler) {
+        if (type == KPIType.COMPLETION_RATE) {
+            return "Completed";
+        }
+        return handler.getTitle() + " (Recognized)";
     }
 
     private boolean usesDateLabels(KPIType type) {
@@ -326,7 +382,7 @@ public class AnalyticsController {
         return switch (type) {
             case REVENUE_OVER_TIME, REVENUE_BY_BAKERY -> "Revenue (In Progress)";
             case AVERAGE_ORDER_VALUE -> "Avg Order Value (In Progress)";
-            case COMPLETION_RATE -> "In Progress Rate";
+            case COMPLETION_RATE -> "In progress";
             case TOP_PRODUCTS -> "Units (In Progress)";
             case SALES_BY_EMPLOYEE -> "Sales (In Progress)";
         };
@@ -348,30 +404,30 @@ public class AnalyticsController {
                              KPIType kpiType,
                              ChartType chartType,
                              double primaryValue,
-                             double secondaryValue) {
+                             double secondaryValue,
+                             TimeSeriesGranularity chartGranularity) {
 
         chartContainer.getChildren().clear();
 
         switch (chartType) {
-            case LINE -> renderLineChart(primaryData, secondaryData, kpiType);
-            case BAR -> renderBarChart(primaryData, secondaryData, kpiType);
+            case LINE -> renderLineChart(primaryData, secondaryData, kpiType, chartGranularity);
+            case BAR -> renderBarChart(primaryData, secondaryData, kpiType, chartGranularity);
             case PIE -> renderPieChart(primaryData, secondaryData, kpiType, primaryValue, secondaryValue);
         }
     }
 
     private void renderLineChart(List<DataPoint> primaryData,
                                  List<DataPoint> secondaryData,
-                                 KPIType kpiType) {
+                                 KPIType kpiType,
+                                 TimeSeriesGranularity chartGranularity) {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         LineChart<String, Number> chart = new LineChart<>(xAxis, yAxis);
 
         XYChart.Series<String, Number> recognizedSeries = new XYChart.Series<>();
-        recognizedSeries.setName("Recognized");
-
         XYChart.Series<String, Number> inProgressSeries = new XYChart.Series<>();
-        inProgressSeries.setName("In Progress");
+        applyDualSeriesNames(kpiType, recognizedSeries, inProgressSeries);
 
         List<String> orderedCategories = buildOrderedCategories(
                 primaryData,
@@ -379,24 +435,23 @@ public class AnalyticsController {
                 kpiType,
                 startDatePicker.getValue(),
                 endDatePicker.getValue(),
-                isCompressedView()
+                isCompressedView(),
+                chartGranularity
         );
 
         xAxis.setAutoRanging(false);
         xAxis.setCategories(FXCollections.observableArrayList(orderedCategories));
+        applyRotatedDateCategoryAxisLabels(kpiType, xAxis, chart);
+
+        if (kpiType == KPIType.COMPLETION_RATE) {
+            applyCompletionRateYAxis(yAxis);
+        }
 
         Map<String, Double> primaryMap = toValueMap(primaryData);
         Map<String, Double> secondaryMap = toValueMap(secondaryData);
 
-        for (String category : orderedCategories) {
-            recognizedSeries.getData().add(
-                    new XYChart.Data<>(category, primaryMap.getOrDefault(category, 0.0))
-            );
-
-            inProgressSeries.getData().add(
-                    new XYChart.Data<>(category, secondaryMap.getOrDefault(category, 0.0))
-            );
-        }
+        addCompletionAwareSeriesPoints(
+                orderedCategories, primaryMap, secondaryMap, kpiType, recognizedSeries, inProgressSeries);
 
         chart.getData().add(recognizedSeries);
         chart.getData().add(inProgressSeries);
@@ -407,17 +462,16 @@ public class AnalyticsController {
 
     private void renderBarChart(List<DataPoint> primaryData,
                                 List<DataPoint> secondaryData,
-                                KPIType kpiType) {
+                                KPIType kpiType,
+                                TimeSeriesGranularity chartGranularity) {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
 
         XYChart.Series<String, Number> recognizedSeries = new XYChart.Series<>();
-        recognizedSeries.setName("Recognized");
-
         XYChart.Series<String, Number> inProgressSeries = new XYChart.Series<>();
-        inProgressSeries.setName("In Progress");
+        applyDualSeriesNames(kpiType, recognizedSeries, inProgressSeries);
 
         List<String> orderedCategories = buildOrderedCategories(
                 primaryData,
@@ -425,24 +479,23 @@ public class AnalyticsController {
                 kpiType,
                 startDatePicker.getValue(),
                 endDatePicker.getValue(),
-                isCompressedView()
+                isCompressedView(),
+                chartGranularity
         );
 
         xAxis.setAutoRanging(false);
         xAxis.setCategories(FXCollections.observableArrayList(orderedCategories));
+        applyRotatedDateCategoryAxisLabels(kpiType, xAxis, chart);
+
+        if (kpiType == KPIType.COMPLETION_RATE) {
+            applyCompletionRateYAxis(yAxis);
+        }
 
         Map<String, Double> primaryMap = toValueMap(primaryData);
         Map<String, Double> secondaryMap = toValueMap(secondaryData);
 
-        for (String category : orderedCategories) {
-            recognizedSeries.getData().add(
-                    new XYChart.Data<>(category, primaryMap.getOrDefault(category, 0.0))
-            );
-
-            inProgressSeries.getData().add(
-                    new XYChart.Data<>(category, secondaryMap.getOrDefault(category, 0.0))
-            );
-        }
+        addCompletionAwareSeriesPoints(
+                orderedCategories, primaryMap, secondaryMap, kpiType, recognizedSeries, inProgressSeries);
 
         chart.getData().add(recognizedSeries);
         chart.getData().add(inProgressSeries);
@@ -451,15 +504,74 @@ public class AnalyticsController {
         chartContainer.getChildren().add(chart);
     }
 
+    private void applyDualSeriesNames(KPIType kpiType,
+                                      XYChart.Series<String, Number> primarySeries,
+                                      XYChart.Series<String, Number> secondarySeries) {
+        if (kpiType == KPIType.COMPLETION_RATE) {
+            primarySeries.setName("Completed");
+            secondarySeries.setName("In progress");
+        } else {
+            primarySeries.setName("Recognized");
+            secondarySeries.setName("In Progress");
+        }
+    }
+
+    private void applyCompletionRateYAxis(NumberAxis yAxis) {
+        yAxis.setAutoRanging(false);
+        yAxis.setMinorTickVisible(false);
+        yAxis.setLowerBound(0);
+        yAxis.setUpperBound(100);
+        yAxis.setTickUnit(10);
+        yAxis.setLabel("%");
+    }
+
+    private void addCompletionAwareSeriesPoints(List<String> orderedCategories,
+                                                Map<String, Double> primaryMap,
+                                                Map<String, Double> secondaryMap,
+                                                KPIType kpiType,
+                                                XYChart.Series<String, Number> primarySeries,
+                                                XYChart.Series<String, Number> secondarySeries) {
+        for (String category : orderedCategories) {
+            double primary = primaryMap.getOrDefault(category, 0.0);
+            double secondary = secondaryMap.getOrDefault(category, 0.0);
+            if (kpiType == KPIType.COMPLETION_RATE) {
+                double sum = primary + secondary;
+                if (sum > 1e-9) {
+                    primary = primary / sum * 100.0;
+                    secondary = secondary / sum * 100.0;
+                }
+            }
+            primarySeries.getData().add(new XYChart.Data<>(category, primary));
+            secondarySeries.getData().add(new XYChart.Data<>(category, secondary));
+        }
+    }
+
+    /**
+     * Tilts date category labels on the X axis (~45°) so dense daily or bucket labels stay readable
+     * in both standard (full date range) and compressed (sparse / grouped) modes.
+     */
+    private void applyRotatedDateCategoryAxisLabels(KPIType kpiType,
+                                                    CategoryAxis xAxis,
+                                                    XYChart<String, Number> chart) {
+        if (!usesDateLabels(kpiType)) {
+            return;
+        }
+        xAxis.setTickLabelRotation(-45);
+        xAxis.setTickLabelGap(6);
+        StackPane.setMargin(chart, new Insets(0, 0, 28, 0));
+    }
+
     private List<String> buildOrderedCategories(List<DataPoint> primaryData,
                                                 List<DataPoint> secondaryData,
                                                 KPIType kpiType,
                                                 LocalDate start,
                                                 LocalDate end,
-                                                boolean compressedView) {
+                                                boolean compressedView,
+                                                TimeSeriesGranularity chartGranularity) {
 
         if (usesDateLabels(kpiType)) {
-            return buildOrderedDateCategories(primaryData, secondaryData, start, end, compressedView);
+            return buildOrderedDateCategories(
+                    primaryData, secondaryData, start, end, compressedView, chartGranularity);
         }
 
         return buildOrderedCategoricalLabels(primaryData, secondaryData);
@@ -469,7 +581,8 @@ public class AnalyticsController {
                                                     List<DataPoint> secondaryData,
                                                     LocalDate start,
                                                     LocalDate end,
-                                                    boolean compressedView) {
+                                                    boolean compressedView,
+                                                    TimeSeriesGranularity chartGranularity) {
 
         if (!compressedView && start != null && end != null) {
             List<String> ordered = new ArrayList<>();
@@ -477,6 +590,18 @@ public class AnalyticsController {
             while (!current.isAfter(end)) {
                 ordered.add(current.toString());
                 current = current.plusDays(1);
+            }
+            return ordered;
+        }
+
+        if (compressedView
+                && chartGranularity != TimeSeriesGranularity.DAILY
+                && start != null
+                && end != null) {
+            List<String> ordered = new ArrayList<>();
+            for (AnalyticsTimeSeriesCompressor.DateBucket b :
+                    AnalyticsTimeSeriesCompressor.listBuckets(start, end, chartGranularity)) {
+                ordered.add(b.label().toString());
             }
             return ordered;
         }
@@ -566,20 +691,19 @@ public class AnalyticsController {
             }
 
             case COMPLETION_RATE -> {
-                double recognizedRate = primaryValue;
-                double inProgressRate = secondaryValue;
-                double grandTotal = recognizedRate + inProgressRate;
-
-                if (recognizedRate > 0) {
+                double completed = primaryValue;
+                double open = secondaryValue;
+                double sum = completed + open;
+                if (sum > 1e-9) {
+                    completed = completed / sum * 100.0;
+                    open = open / sum * 100.0;
                     chart.getData().add(new PieChart.Data(
-                            formatPieLabel("Recognized", recognizedRate, grandTotal),
-                            recognizedRate
+                            formatPieLabel("Completed", completed, 100.0),
+                            completed
                     ));
-                }
-                if (inProgressRate > 0) {
                     chart.getData().add(new PieChart.Data(
-                            formatPieLabel("In Progress", inProgressRate, grandTotal),
-                            inProgressRate
+                            formatPieLabel("In progress", open, 100.0),
+                            open
                     ));
                 }
             }

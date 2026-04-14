@@ -8,6 +8,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <AnchorPane styleClass="app-root" xmlns="http://javafx.com/javafx/25"
@@ -107,7 +108,11 @@
 
             <!-- User info block -->
             <HBox alignment="CENTER_LEFT" spacing="10" styleClass="sidebar-user-block">
-                <Label fx:id="lblInitials" text="?" styleClass="sidebar-user-initials"/>
+                <StackPane minWidth="36" minHeight="36" maxWidth="36" maxHeight="36" styleClass="sidebar-user-avatar-wrap">
+                    <ImageView fx:id="imgUserAvatar" fitWidth="36" fitHeight="36" pickOnBounds="true" preserveRatio="true"
+                               visible="false" managed="false"/>
+                    <Label fx:id="lblInitials" text="?" styleClass="sidebar-user-initials"/>
+                </StackPane>
                 <VBox spacing="2">
                     <Label fx:id="lblUsername" text="User" styleClass="sidebar-user-name"/>
                     <Label fx:id="lblRole" text="Role" styleClass="sidebar-user-role"/>

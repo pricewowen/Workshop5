@@ -9,6 +9,7 @@ import com.sait.workshop05.models.OrderItem;
 import com.sait.workshop05.util.OrderStatus;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -62,7 +63,7 @@ public class DashboardController {
     // ───────────────────────────────────────────────
 
     private void setupColumns() {
-        colOrderId.setCellValueFactory(new PropertyValueFactory<>("orderId"));
+        colOrderId.setCellValueFactory(new PropertyValueFactory<>("orderNumber"));
         colCustomer.setCellValueFactory(new PropertyValueFactory<>("customerDisplay"));
         colTotal.setCellValueFactory(new PropertyValueFactory<>("orderTotal"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("orderStatus"));
@@ -165,16 +166,34 @@ public class DashboardController {
     // ───────────────────────────────────────────────
 
     private void loadDashboard() {
-        try {
-            DashboardApi.SummaryResponse s = DashboardApi.fetchSummary();
+        lblStatus.setText("Loading dashboard…");
+        Task<DashboardApi.SummaryResponse> task = new Task<>() {
+            @Override
+            protected DashboardApi.SummaryResponse call() throws Exception {
+                return DashboardApi.fetchSummary();
+            }
+        };
+        task.setOnSucceeded(e -> applyDashboardSummary(task.getValue()));
+        task.setOnFailed(e -> {
+            Throwable t = task.getException();
+            lblTotalRevenu.setText("$0.00");
+            lblTotalOrders.setText("0");
+            lblTotalCustomers.setText("0");
+            lblActiveProducts.setText("0");
+            tbvRecentOrders.setItems(FXCollections.observableArrayList());
+            lblStatus.setText("Could not load dashboard");
+            LogData.handleException("LOAD_DASHBOARD", new RuntimeException(t));
+        });
+        Thread.ofVirtual().name("dashboard-load").start(task);
+    }
 
-            // Summary cards
+    private void applyDashboardSummary(DashboardApi.SummaryResponse s) {
+        try {
             lblTotalRevenu.setText(String.format("$%,.2f", s.totalRevenue != null ? s.totalRevenue.doubleValue() : 0));
             lblTotalOrders.setText(String.valueOf(s.totalOrders));
             lblTotalCustomers.setText(String.valueOf(s.totalCustomers));
             lblActiveProducts.setText(String.valueOf(s.totalProducts));
 
-            // Recent orders table
             orderProductsMap.clear();
             List<Order> recent = new java.util.ArrayList<>();
             if (s.recentOrders != null) {
@@ -191,15 +210,9 @@ public class DashboardController {
             }
             tbvRecentOrders.setItems(FXCollections.observableArrayList(recent));
             lblStatus.setText(recent.size() + " recent order(s)");
-
-        } catch (Exception e) {
-            lblTotalRevenu.setText("$0.00");
-            lblTotalOrders.setText("0");
-            lblTotalCustomers.setText("0");
-            lblActiveProducts.setText("0");
-            tbvRecentOrders.setItems(FXCollections.observableArrayList());
+        } catch (Exception ex) {
             lblStatus.setText("Could not load dashboard");
-            LogData.handleException("LOAD_DASHBOARD", e);
+            LogData.handleException("LOAD_DASHBOARD", ex);
         }
     }
 
@@ -231,7 +244,7 @@ public class DashboardController {
             }
         } catch (Exception e) {
             LogData.handleException("NAV_NEW_ORDER", e);
-            ErrorHandler.showErrorDialog("Navigation Error", "Could not open Order Management", e.getMessage());
+            ErrorHandler.showErrorDialog("Navigation Error", "Could not open Order Management", e);
         }
     }
 
@@ -240,7 +253,7 @@ public class DashboardController {
             List<OrderItem> items = OrderApi.getOrderItems(order.getOrderId());
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Order #").append(order.getOrderId()).append("\n");
+            sb.append("Order #").append(order.getOrderNumber()).append("\n");
             sb.append("Customer: ").append(order.getCustomerDisplay()).append("\n");
             sb.append("Bakery: ").append(order.getBakeryDisplay()).append("\n");
             sb.append("Method: ").append(order.getOrderMethod()).append("\n");
@@ -268,7 +281,7 @@ public class DashboardController {
 
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Order Details");
-            alert.setHeaderText("Order #" + order.getOrderId());
+            alert.setHeaderText("Order #" + order.getOrderNumber());
 
             TextArea textArea = new TextArea(sb.toString());
             textArea.setEditable(false);

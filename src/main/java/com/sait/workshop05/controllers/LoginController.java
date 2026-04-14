@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.User;
 import com.sait.workshop05.session.UserSession;
+import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StageIconHelper;
 import io.sentry.Sentry;
 import javafx.fxml.FXML;
@@ -25,7 +26,7 @@ import java.util.List;
 
 public class LoginController {
 
-    @FXML private TextField emailField;
+    @FXML private TextField loginIdField;
     @FXML private PasswordField passwordField;
     @FXML private TextField passwordVisible;
     @FXML private Button togglePasswordBtn;
@@ -67,17 +68,17 @@ public class LoginController {
 
     @FXML
     private void handleLogin() {
-        String email = emailField.getText().trim();
+        String principal = loginIdField.getText().trim();
         String password = getCurrentPassword();
 
-        if (email.isEmpty() || password.isEmpty()) {
-            showError("Please enter both email and password");
+        if (principal.isEmpty() || password.isEmpty()) {
+            showError("Please enter email or username and password");
             return;
         }
 
         try {
             ApiClient api = ApiClient.getInstance();
-            LoginRequestDto loginRequest = new LoginRequestDto(email, password);
+            LoginRequestDto loginRequest = LoginRequestDto.fromLoginPrincipal(principal, password);
             HttpResponse<String> response = api.post("/api/v1/auth/login", loginRequest);
 
             if (response.statusCode() == 200) {
@@ -87,12 +88,12 @@ public class LoginController {
                 String role = auth.getRole();
                 if (!role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("EMPLOYEE")) {
                     showError("This account does not have management access");
-                    LogData.logAction("LOGIN_FAILED", "Non-staff login attempt for email: " + email
+                    LogData.logAction("LOGIN_FAILED", "Non-staff login attempt for: " + principal
                             + " (role: " + role + ")");
                     Sentry.withScope(scope -> {
                         scope.setTag("action", "LOGIN_FAILED");
                         scope.setTag("reason", "insufficient_role");
-                        Sentry.captureMessage("Login failed: non-staff role for " + email, io.sentry.SentryLevel.WARNING);
+                        Sentry.captureMessage("Login failed: non-staff role for " + principal, io.sentry.SentryLevel.WARNING);
                     });
                     return;
                 }
@@ -102,12 +103,17 @@ public class LoginController {
                 // Create a User object from response to maintain compatibility with existing session
                 User user = new User();
                 user.setUsername(auth.getUsername());
-                user.setEmail(email);
+                String sessionEmail = auth.getEmail();
+                if (sessionEmail == null || sessionEmail.isBlank()) {
+                    sessionEmail = principal.contains("@") ? principal : "";
+                }
+                user.setEmail(sessionEmail);
                 user.setRole(auth.getRole());
 
                 // Store session
                 UserSession session = UserSession.getInstance();
                 session.createSession(user, auth.getToken());
+                session.setProfileDisplayHints(auth.getFirstName(), auth.getLastName(), auth.getProfilePhotoPath());
                 if (auth.getUserId() != null && !auth.getUserId().isBlank()) {
                     session.setApiUserId(auth.getUserId());
                 }
@@ -115,7 +121,7 @@ public class LoginController {
                 // Attach user identity to Sentry for all subsequent events
                 io.sentry.protocol.User sentryUser = new io.sentry.protocol.User();
                 sentryUser.setUsername(auth.getUsername());
-                sentryUser.setEmail(email);
+                sentryUser.setEmail(sessionEmail != null && !sessionEmail.isBlank() ? sessionEmail : null);
                 Sentry.setUser(sentryUser);
                 Sentry.setTag("role", auth.getRole().toLowerCase());
 
@@ -148,30 +154,30 @@ public class LoginController {
                 openMainView();
 
             } else if (response.statusCode() == 401 || response.statusCode() == 403) {
-                showError("Invalid email or password");
-                LogData.logAction("LOGIN_FAILED", "Failed login for email: " + email);
+                showError("Invalid email, username, or password");
+                LogData.logAction("LOGIN_FAILED", "Failed login for: " + principal);
                 Sentry.withScope(scope -> {
                     scope.setTag("action", "LOGIN_FAILED");
                     scope.setTag("reason", "invalid_credentials");
-                    Sentry.captureMessage("Login failed: invalid credentials for " + email, io.sentry.SentryLevel.WARNING);
+                    Sentry.captureMessage("Login failed: invalid credentials for " + principal, io.sentry.SentryLevel.WARNING);
                 });
             } else {
                 showError("Login failed (server error " + response.statusCode() + ")");
-                LogData.logAction("LOGIN_FAILED", "Server error " + response.statusCode() + " for email: " + email);
+                LogData.logAction("LOGIN_FAILED", "Server error " + response.statusCode() + " for: " + principal);
                 Sentry.withScope(scope -> {
                     scope.setTag("action", "LOGIN_FAILED");
                     scope.setTag("reason", "server_error");
                     scope.setTag("status_code", String.valueOf(response.statusCode()));
-                    Sentry.captureMessage("Login failed: server error " + response.statusCode() + " for " + email, io.sentry.SentryLevel.ERROR);
+                    Sentry.captureMessage("Login failed: server error " + response.statusCode() + " for " + principal, io.sentry.SentryLevel.ERROR);
                 });
             }
 
         } catch (Exception e) {
-            String errorMsg = "Authentication exception: " + e.getClass().getSimpleName() + " - " + e.getMessage();
-            showError("Authentication error: " + e.getMessage());
-            System.err.println("[DEBUG_LOG] " + errorMsg);
-            e.printStackTrace();
             LogData.handleException("LOGIN", e);
+            String userMsg = ErrorHandler.userFacingMessage(e);
+            showError(userMsg != null && !userMsg.isBlank()
+                    ? userMsg
+                    : "We could not sign you in. Check your connection and try again.");
         }
     }
 

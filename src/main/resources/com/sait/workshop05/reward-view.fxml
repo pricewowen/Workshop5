@@ -23,7 +23,6 @@
                         <TableView fx:id="tblRewards" prefWidth="1.0" style="-fx-font-size: 13px;" VBox.vgrow="ALWAYS">
                             <fixedCellSize>28</fixedCellSize>
                             <columns>
-                                <TableColumn fx:id="colRewardId" prefWidth="60" text="ID" />
                                 <TableColumn fx:id="colCustomer" prefWidth="200" text="Customer" />
                                 <TableColumn fx:id="colOrder" prefWidth="200" text="Order" />
                                 <TableColumn fx:id="colPoints" prefWidth="80" text="Points" />
@@ -47,21 +46,18 @@
                                         <ColumnConstraints minWidth="150" />
                                         <ColumnConstraints hgrow="ALWAYS" />
                                     </columnConstraints>
-                                    <Label style="-fx-font-size: 13px;" text="Reward ID:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                    <TextField fx:id="txtRewardId" editable="false" promptText="Auto" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                                    <Label text="Customer:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                    <ComboBox fx:id="cboCustomer" disable="true" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                    <Label style="-fx-font-size: 13px;" text="Order:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                    <ComboBox fx:id="cboOrder" disable="true" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                    <Label style="-fx-font-size: 13px;" text="Points Earned:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                                    <TextField fx:id="txtPoints" editable="false" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                    <Label style="-fx-font-size: 13px;" text="Transaction Date:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
-                                    <HBox spacing="5" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                                    <Label text="Customer:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                    <ComboBox fx:id="cboCustomer" disable="true" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                    <Label style="-fx-font-size: 13px;" text="Order:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                    <ComboBox fx:id="cboOrder" disable="true" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    <Label style="-fx-font-size: 13px;" text="Points Earned:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                    <TextField fx:id="txtPoints" editable="false" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <Label style="-fx-font-size: 13px;" text="Transaction Date:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                                    <HBox spacing="5" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="3">
                                         <DatePicker fx:id="dtpTransactionDate" disable="true" prefWidth="150" />
                                         <TextField fx:id="txtTransactionTime" editable="false" prefWidth="60" promptText="HH:MM" />
                                     </HBox>
                            <rowConstraints>
-                              <RowConstraints />
                               <RowConstraints />
                               <RowConstraints />
                               <RowConstraints />
