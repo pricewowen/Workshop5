@@ -16,7 +16,7 @@
           styleClass="login-brand-panel">
         <padding><Insets top="60" right="48" bottom="60" left="48"/></padding>
 
-        <ImageView fitHeight="48" fitWidth="220" pickOnBounds="true" preserveRatio="true">
+        <ImageView fitHeight="250" fitWidth="500" pickOnBounds="true" preserveRatio="true">
             <image><Image smooth="true" url="@bakery_logo.png"/></image>
         </ImageView>
 
