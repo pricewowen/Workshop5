@@ -6,6 +6,7 @@ import java.net.URL;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.StageSizing;
 import com.sait.workshop05.util.StageIconHelper;
 import com.sait.workshop05.util.UserInitialsHelper;
 import io.sentry.Sentry;
@@ -353,11 +354,8 @@ public class MainController {
             stage.setScene(scene);
             stage.setTitle("Login");
             StageIconHelper.setAppIcon(stage);
-            stage.setWidth(750);
-            stage.setHeight(730);
-            stage.setMinWidth(750);
-            stage.setMinHeight(730);
-            stage.centerOnScreen();
+            StageSizing.applyMainShellBounds(stage);
+            stage.setResizable(true);
         } catch (IOException e) {
             ErrorHandler.showErrorDialog("Logout Error", "Could not return to login screen", e);
             LogData.handleException("LOGOUT", e);

@@ -64,6 +64,7 @@ public class CustomerManagementController {
     // Cached options for dialogs
     private List<RewardTierOption> tierOptions = new ArrayList<>();
     private List<AddressOption> addressOptions = new ArrayList<>();
+    private boolean isLoading = false;
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -77,6 +78,9 @@ public class CustomerManagementController {
         setupActionsColumn();
         setupSearchFiltering();
         setupSelectionButtons();
+        if (tblCustomers != null) {
+            tblCustomers.setPlaceholder(new Label("Loading customers…"));
+        }
         loadAllAsync();
     }
 
@@ -138,11 +142,28 @@ public class CustomerManagementController {
                         || String.valueOf(cust.getRewardBalance()).contains(q);
             });
             lblStatus.setText(filtered.size() + " customer(s) shown");
+            updateCustomerTablePlaceholder();
         });
 
         SortedList<Customer> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblCustomers.comparatorProperty());
         tblCustomers.setItems(sorted);
+    }
+
+    private void updateCustomerTablePlaceholder() {
+        if (tblCustomers == null || filtered == null) {
+            return;
+        }
+        if (isLoading) {
+            tblCustomers.setPlaceholder(new Label("Loading customers…"));
+            return;
+        }
+        if (filtered.isEmpty()) {
+            tblCustomers.setPlaceholder(new Label(
+                    master.isEmpty()
+                            ? "No customers to display."
+                            : "No customers match the current filter."));
+        }
     }
 
     // ────────────────────────────────────────────────────────────
@@ -155,7 +176,9 @@ public class CustomerManagementController {
      * HTTP calls on the FX thread (2 of which were duplicates).
      */
     private void loadAllAsync() {
+        isLoading = true;
         lblStatus.setText("Loading...");
+        updateCustomerTablePlaceholder();
         Task<CombinedData> task = new Task<>() {
             @Override
             protected CombinedData call() throws Exception {
@@ -169,12 +192,15 @@ public class CustomerManagementController {
         task.setOnFailed(e -> {
             Throwable t = task.getException();
             LogData.handleException("LOAD_CUSTOMERS", new RuntimeException(t));
+            isLoading = false;
+            updateCustomerTablePlaceholder();
             ErrorHandler.showErrorDialog("API Error", "Could not load customers.", t);
         });
         new Thread(task).start();
     }
 
     private void applyData(CombinedData d) {
+        isLoading = false;
         tierData = new ArrayList<>(d.tiers);
         tierOptions = d.tiers.stream()
                 .filter(t -> t.id != null)
@@ -195,6 +221,7 @@ public class CustomerManagementController {
             master.add(fromCustomerRow(row, tierMap, addrMap));
         }
         lblStatus.setText(master.size() + " customer(s) loaded");
+        updateCustomerTablePlaceholder();
         LogData.logAction("READ", "Customer");
     }
 

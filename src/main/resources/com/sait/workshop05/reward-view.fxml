@@ -51,7 +51,11 @@
                                     <Label style="-fx-font-size: 13px;" text="Order:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                                     <ComboBox fx:id="cboOrder" disable="true" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                                     <Label style="-fx-font-size: 13px;" text="Points Earned:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                    <TextField fx:id="txtPoints" editable="false" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <TextField fx:id="txtPoints"
+                                               editable="false"
+                                               focusTraversable="false"
+                                               style="-fx-font-size: 13px; -fx-opacity: 1; -fx-control-inner-background: #f0ebe4;"
+                                               GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                     <Label style="-fx-font-size: 13px;" text="Transaction Date:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
                                     <HBox spacing="5" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="3">
                                         <DatePicker fx:id="dtpTransactionDate" disable="true" prefWidth="150" />

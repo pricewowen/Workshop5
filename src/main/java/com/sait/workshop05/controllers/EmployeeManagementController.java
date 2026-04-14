@@ -61,6 +61,7 @@ public class EmployeeManagementController {
     private List<UserOption> userOptions = new ArrayList<>();
     private List<BakeryOption> bakeryOptions = new ArrayList<>();
     private List<AddressOption> addressOptions = new ArrayList<>();
+    private boolean isLoading = false;
 
     // ────────────────────────────────────────────────────────────
     // Initialization
@@ -71,7 +72,7 @@ public class EmployeeManagementController {
         setupColumns();
         setupActionsColumn();
         setupSearchFiltering();
-        tblEmployees.setPlaceholder(new Label("No employees match the current filter."));
+        tblEmployees.setPlaceholder(new Label("Loading employees…"));
         loadAllAsync();
     }
 
@@ -143,7 +144,9 @@ public class EmployeeManagementController {
     }
 
     private void loadAllAsync() {
+        isLoading = true;
         lblStatus.setText("Loading employees…");
+        tblEmployees.setPlaceholder(new Label("Loading employees…"));
         if (btnRefresh != null) {
             btnRefresh.setDisable(true);
         }
@@ -161,6 +164,7 @@ public class EmployeeManagementController {
             if (btnRefresh != null) {
                 btnRefresh.setDisable(false);
             }
+            isLoading = false;
             applyBootstrap(task.getValue());
             LogData.logAction("READ", "Employee");
         });
@@ -170,7 +174,9 @@ public class EmployeeManagementController {
             }
             Throwable t = task.getException();
             LogData.handleException("READ_EMPLOYEES", new RuntimeException(t));
+            isLoading = false;
             lblStatus.setText("Could not load employees.");
+            tblEmployees.setPlaceholder(new Label("Could not load employees."));
             ErrorHandler.showErrorDialog("API Error", "Could not load employees.", t);
         });
         new Thread(task, "employees-load").start();
@@ -191,6 +197,12 @@ public class EmployeeManagementController {
             master.add(fromRow(row, addrMap));
         }
         lblStatus.setText(master.size() + " employee(s) loaded");
+        if (filtered != null && filtered.isEmpty()) {
+            tblEmployees.setPlaceholder(new Label(
+                    master.isEmpty()
+                            ? "No employees to display."
+                            : "No employees match the current filter."));
+        }
     }
 
     private Employee fromRow(EmployeeApi.EmployeeRow row, Map<Integer, String> addrMap) {

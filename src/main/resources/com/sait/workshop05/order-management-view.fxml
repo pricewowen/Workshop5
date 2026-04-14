@@ -54,7 +54,7 @@
 
                                 <Button text="Refresh" fx:id="btnRefreshOrders"
                                         onAction="#onRefreshOrders"
-                                        prefWidth="100" styleClass="btn-muted toolbar-action"/>
+                                        styleClass="btn-muted toolbar-action"/>
                             </HBox>
 
                             <!-- Orders table + details split -->
@@ -306,8 +306,7 @@
 
                                         <Button text="Place Order" fx:id="btnPlaceOrder"
                                                 onAction="#onPlaceOrder"
-                                                styleClass="btn-muted toolbar-action"
-                                                maxWidth="1.7976931348623157E308"/>
+                                                styleClass="btn-muted toolbar-action"/>
 
                                         <Label fx:id="lblNewOrderStatus" text=""
                                                style="-fx-text-fill: #444; -fx-font-size: 12px;"/>
