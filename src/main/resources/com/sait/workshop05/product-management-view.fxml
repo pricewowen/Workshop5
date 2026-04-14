@@ -27,164 +27,26 @@
                 <Label text="Product Management" styleClass="page-title"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
-
-                <Label text="Search:" style="-fx-font-size: 13px;"/>
-                <TextField fx:id="txtSearch"
-                           promptText="Search name, description, price, tags"
-                           prefWidth="420"
-                           style="-fx-font-size: 13px;"/>
-
-                <Button text="Refresh"
-                        fx:id="btnRefresh"
-                        onAction="#onRefresh"
-                        prefWidth="100"
-                        styleClass="btn-muted"/>
+                <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
+                        styleClass="btn-muted toolbar-action"/>
+                <Button fx:id="btnNewProduct" text="New Product" onAction="#onNewProduct"
+                        styleClass="btn-accent toolbar-action"/>
             </HBox>
 
-            <SplitPane dividerPositions="0.70" VBox.vgrow="ALWAYS" prefWidth="1.0" prefHeight="1.0">
+            <!-- Table -->
+            <TableView fx:id="tblProducts" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colProductId" text="ID" prefWidth="60"/>
+                    <TableColumn fx:id="colProductName" text="PRODUCT" prefWidth="180"/>
+                    <TableColumn fx:id="colDescription" text="DESCRIPTION" prefWidth="280"/>
+                    <TableColumn fx:id="colBasePrice" text="PRICE" prefWidth="90"/>
+                    <TableColumn fx:id="colTags" text="TAGS" prefWidth="140"/>
+                    <TableColumn fx:id="colImage" text="IMAGE" prefWidth="100" minWidth="88"/>
+                    <TableColumn fx:id="colActions" text="" prefWidth="130"/>
+                </columns>
+            </TableView>
 
-                <items>
-
-                    <VBox spacing="10" SplitPane.resizableWithParent="true" fillWidth="true">
-
-                        <TableView fx:id="tblProducts"
-                                   VBox.vgrow="ALWAYS"
-                                   prefWidth="1.0"
-                                   style="-fx-font-size: 13px;">
-                            <fixedCellSize>28</fixedCellSize>
-
-                            <columns>
-                                <TableColumn fx:id="colProductId" text="ID" prefWidth="70"/>
-                                <TableColumn fx:id="colProductName" text="Name" prefWidth="180"/>
-                                <TableColumn fx:id="colDescription" text="Description" prefWidth="280"/>
-                                <TableColumn fx:id="colBasePrice" text="Price" prefWidth="100"/>
-                                <TableColumn fx:id="colTags" text="Tags" prefWidth="220"/>
-                            </columns>
-                        </TableView>
-
-                        <Label fx:id="lblStatus"
-                               text=""
-                               style="-fx-text-fill: #444; -fx-font-size: 13px;"/>
-                    </VBox>
-
-                    <ScrollPane fitToWidth="true"
-                                fitToHeight="true"
-                                hbarPolicy="NEVER"
-                                vbarPolicy="AS_NEEDED"
-                                prefWidth="420"
-                                SplitPane.resizableWithParent="true">
-
-                        <content>
-                            <VBox spacing="14"
-                                  fillWidth="true"
-                                  prefWidth="1.0"
-                                  styleClass="form-panel">
-
-                                <padding>
-                                    <Insets top="16" right="16" bottom="16" left="16"/>
-                                </padding>
-
-                                <Label text="Product Details"
-                                       styleClass="form-panel-title"/>
-
-                                <GridPane hgap="12" vgap="12" prefWidth="1.0">
-                                    <columnConstraints>
-                                        <ColumnConstraints minWidth="130"/>
-                                        <ColumnConstraints hgrow="ALWAYS"/>
-                                    </columnConstraints>
-
-                                    <Label text="Product ID:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtProductId" editable="false" promptText="Auto"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-
-                                    <Label text="Name*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtProductName" promptText="Product name"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-
-                                    <Label text="Description*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                                    <TextArea fx:id="txtDescription" promptText="Product description"
-                                              prefRowCount="3" wrapText="true"
-                                              style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-
-                                    <Label text="Base Price*:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                                    <TextField fx:id="txtBasePrice" promptText="0.00"
-                                               style="-fx-font-size: 13px;"
-                                               GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-
-                                    <Label text="Tag:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                                    <ComboBox fx:id="cboTag" promptText="Select a tag"
-                                              style="-fx-font-size: 13px;"
-                                              GridPane.rowIndex="4" GridPane.columnIndex="1"/>
-
-                                    <Label text="Image:" style="-fx-font-size: 13px;"
-                                           GridPane.rowIndex="5" GridPane.columnIndex="0"/>
-                                    <HBox spacing="8" alignment="CENTER_LEFT"
-                                          GridPane.rowIndex="5" GridPane.columnIndex="1">
-                                        <Label fx:id="lblImageFile" text="No file selected"
-                                               style="-fx-font-size: 12px; -fx-text-fill: #666;"
-                                               HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"/>
-                                        <Button text="Browse..." onAction="#onBrowseImage"
-                                                styleClass="btn-muted" prefHeight="26"/>
-                                    </HBox>
-                                </GridPane>
-
-                                <!-- Multi-tag selection area -->
-                                <Label text="Assigned Tags:" style="-fx-font-size: 13px; -fx-font-weight: bold;"/>
-
-                                <HBox spacing="8" alignment="CENTER_LEFT">
-                                    <Button text="Add Tag" fx:id="btnAddTag" onAction="#onAddTag"
-                                            styleClass="btn-accent" prefHeight="30"/>
-                                    <Button text="Remove Selected Tag" fx:id="btnRemoveTag" onAction="#onRemoveTag"
-                                            styleClass="btn-muted" prefHeight="30"/>
-                                </HBox>
-
-                                <ListView fx:id="lstAssignedTags" prefHeight="100"
-                                          style="-fx-font-size: 13px;"/>
-
-                                <Separator/>
-
-                                <GridPane hgap="12" vgap="12">
-                                    <columnConstraints>
-                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10"/>
-                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10"/>
-                                    </columnConstraints>
-                                    <rowConstraints>
-                                        <RowConstraints minHeight="38" vgrow="NEVER"/>
-                                        <RowConstraints minHeight="38" vgrow="NEVER"/>
-                                    </rowConstraints>
-                                    <Button text="Create" fx:id="btnCreate" onAction="#onCreate"
-                                            prefHeight="38" styleClass="btn-accent"
-                                            maxWidth="1.7976931348623157E308"
-                                            GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
-                                    <Button text="Update" fx:id="btnUpdate" onAction="#onUpdate"
-                                            prefHeight="38" styleClass="btn-accent"
-                                            maxWidth="1.7976931348623157E308"
-                                            GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
-                                    <Button text="Delete" fx:id="btnDelete" onAction="#onDelete"
-                                            prefHeight="38" styleClass="danger-button"
-                                            maxWidth="1.7976931348623157E308"
-                                            GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
-                                    <Button text="Clear" fx:id="btnClear" onAction="#onClear"
-                                            prefHeight="38" styleClass="btn-muted"
-                                            maxWidth="1.7976931348623157E308"
-                                            GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
-                                </GridPane>
-
-                                <Label text="* required" style="-fx-text-fill: #666; -fx-font-size: 12px;"/>
-                            </VBox>
-                        </content>
-                    </ScrollPane>
-
-                </items>
-            </SplitPane>
+            <Label fx:id="lblStatus" text="" styleClass="hint-label"/>
         </VBox>
     </children>
 </AnchorPane>

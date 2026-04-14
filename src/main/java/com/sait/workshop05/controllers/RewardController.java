@@ -2,7 +2,6 @@ package com.sait.workshop05.controllers;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import com.sait.workshop05.api.OrderApi;
 import com.sait.workshop05.api.ReferenceApi;
@@ -12,15 +11,15 @@ import com.sait.workshop05.models.OrderOption;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.CustomerOption;
 import com.sait.workshop05.models.Reward;
+import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.UiPrivacy;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -35,10 +34,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
  */
 public class RewardController {
 
-    private static final String LOG_USER = "REWARD_VIEW";
-
     @FXML private TableView<Reward> tblRewards;
-    @FXML private TableColumn<Reward, String> colRewardId;
     @FXML private TableColumn<Reward, String> colCustomer;
     @FXML private TableColumn<Reward, String> colOrder;
     @FXML private TableColumn<Reward, Integer> colPoints;
@@ -47,7 +43,6 @@ public class RewardController {
     @FXML private TextField txtSearch;
     @FXML private Label lblStatus;
 
-    @FXML private TextField txtRewardId;
     @FXML private ComboBox<CustomerOption> cboCustomer;
     @FXML private ComboBox<OrderOption> cboOrder;
     @FXML private TextField txtPoints;
@@ -69,7 +64,6 @@ public class RewardController {
     }
 
     private void setColumns() {
-        colRewardId.setCellValueFactory(new PropertyValueFactory<>("rewardId"));
         colCustomer.setCellValueFactory(new PropertyValueFactory<>("customerDisplay"));
         colOrder.setCellValueFactory(new PropertyValueFactory<>("orderDisplay"));
         colPoints.setCellValueFactory(new PropertyValueFactory<>("rewardPointsEarned"));
@@ -92,14 +86,23 @@ public class RewardController {
 
     private void setSelectionBinding() {
         tblRewards.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> {
-            if (selected == null) return;
-            txtRewardId.setText(String.valueOf(selected.getRewardId()));
+            if (selected == null) {
+                txtPoints.clear();
+                dtpTransactionDate.setValue(null);
+                txtTransactionTime.clear();
+                cboCustomer.getSelectionModel().clearSelection();
+                cboOrder.getSelectionModel().clearSelection();
+                return;
+            }
             txtPoints.setText(String.valueOf(selected.getRewardPointsEarned()));
 
             if (selected.getRewardTransactionDate() != null) {
                 LocalDateTime dt = selected.getRewardTransactionDate();
                 dtpTransactionDate.setValue(dt.toLocalDate());
                 txtTransactionTime.setText(String.format("%02d:%02d", dt.getHour(), dt.getMinute()));
+            } else {
+                dtpTransactionDate.setValue(null);
+                txtTransactionTime.clear();
             }
             selectCustomerById(selected.getCustomerId());
             selectOrderById(selected.getOrderId());
@@ -117,18 +120,30 @@ public class RewardController {
 
                 return contains(reward.getCustomerDisplay(), q)
                         || contains(reward.getOrderDisplay(), q)
-                        || String.valueOf(reward.getRewardId()).contains(q)
-                        || String.valueOf(reward.getCustomerId()).contains(q)
-                        || String.valueOf(reward.getOrderId()).contains(q)
+                        || contains(UiPrivacy.compactRef(reward.getRewardId()), q)
                         || String.valueOf(reward.getRewardPointsEarned()).contains(q)
                         || (reward.getRewardTransactionDate() != null &&
                         reward.getRewardTransactionDate().toString().toLowerCase().contains(q));
             });
             lblStatus.setText(filtered.size() + " reward(s) shown");
+            updateRewardsTablePlaceholder();
         });
         SortedList<Reward> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblRewards.comparatorProperty());
         tblRewards.setItems(sorted);
+        tblRewards.setPlaceholder(new Label("Loading rewards…"));
+    }
+
+    private void updateRewardsTablePlaceholder() {
+        if (tblRewards == null || filtered == null) {
+            return;
+        }
+        if (filtered.isEmpty()) {
+            tblRewards.setPlaceholder(new Label(
+                    master.isEmpty()
+                            ? "No reward transactions to display."
+                            : "No rewards match the search filter."));
+        }
     }
 
     private void loadCombos() {
@@ -138,25 +153,35 @@ public class RewardController {
 
             List<OrderOption> orders = new java.util.ArrayList<>();
             for (Order o : OrderApi.listOrders()) {
-                orders.add(new OrderOption(o.getOrderId(),
-                        o.getOrderId() + " — " + o.getCustomerDisplay()));
+                String num = o.getOrderNumber();
+                if (num == null || num.isBlank()) {
+                    num = "Order";
+                }
+                String cust = o.getCustomerDisplay();
+                if (cust == null || cust.isBlank()) {
+                    cust = "Customer";
+                }
+                orders.add(new OrderOption(o.getOrderId(), num + " — " + cust));
             }
             cboOrder.setItems(FXCollections.observableArrayList(orders));
         } catch (Exception e) {
             LogData.handleException("LOAD_REWARD_COMBOS", e);
-            showError("API Error", "Could not load Customer/Order lists.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load Customer/Order lists.", e);
         }
     }
 
     private void refreshTable() {
+        tblRewards.setPlaceholder(new Label("Loading rewards…"));
         try {
             master.clear();
             master.addAll(RewardApi.listAll());
             lblStatus.setText(master.size() + " reward(s) loaded");
+            updateRewardsTablePlaceholder();
             LogData.logAction("READ", "Reward");
         } catch (Exception e) {
             LogData.handleException("READ_REWARDS", e);
-            showError("API Error", "Could not load rewards.", e.getMessage());
+            tblRewards.setPlaceholder(new Label("Could not load rewards."));
+            ErrorHandler.showErrorDialog("API Error", "Could not load rewards.", e);
         }
     }
 
@@ -169,75 +194,12 @@ public class RewardController {
     @FXML
     private void onClear() {
         tblRewards.getSelectionModel().clearSelection();
-        txtRewardId.clear();
         txtPoints.clear();
         dtpTransactionDate.setValue(null);
         txtTransactionTime.clear();
         cboCustomer.getSelectionModel().clearSelection();
         cboOrder.getSelectionModel().clearSelection();
         lblStatus.setText("Cleared");
-    }
-
-    @FXML
-    private void onCreate() {
-        showWarning("Not available", "Reward creation is not exposed via the API. Points are created when orders are placed.");
-    }
-
-    @FXML
-    private void onUpdate() {
-        showWarning("Not available", "Reward updates are not exposed via the API.");
-    }
-
-    @FXML
-    private void onDelete() {
-        showWarning("Not available", "Reward deletion is not exposed via the API.");
-    }
-
-    private Reward buildFromForm(boolean includeId) {
-        return new Reward();
-    }
-
-    private ValidationResult validateForm(boolean isUpdate) {
-        String points = safe(txtPoints.getText());
-        CustomerOption customer = cboCustomer.getValue();
-        OrderOption order = cboOrder.getValue();
-
-        if (isUpdate) {
-            String id = safe(txtRewardId.getText());
-            if (id.isBlank()) return ValidationResult.fail("Reward ID is missing (select a row first).");
-        }
-
-        if (points.isBlank()) return ValidationResult.fail("Points earned is required.");
-        try {
-            int pointsValue = Integer.parseInt(points);
-            if (pointsValue < 0) return ValidationResult.fail("Points must be positive.");
-            if (pointsValue > 1000000) return ValidationResult.fail("Points value too large.");
-        } catch (NumberFormatException ex) {
-            return ValidationResult.fail("Points must be a valid integer.");
-        }
-
-        if (customer == null) return ValidationResult.fail("Customer is required.");
-        if (order == null) return ValidationResult.fail("Order is required.");
-
-        // Validate time format if provided
-        String timeStr = safe(txtTransactionTime.getText());
-        if (!timeStr.isEmpty()) {
-            if (!timeStr.matches("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")) {
-                return ValidationResult.fail("Time format must be HH:MM (24-hour format).");
-            }
-        }
-
-        return ValidationResult.ok();
-    }
-
-    private void selectRewardById(String id) {
-        for (Reward r : master) {
-            if (r.getRewardId() != null && r.getRewardId().equals(id)) {
-                tblRewards.getSelectionModel().select(r);
-                tblRewards.scrollTo(r);
-                return;
-            }
-        }
     }
 
     private void selectCustomerById(String customerId) {
@@ -262,46 +224,9 @@ public class RewardController {
         cboOrder.getSelectionModel().clearSelection();
     }
 
-    private void showWarning(String title, String content) {
-        Alert a = new Alert(Alert.AlertType.WARNING);
-        a.setTitle(title);
-        a.setHeaderText(null);
-        a.setContentText(content);
-        a.showAndWait();
-    }
-
-    private void showError(String title, String header, String content) {
-        Alert a = new Alert(Alert.AlertType.ERROR);
-        a.setTitle(title);
-        a.setHeaderText(header);
-        a.setContentText(content);
-        a.showAndWait();
-    }
-
     private static boolean contains(String field, String q) {
         if (field == null) return false;
         return field.toLowerCase().contains(q);
     }
 
-    private static String safe(String s) {
-        return s == null ? "" : s.trim();
-    }
-
-    private static class ValidationResult {
-        final boolean ok;
-        final String message;
-
-        private ValidationResult(boolean ok, String message) {
-            this.ok = ok;
-            this.message = message;
-        }
-
-        static ValidationResult ok() {
-            return new ValidationResult(true, "");
-        }
-
-        static ValidationResult fail(String msg) {
-            return new ValidationResult(false, msg);
-        }
-    }
 }

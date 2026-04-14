@@ -14,8 +14,8 @@
                 <Label text="Reward Management" styleClass="page-title"/>
                 <Region HBox.hgrow="ALWAYS" />
                 <Label style="-fx-font-size: 13px;" text="Search:" />
-                <TextField fx:id="txtSearch" prefWidth="420" promptText="Search rewards..." style="-fx-font-size: 13px;" />
-                <Button fx:id="btnRefresh" onAction="#onRefresh" prefWidth="100" styleClass="btn-muted" text="Refresh" />
+                <TextField fx:id="txtSearch" prefWidth="420" prefHeight="36" promptText="Search rewards..." style="-fx-font-size: 13px;" />
+                <Button fx:id="btnRefresh" onAction="#onRefresh" prefWidth="100" styleClass="btn-muted toolbar-action" text="Refresh" />
             </HBox>
             <SplitPane dividerPositions="0.7" prefHeight="1.0" prefWidth="1.0" VBox.vgrow="ALWAYS">
                 <items>
@@ -23,7 +23,6 @@
                         <TableView fx:id="tblRewards" prefWidth="1.0" style="-fx-font-size: 13px;" VBox.vgrow="ALWAYS">
                             <fixedCellSize>28</fixedCellSize>
                             <columns>
-                                <TableColumn fx:id="colRewardId" prefWidth="60" text="ID" />
                                 <TableColumn fx:id="colCustomer" prefWidth="200" text="Customer" />
                                 <TableColumn fx:id="colOrder" prefWidth="200" text="Order" />
                                 <TableColumn fx:id="colPoints" prefWidth="80" text="Points" />
@@ -47,21 +46,18 @@
                                         <ColumnConstraints minWidth="150" />
                                         <ColumnConstraints hgrow="ALWAYS" />
                                     </columnConstraints>
-                                    <Label style="-fx-font-size: 13px;" text="Reward ID:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                    <TextField fx:id="txtRewardId" editable="false" promptText="Auto" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                                    <Label text="Customer:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                    <ComboBox fx:id="cboCustomer" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                    <Label style="-fx-font-size: 13px;" text="Order:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                    <ComboBox fx:id="cboOrder" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                    <Label style="-fx-font-size: 13px;" text="Points Earned:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                                    <TextField fx:id="txtPoints" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                    <Label style="-fx-font-size: 13px;" text="Transaction Date:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
-                                    <HBox spacing="5" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="4">
-                                        <DatePicker fx:id="dtpTransactionDate" prefWidth="150" />
-                                        <TextField fx:id="txtTransactionTime" prefWidth="60" promptText="HH:MM" />
+                                    <Label text="Customer:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                    <ComboBox fx:id="cboCustomer" disable="true" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                    <Label style="-fx-font-size: 13px;" text="Order:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                    <ComboBox fx:id="cboOrder" disable="true" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    <Label style="-fx-font-size: 13px;" text="Points Earned:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                    <TextField fx:id="txtPoints" editable="false" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <Label style="-fx-font-size: 13px;" text="Transaction Date:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                                    <HBox spacing="5" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                                        <DatePicker fx:id="dtpTransactionDate" disable="true" prefWidth="150" />
+                                        <TextField fx:id="txtTransactionTime" editable="false" prefWidth="60" promptText="HH:MM" />
                                     </HBox>
                            <rowConstraints>
-                              <RowConstraints />
                               <RowConstraints />
                               <RowConstraints />
                               <RowConstraints />
@@ -69,25 +65,9 @@
                            </rowConstraints>
                                 </GridPane>
                                 <Separator />
-                                <GridPane hgap="12" vgap="12">
-                                    <columnConstraints>
-                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10"/>
-                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10"/>
-                                    </columnConstraints>
-                                    <rowConstraints>
-                                        <RowConstraints minHeight="38" vgrow="NEVER"/>
-                                        <RowConstraints minHeight="38" vgrow="NEVER"/>
-                                    </rowConstraints>
-                                    <Button fx:id="btnCreate" maxWidth="1.7976931348623157E308" onAction="#onCreate" prefHeight="38" styleClass="btn-accent" text="Create"
-                                            GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
-                                    <Button fx:id="btnUpdate" maxWidth="1.7976931348623157E308" onAction="#onUpdate" prefHeight="38" styleClass="btn-accent" text="Update"
-                                            GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
-                                    <Button fx:id="btnDelete" maxWidth="1.7976931348623157E308" onAction="#onDelete" prefHeight="38" styleClass="danger-button" text="Delete"
-                                            GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS"/>
-                                    <Button fx:id="btnClear" maxWidth="1.7976931348623157E308" onAction="#onClear" prefHeight="38" styleClass="btn-muted" text="Clear"
-                                            GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS"/>
-                                </GridPane>
-                                <Label style="-fx-text-fill: #666; -fx-font-size: 12px;" text="* required" />
+                                <Label style="-fx-text-fill: #8A8178; -fx-font-size: 12px; -fx-wrap-text: true;"
+                                       text="Reward transactions are read-only. Points are awarded automatically when orders are placed." />
+                                <Button fx:id="btnClear" maxWidth="1.7976931348623157E308" onAction="#onClear" styleClass="btn-muted toolbar-action" text="Clear Selection" />
                             </VBox>
                         </content>
                     </ScrollPane>

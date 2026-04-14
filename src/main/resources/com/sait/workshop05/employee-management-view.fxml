@@ -27,18 +27,10 @@
                 <Label text="Employee Management" styleClass="page-title"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
-
-                <Label text="Search:" style="-fx-font-size: 13px;"/>
-                <TextField fx:id="txtSearch"
-                           promptText="Search name, role, phone, email, user, address"
-                           prefWidth="420"
-                           style="-fx-font-size: 13px;"/>
-
-                <Button text="Refresh"
-                        fx:id="btnRefresh"
-                        onAction="#onRefresh"
-                        prefWidth="100"
-                        styleClass="btn-muted"/>
+                <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
+                        styleClass="btn-muted toolbar-action"/>
+                <Button fx:id="btnNewEmployee" text="New Employee" onAction="#onNewEmployee"
+                        styleClass="btn-accent toolbar-action"/>
             </HBox>
 
             <SplitPane dividerPositions="0.70" VBox.vgrow="ALWAYS" prefWidth="1.0" prefHeight="1.0">

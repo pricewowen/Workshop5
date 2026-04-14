@@ -2,6 +2,7 @@ package com.sait.workshop05;
 
 import com.sait.workshop05.api.ApiClient;
 import com.sait.workshop05.util.StageIconHelper;
+import com.sait.workshop05.util.StageSizing;
 import io.sentry.Sentry;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -48,12 +49,7 @@ public class MainApplication extends Application {
         StageIconHelper.setAppIcon(stage);
         stage.setScene(scene);
 
-        stage.setWidth(700);
-        stage.setHeight(730);
-
-        stage.setMinWidth(700);
-        stage.setMinHeight(730);
-
+        StageSizing.applyMainShellBounds(stage);
         stage.setResizable(true);
 
         stage.show();
