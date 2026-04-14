@@ -18,6 +18,8 @@
                 <TextField fx:id="txtSearch" promptText="Search customers..."
                            prefWidth="300" prefHeight="36"/>
                 <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnNewCustomer" text="New Customer" onAction="#onNewCustomer"
+                        styleClass="btn-muted" prefHeight="36"/>
                 <Button fx:id="btnOrderHistory" text="Order History"
                         onAction="#onViewOrderHistory"
                         styleClass="btn-muted" prefHeight="36" disable="true"/>
@@ -31,7 +33,6 @@
             <!-- Table -->
             <TableView fx:id="tblCustomers" VBox.vgrow="ALWAYS">
                 <columns>
-                    <TableColumn fx:id="colCustomerId" text="ID" prefWidth="60"/>
                     <TableColumn fx:id="colFirstName" text="FIRST NAME" prefWidth="120"/>
                     <TableColumn fx:id="colLastName" text="LAST NAME" prefWidth="120"/>
                     <TableColumn fx:id="colEmail" text="EMAIL" prefWidth="200"/>

@@ -8,9 +8,13 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.sait.workshop05.models.Order;
 import com.sait.workshop05.models.Reward;
+import com.sait.workshop05.util.UiPrivacy;
 
 public final class RewardApi {
 
@@ -32,6 +36,18 @@ public final class RewardApi {
         }
         List<RewardJson> rows = ApiClient.getInstance().getMapper()
                 .readValue(res.body(), new TypeReference<List<RewardJson>>() {});
+
+        Map<String, Order> orderById = new HashMap<>();
+        try {
+            for (Order o : OrderApi.listOrders()) {
+                if (o.getOrderId() != null && !o.getOrderId().isBlank()) {
+                    orderById.put(o.getOrderId(), o);
+                }
+            }
+        } catch (Exception ignored) {
+            // Fall back to masked ids below
+        }
+
         List<Reward> out = new ArrayList<>();
         for (RewardJson j : rows) {
             Reward r = new Reward();
@@ -40,8 +56,17 @@ public final class RewardApi {
             r.setOrderId(j.orderId != null ? j.orderId : "");
             r.setRewardPointsEarned(j.pointsEarned);
             r.setRewardTransactionDate(parseTs(j.transactionDate));
-            r.setCustomerDisplay(j.customerId != null ? j.customerId : "");
-            r.setOrderDisplay(j.orderId != null ? j.orderId : "");
+
+            Order ord = j.orderId != null ? orderById.get(j.orderId) : null;
+            if (ord != null) {
+                String onum = ord.getOrderNumber();
+                r.setOrderDisplay(onum != null && !onum.isBlank() ? onum : "—");
+                String cname = ord.getCustomerDisplay();
+                r.setCustomerDisplay(cname != null && !cname.isBlank() ? cname : "—");
+            } else {
+                r.setOrderDisplay(UiPrivacy.maskUuid(j.orderId));
+                r.setCustomerDisplay(UiPrivacy.customerDisplayFallback(j.customerId));
+            }
             out.add(r);
         }
         return out;

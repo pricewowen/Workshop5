@@ -19,6 +19,14 @@ public final class OrderStatus {
             PENDING, PROCESSING, READY, OUT_FOR_DELIVERY, DELIVERED, COMPLETED, CANCELLED
     );
 
+    /**
+     * Status values staff may set via PATCH (matches mobile admin: no direct {@link #COMPLETED}).
+     * Terminal completion is via customer acceptance or automatic flows on the API.
+     */
+    public static final List<String> STAFF_ASSIGNABLE_STATUSES = List.of(
+            PENDING, PROCESSING, READY, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
+    );
+
     /** Statuses for filter dropdowns (includes "All" option). */
     public static final List<String> FILTER_STATUSES = List.of(
             "All", PENDING, PROCESSING, READY, OUT_FOR_DELIVERY, DELIVERED, COMPLETED, CANCELLED

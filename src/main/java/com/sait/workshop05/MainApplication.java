@@ -48,10 +48,10 @@ public class MainApplication extends Application {
         StageIconHelper.setAppIcon(stage);
         stage.setScene(scene);
 
-        stage.setWidth(700);
+        stage.setWidth(750);
         stage.setHeight(730);
 
-        stage.setMinWidth(700);
+        stage.setMinWidth(750);
         stage.setMinHeight(730);
 
         stage.setResizable(true);

@@ -40,7 +40,6 @@ public class CustomerManagementController {
 
     // ── Table ──────────────────────────────────────────────────
     @FXML private TableView<Customer> tblCustomers;
-    @FXML private TableColumn<Customer, String> colCustomerId;
     @FXML private TableColumn<Customer, String> colFirstName;
     @FXML private TableColumn<Customer, String> colLastName;
     @FXML private TableColumn<Customer, String> colEmail;
@@ -54,6 +53,7 @@ public class CustomerManagementController {
     @FXML private TextField txtSearch;
     @FXML private Label lblStatus;
     @FXML private Button btnRefresh;
+    @FXML private Button btnNewCustomer;
     @FXML private Button btnOrderHistory;
     @FXML private Button btnAdjustPoints;
 
@@ -63,7 +63,6 @@ public class CustomerManagementController {
 
     // Cached options for dialogs
     private List<RewardTierOption> tierOptions = new ArrayList<>();
-    private List<UserOption> userOptions = new ArrayList<>();
     private List<AddressOption> addressOptions = new ArrayList<>();
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -82,7 +81,6 @@ public class CustomerManagementController {
     }
 
     private void setupColumns() {
-        colCustomerId.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         colFirstName.setCellValueFactory(new PropertyValueFactory<>("firstName"));
         colLastName.setCellValueFactory(new PropertyValueFactory<>("lastName"));
         colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
@@ -137,7 +135,6 @@ public class CustomerManagementController {
                         || StringUtil.containsIgnoreCase(cust.getPhone(), q)
                         || StringUtil.containsIgnoreCase(cust.getRewardTierDisplay(), q)
                         || StringUtil.containsIgnoreCase(cust.getAddressDisplay(), q)
-                        || StringUtil.containsIgnoreCase(cust.getCustomerId(), q)
                         || String.valueOf(cust.getRewardBalance()).contains(q);
             });
             lblStatus.setText(filtered.size() + " customer(s) shown");
@@ -163,17 +160,16 @@ public class CustomerManagementController {
             @Override
             protected CombinedData call() throws Exception {
                 List<RewardTierApi.RewardTierJson> tiers = RewardTierApi.list();
-                List<UserOption> users = ReferenceApi.loadAdminUsers();
                 List<AddressOption> addrs = ReferenceApi.loadAddresses();
                 List<CustomerApi.CustomerRow> customers = CustomerApi.list();
-                return new CombinedData(tiers, users, addrs, customers);
+                return new CombinedData(tiers, addrs, customers);
             }
         };
         task.setOnSucceeded(e -> applyData(task.getValue()));
         task.setOnFailed(e -> {
             Throwable t = task.getException();
             LogData.handleException("LOAD_CUSTOMERS", new RuntimeException(t));
-            ErrorHandler.showErrorDialog("API Error", "Could not load customers.", t != null ? t.getMessage() : null);
+            ErrorHandler.showErrorDialog("API Error", "Could not load customers.", t);
         });
         new Thread(task).start();
     }
@@ -184,7 +180,6 @@ public class CustomerManagementController {
                 .filter(t -> t.id != null)
                 .map(t -> new RewardTierOption(t.id, t.name != null ? t.name : ""))
                 .collect(Collectors.toList());
-        userOptions = d.users;
         addressOptions = d.addrs;
 
         Map<Integer, String> tierMap = new HashMap<>();
@@ -204,19 +199,30 @@ public class CustomerManagementController {
     }
 
     /**
-     * After a mutation (edit/adjust points), re-fetches only the customer list
-     * using already-cached tier and address data. Much cheaper than loadAllAsync().
+     * After a mutation (edit/adjust points), re-fetches customers and reward tiers
+     * so tier names and point thresholds match the server (e.g. after tiers were
+     * edited on the Reward Tiers screen). Addresses stay cached from the last full load.
      */
     private void refreshCustomersOnlyAsync(Runnable afterRefresh) {
-        Task<List<CustomerApi.CustomerRow>> task = new Task<>() {
+        ReferenceApi.invalidateCustomersCache();
+        Task<CustomerRefreshData> task = new Task<>() {
             @Override
-            protected List<CustomerApi.CustomerRow> call() throws Exception {
-                return CustomerApi.list();
+            protected CustomerRefreshData call() throws Exception {
+                List<RewardTierApi.RewardTierJson> tiers = RewardTierApi.list();
+                List<CustomerApi.CustomerRow> customers = CustomerApi.list();
+                return new CustomerRefreshData(tiers, customers);
             }
         };
         task.setOnSucceeded(e -> {
+            CustomerRefreshData data = task.getValue();
+            tierData = new ArrayList<>(data.tiers);
+            tierOptions = data.tiers.stream()
+                    .filter(t -> t.id != null)
+                    .map(t -> new RewardTierOption(t.id, t.name != null ? t.name : ""))
+                    .collect(Collectors.toList());
+
             Map<Integer, String> tierMap = new HashMap<>();
-            for (RewardTierApi.RewardTierJson t : tierData) {
+            for (RewardTierApi.RewardTierJson t : data.tiers) {
                 if (t.id != null) tierMap.put(t.id, t.name != null ? t.name : "");
             }
             Map<Integer, String> addrMap = new HashMap<>();
@@ -224,7 +230,7 @@ public class CustomerManagementController {
                 addrMap.put(a.getAddressId(), a.getLine1() + ", " + a.getCity());
             }
             master.clear();
-            for (CustomerApi.CustomerRow row : task.getValue()) {
+            for (CustomerApi.CustomerRow row : data.customers) {
                 master.add(fromCustomerRow(row, tierMap, addrMap));
             }
             lblStatus.setText(master.size() + " customer(s) loaded");
@@ -234,7 +240,7 @@ public class CustomerManagementController {
         task.setOnFailed(e -> {
             Throwable t = task.getException();
             LogData.handleException("READ_CUSTOMERS", new RuntimeException(t));
-            ErrorHandler.showErrorDialog("API Error", "Could not load customers.", t != null ? t.getMessage() : null);
+            ErrorHandler.showErrorDialog("API Error", "Could not load customers.", t);
         });
         new Thread(task).start();
     }
@@ -243,6 +249,7 @@ public class CustomerManagementController {
         Customer c = new Customer();
         c.setCustomerId(row.id != null ? row.id : "");
         c.setUserId(row.userId != null ? row.userId : "");
+        c.setUserDisplay(row.username != null && !row.username.isBlank() ? row.username : "");
         c.setFirstName(row.firstName != null ? row.firstName : "");
         c.setMiddleInitial(row.middleInitial != null ? row.middleInitial : "");
         c.setLastName(row.lastName != null ? row.lastName : "");
@@ -266,28 +273,91 @@ public class CustomerManagementController {
     }
 
     // ────────────────────────────────────────────────────────────
-    // Edit Dialog (no create/delete — not in API)
+    // Create / Edit Dialog
     // ────────────────────────────────────────────────────────────
 
-    private void showCustomerDialog(Customer existing) {
-        TextField tfFirstName = new TextField(StringUtil.nz(existing.getFirstName()));
-        TextField tfMiddleInitial = new TextField(StringUtil.nz(existing.getMiddleInitial()));
-        tfMiddleInitial.setMaxWidth(70);
-        TextField tfLastName = new TextField(StringUtil.nz(existing.getLastName()));
-        TextField tfPhone = new TextField(StringUtil.nz(existing.getPhone()));
-        TextField tfBusinessPhone = new TextField(StringUtil.nz(existing.getBusinessPhone()));
-        TextField tfEmail = new TextField(StringUtil.nz(existing.getEmail()));
-        TextField tfRewardBalance = new TextField(String.valueOf(existing.getRewardBalance()));
+    @FXML
+    private void onNewCustomer() {
+        showCustomerDialog(null);
+    }
 
-        ComboBox<RewardTierOption> cbTier = new ComboBox<>(FXCollections.observableArrayList(tierOptions));
-        cbTier.setMaxWidth(Double.MAX_VALUE);
-        tierOptions.stream().filter(t -> t.getRewardTierId() == existing.getRewardTierId())
-                .findFirst().ifPresent(cbTier::setValue);
+    private void showCustomerDialog(Customer existing) {
+        boolean isNew = existing == null;
+
+        TextField tfFirstName = new TextField(isNew ? "" : StringUtil.nz(existing.getFirstName()));
+        TextField tfMiddleInitial = new TextField(isNew ? "" : StringUtil.nz(existing.getMiddleInitial()));
+        tfMiddleInitial.setMaxWidth(70);
+        TextField tfLastName = new TextField(isNew ? "" : StringUtil.nz(existing.getLastName()));
+        TextField tfPhone = new TextField(isNew ? "" : StringUtil.nz(existing.getPhone()));
+        TextField tfBusinessPhone = new TextField(isNew ? "" : StringUtil.nz(existing.getBusinessPhone()));
+        TextField tfEmail = new TextField(isNew ? "" : StringUtil.nz(existing.getEmail()));
+        TextField tfRewardBalance = new TextField(isNew ? "0" : String.valueOf(existing.getRewardBalance()));
+        tfRewardBalance.setEditable(false);
+        tfRewardBalance.setFocusTraversable(false);
+        tfRewardBalance.setStyle("-fx-opacity: 1; -fx-control-inner-background: #f0ebe4;");
+
+        TextField tfTierDisplay = new TextField(isNew ? tierDisplayForBalance(0) : StringUtil.nz(existing.getRewardTierDisplay()));
+        tfTierDisplay.setEditable(false);
+        tfTierDisplay.setFocusTraversable(false);
+        tfTierDisplay.setStyle("-fx-opacity: 1; -fx-control-inner-background: #f0ebe4;");
+        tfTierDisplay.setPromptText("—");
+
+        final ComboBox<UserOption> cbUserNew;
+        final TextField tfLinkedUser;
+
+        if (isNew) {
+            List<UserOption> assignablePool;
+            try {
+                assignablePool = ReferenceApi.loadUnlinkedCustomerRoleUsersForNewCustomer();
+            } catch (Exception ex) {
+                LogData.handleException("LOAD_ASSIGNABLE_CUSTOMER_USERS", ex);
+                assignablePool = new ArrayList<>();
+            }
+            final List<UserOption> assignableForFilter = new ArrayList<>(assignablePool);
+            cbUserNew = new ComboBox<>(FXCollections.observableArrayList(assignablePool));
+            cbUserNew.setMaxWidth(Double.MAX_VALUE);
+            cbUserNew.setEditable(true);
+            cbUserNew.setOnKeyReleased(evt -> {
+                javafx.scene.input.KeyCode code = evt.getCode();
+                if (code == javafx.scene.input.KeyCode.ENTER || code == javafx.scene.input.KeyCode.ESCAPE
+                        || code == javafx.scene.input.KeyCode.UP || code == javafx.scene.input.KeyCode.DOWN) {
+                    return;
+                }
+                String typed = cbUserNew.getEditor().getText();
+                cbUserNew.getSelectionModel().clearSelection();
+                String lc = typed == null ? "" : typed.toLowerCase();
+                List<UserOption> match = lc.isEmpty()
+                        ? new ArrayList<>(assignableForFilter)
+                        : assignableForFilter.stream()
+                                .filter(u -> u.getUsername().toLowerCase().contains(lc))
+                                .collect(Collectors.toList());
+                cbUserNew.setItems(FXCollections.observableArrayList(match));
+                if (typed != null) {
+                    cbUserNew.getEditor().setText(typed);
+                    cbUserNew.getEditor().positionCaret(typed.length());
+                }
+                if (!match.isEmpty()) {
+                    cbUserNew.show();
+                }
+            });
+            tfLinkedUser = null;
+        } else {
+            cbUserNew = null;
+            tfLinkedUser = new TextField(StringUtil.nz(existing.getUserDisplay()));
+            tfLinkedUser.setEditable(false);
+            tfLinkedUser.setFocusTraversable(false);
+            tfLinkedUser.setStyle("-fx-opacity: 1; -fx-control-inner-background: #f0ebe4;");
+            if (tfLinkedUser.getText().isBlank()) {
+                tfLinkedUser.setText("(no linked login)");
+            }
+        }
 
         ComboBox<AddressOption> cbAddress = new ComboBox<>();
         AddressInputHelper.configureEditableAddressCombo(cbAddress);
         AddressInputHelper.setAddressItems(cbAddress, addressOptions);
-        if (existing.getAddressId() > 0) AddressInputHelper.selectAddressById(cbAddress, existing.getAddressId());
+        if (!isNew && existing.getAddressId() > 0) {
+            AddressInputHelper.selectAddressById(cbAddress, existing.getAddressId());
+        }
         cbAddress.setMaxWidth(Double.MAX_VALUE);
 
         Label lblError = new Label();
@@ -303,22 +373,39 @@ public class CustomerManagementController {
         addRow(grid, row++, "Email *", tfEmail);
         addRow(grid, row++, "Phone *", tfPhone);
         addRow(grid, row++, "Business Phone", tfBusinessPhone);
-        addRow(grid, row++, "Reward Tier *", cbTier);
-        addRow(grid, row++, "Reward Points", tfRewardBalance);
+        if (isNew) {
+            addRow(grid, row++, "User Account *", cbUserNew);
+        } else {
+            addRow(grid, row++, "Linked user (read-only)", tfLinkedUser);
+        }
+        addRow(grid, row++, "Reward tier (from points)", tfTierDisplay);
+        addRow(grid, row++, "Reward points (read-only)", tfRewardBalance);
         addRow(grid, row, "Address *", cbAddress);
 
-        VBox content = new VBox(12, grid, lblError);
+        Label lblTierHint = new Label("Tier updates automatically when points cross a threshold (including after Save).");
+        lblTierHint.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 11px; -fx-wrap-text: true;");
+        lblTierHint.setMaxWidth(480);
+        Label lblPointsHint = new Label(
+                isNew
+                        ? "New customers start at 0 points. After saving, use Adjust Points on the list to add or remove points."
+                        : "Use Adjust Points on the customer list to change points; they cannot be edited here.");
+        lblPointsHint.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 11px; -fx-wrap-text: true;");
+        lblPointsHint.setMaxWidth(480);
+
+        VBox content = new VBox(12, grid, lblTierHint, lblPointsHint, lblError);
         content.setPadding(new Insets(20, 24, 8, 24));
 
         Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Edit Customer");
+        dialog.setTitle(isNew ? "New Customer" : "Edit Customer");
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().setPrefWidth(500);
         dialog.getDialogPane().getStylesheets().add(
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
 
-        ButtonType saveType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        ButtonType saveType = new ButtonType(
+                isNew ? "Create Customer" : "Save Changes",
+                ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(saveType, ButtonType.CANCEL);
 
         Button saveBtn = (Button) dialog.getDialogPane().lookupButton(saveType);
@@ -327,49 +414,76 @@ public class CustomerManagementController {
             if (StringUtil.safe(tfLastName.getText()).isBlank()) { showErr(lblError, "Last name is required."); event.consume(); return; }
             if (StringUtil.safe(tfPhone.getText()).isBlank()) { showErr(lblError, "Phone is required."); event.consume(); return; }
             if (StringUtil.safe(tfEmail.getText()).isBlank()) { showErr(lblError, "Email is required."); event.consume(); return; }
-            if (cbTier.getValue() == null) { showErr(lblError, "Reward tier is required."); event.consume(); return; }
-            String balStr = StringUtil.safe(tfRewardBalance.getText());
-            try {
-                int bal = Integer.parseInt(balStr);
-                if (bal < 0) { showErr(lblError, "Reward points cannot be negative."); event.consume(); }
-            } catch (NumberFormatException e) {
-                showErr(lblError, "Reward points must be a whole number.");
+            if (isNew && (cbUserNew == null || cbUserNew.getValue() == null)) {
+                showErr(lblError, "Username is required (create a customer login first if the list is empty).");
                 event.consume();
+                return;
+            }
+            String addrTyped = AddressInputHelper.getTypedText(cbAddress);
+            if (cbAddress.getValue() == null && addrTyped.isBlank()) {
+                showErr(lblError, "Address is required.");
+                event.consume();
+                return;
             }
         });
 
         dialog.showAndWait().ifPresent(result -> {
             if (result.getButtonData() != ButtonBar.ButtonData.OK_DONE) return;
             try {
-                int newBalance = Integer.parseInt(StringUtil.safe(tfRewardBalance.getText()));
-                Integer newTierId = cbTier.getValue() != null ? cbTier.getValue().getRewardTierId() : existing.getRewardTierId();
-                // Auto-recalculate tier if balance changed
-                if (newBalance != existing.getRewardBalance()) {
-                    Integer autoTier = findTierForBalance(newBalance);
-                    if (autoTier != null) newTierId = autoTier;
-                }
                 AddressOption addr = resolveAddress(cbAddress);
-                Map<String, Object> body = CustomerApi.patchBodyForProfile(
-                        tfFirstName.getText().trim(),
-                        tfMiddleInitial.getText().trim().isEmpty() ? null : tfMiddleInitial.getText().trim(),
-                        tfLastName.getText().trim(),
-                        tfPhone.getText().trim(),
-                        tfBusinessPhone.getText().trim().isEmpty() ? null : tfBusinessPhone.getText().trim(),
-                        tfEmail.getText().trim(),
-                        addr != null ? addr.getAddressId() : existing.getAddressId(),
-                        newTierId
-                );
-                body.put("rewardBalance", newBalance);
-                CustomerApi.patch(existing.getCustomerId(), body);
-                LogData.logAction("UPDATE", "Customer");
-                String cid = existing.getCustomerId();
-                refreshCustomersOnlyAsync(() -> {
-                    selectCustomerById(cid);
-                    lblStatus.setText("Updated customer " + cid);
-                });
+                if (isNew) {
+                    int addressId = addr != null ? addr.getAddressId() : 0;
+                    if (addressId <= 0) {
+                        ErrorHandler.showWarning("Create Failed", "Address is required.");
+                        return;
+                    }
+                    Map<String, Object> body = new LinkedHashMap<>();
+                    body.put("userId", cbUserNew.getValue().getUserId());
+                    body.put("addressId", addressId);
+                    body.put("firstName", tfFirstName.getText().trim());
+                    body.put("middleInitial", tfMiddleInitial.getText().trim().isEmpty() ? null : tfMiddleInitial.getText().trim());
+                    body.put("lastName", tfLastName.getText().trim());
+                    body.put("phone", tfPhone.getText().trim());
+                    body.put("businessPhone", tfBusinessPhone.getText().trim().isEmpty() ? null : tfBusinessPhone.getText().trim());
+                    body.put("email", tfEmail.getText().trim());
+                    body.put("rewardBalance", 0);
+                    CustomerApi.CustomerRow created = CustomerApi.create(body);
+                    LogData.logAction("CREATE", "Customer");
+                    String newId = created.id != null ? created.id : "";
+                    refreshCustomersOnlyAsync(() -> {
+                        if (!newId.isBlank()) {
+                            selectCustomerById(newId);
+                        }
+                        lblStatus.setText("Customer created.");
+                    });
+                } else {
+                    int currentBalance = existing.getRewardBalance();
+                    Integer newTierId = findTierForBalance(currentBalance);
+                    if (newTierId == null) {
+                        newTierId = existing.getRewardTierId();
+                    }
+                    Map<String, Object> body = CustomerApi.patchBodyForProfile(
+                            tfFirstName.getText().trim(),
+                            tfMiddleInitial.getText().trim().isEmpty() ? null : tfMiddleInitial.getText().trim(),
+                            tfLastName.getText().trim(),
+                            tfPhone.getText().trim(),
+                            tfBusinessPhone.getText().trim().isEmpty() ? null : tfBusinessPhone.getText().trim(),
+                            tfEmail.getText().trim(),
+                            addr != null ? addr.getAddressId() : existing.getAddressId(),
+                            newTierId
+                    );
+                    CustomerApi.patch(existing.getCustomerId(), body);
+                    LogData.logAction("UPDATE", "Customer");
+                    String cid = existing.getCustomerId();
+                    refreshCustomersOnlyAsync(() -> {
+                        selectCustomerById(cid);
+                        lblStatus.setText("Updated customer " + cid);
+                    });
+                }
             } catch (Exception ex) {
-                LogData.handleException("UPDATE_CUSTOMER", ex);
-                ErrorHandler.showErrorDialog("Update Failed", "Could not update customer.", ex.getMessage());
+                LogData.handleException(isNew ? "CREATE_CUSTOMER" : "UPDATE_CUSTOMER", ex);
+                ErrorHandler.showErrorDialog(isNew ? "Create Failed" : "Update Failed",
+                        "Could not save customer.", ex);
             }
         });
     }
@@ -389,7 +503,7 @@ public class CustomerManagementController {
             showOrderHistoryDialog(selected, orders);
         } catch (Exception e) {
             LogData.handleException("VIEW_ORDER_HISTORY", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load order history.", e.getMessage());
+            ErrorHandler.showErrorDialog("API Error", "Could not load order history.", e);
         }
     }
 
@@ -405,9 +519,9 @@ public class CustomerManagementController {
         TableView<Order> tblOrders = new TableView<>();
         tblOrders.setPrefHeight(260);
 
-        TableColumn<Order, String> colId = new TableColumn<>("Order ID");
-        colId.setCellValueFactory(new PropertyValueFactory<>("orderId"));
-        colId.setPrefWidth(90);
+        TableColumn<Order, String> colOrderNum = new TableColumn<>("Order #");
+        colOrderNum.setCellValueFactory(new PropertyValueFactory<>("orderNumber"));
+        colOrderNum.setPrefWidth(110);
 
         TableColumn<Order, String> colDate = new TableColumn<>("Placed");
         colDate.setCellValueFactory(new PropertyValueFactory<>("orderPlacedDateTime"));
@@ -439,7 +553,7 @@ public class CustomerManagementController {
         colStatus.setCellValueFactory(new PropertyValueFactory<>("orderStatus"));
         colStatus.setPrefWidth(100);
 
-        tblOrders.getColumns().addAll(colId, colDate, colMethod, colTotal, colStatus);
+        tblOrders.getColumns().addAll(colOrderNum, colDate, colMethod, colTotal, colStatus);
         tblOrders.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         Label lblItems = new Label("Order Items (select an order above)");
@@ -480,7 +594,7 @@ public class CustomerManagementController {
             try {
                 List<OrderItem> items = OrderApi.getOrderItems(sel.getOrderId());
                 tblItems.setItems(FXCollections.observableArrayList(items));
-                lblItems.setText("Order " + sel.getOrderId() + " — " + items.size() + " item(s)");
+                lblItems.setText("Order " + sel.getOrderNumber() + " — " + items.size() + " item(s)");
             } catch (Exception e) {
                 LogData.handleException("LOAD_ORDER_ITEMS", e);
                 tblItems.getItems().clear();
@@ -568,7 +682,7 @@ public class CustomerManagementController {
                 });
             } catch (Exception e) {
                 LogData.handleException("ADJUST_POINTS", e);
-                ErrorHandler.showErrorDialog("Error", "Could not update reward balance.", e.getMessage());
+                ErrorHandler.showErrorDialog("Error", "Could not update reward balance.", e);
             }
         });
     }
@@ -633,21 +747,43 @@ public class CustomerManagementController {
         return null;
     }
 
+    private String tierDisplayForBalance(int balance) {
+        Integer id = findTierForBalance(balance);
+        if (id == null) {
+            return "";
+        }
+        for (RewardTierApi.RewardTierJson t : tierData) {
+            if (id.equals(t.id)) {
+                return t.name != null ? t.name : "";
+            }
+        }
+        return "";
+    }
+
     // ────────────────────────────────────────────────────────────
     // Inner types
     // ────────────────────────────────────────────────────────────
 
     private static final class CombinedData {
         final List<RewardTierApi.RewardTierJson> tiers;
-        final List<UserOption> users;
         final List<AddressOption> addrs;
         final List<CustomerApi.CustomerRow> customers;
 
-        CombinedData(List<RewardTierApi.RewardTierJson> tiers, List<UserOption> users,
+        CombinedData(List<RewardTierApi.RewardTierJson> tiers,
                      List<AddressOption> addrs, List<CustomerApi.CustomerRow> customers) {
             this.tiers = tiers;
-            this.users = users;
             this.addrs = addrs;
+            this.customers = customers;
+        }
+    }
+
+    private static final class CustomerRefreshData {
+        final List<RewardTierApi.RewardTierJson> tiers;
+        final List<CustomerApi.CustomerRow> customers;
+
+        CustomerRefreshData(List<RewardTierApi.RewardTierJson> tiers,
+                            List<CustomerApi.CustomerRow> customers) {
+            this.tiers = tiers;
             this.customers = customers;
         }
     }

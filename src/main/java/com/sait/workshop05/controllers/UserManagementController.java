@@ -2,12 +2,14 @@ package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.UserManagementApi;
 import com.sait.workshop05.logging.LogData;
+import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
@@ -17,6 +19,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.util.List;
 import java.util.Optional;
 
 public class UserManagementController {
@@ -32,6 +35,7 @@ public class UserManagementController {
     // ── Toolbar ────────────────────────────────────────────────
     @FXML private TextField txtSearch;
     @FXML private Label     lblStatus;
+    @FXML private Label     lblPolicy;
     @FXML private Button    btnRefresh;
     @FXML private Button    btnNewUser;
 
@@ -44,10 +48,38 @@ public class UserManagementController {
 
     @FXML
     void initialize() {
+        applyAccessPolicyUi();
         setupColumns();
         setupActionsColumn();
         setupSearchFiltering();
+        tblUsers.setPlaceholder(new Label("No users match the current filter."));
+        if (!UserSession.getInstance().isAdmin()) {
+            tblUsers.setDisable(true);
+            txtSearch.setDisable(true);
+            if (btnRefresh != null) {
+                btnRefresh.setDisable(true);
+            }
+            lblStatus.setText("This page is only available to administrators.");
+            return;
+        }
         loadUsers();
+    }
+
+    /**
+     * Employees never see the Users sidebar entry; this supports defense in depth and clear copy for admins.
+     */
+    private void applyAccessPolicyUi() {
+        if (lblPolicy != null) {
+            lblPolicy.setText(
+                    "Administrators only: create Employee or Customer login accounts (for staff profiles and "
+                            + "customer records). New admin accounts are not created from this app. "
+                            + "Staff accounts cannot open this page.");
+        }
+        boolean admin = UserSession.getInstance().isAdmin();
+        if (btnNewUser != null) {
+            btnNewUser.setVisible(admin);
+            btnNewUser.setManaged(admin);
+        }
     }
 
     private void setupColumns() {
@@ -100,31 +132,87 @@ public class UserManagementController {
                 if (q.isEmpty()) return true;
                 return StringUtil.containsIgnoreCase(u.getUsername(), q)
                         || StringUtil.containsIgnoreCase(u.getEmail(), q)
-                        || StringUtil.containsIgnoreCase(u.getRoleDisplay(), q);
+                        || StringUtil.containsIgnoreCase(u.getRoleDisplay(), q)
+                        || StringUtil.containsIgnoreCase(u.getStatusDisplay(), q);
             });
-            lblStatus.setText(filtered.size() + " user(s) shown");
+            updateUserListStatusLabel();
         });
         SortedList<UserRow> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblUsers.comparatorProperty());
         tblUsers.setItems(sorted);
+        colUsername.setSortType(TableColumn.SortType.ASCENDING);
+        tblUsers.getSortOrder().setAll(colUsername);
     }
 
     // ────────────────────────────────────────────────────────────
     // Data
     // ────────────────────────────────────────────────────────────
 
+    private void updateUserListStatusLabel() {
+        if (lblStatus == null || filtered == null) {
+            return;
+        }
+        String q = txtSearch.getText() == null ? "" : txtSearch.getText().trim();
+        if (q.isEmpty()) {
+            lblStatus.setText(master.size() + " user(s)");
+        } else {
+            lblStatus.setText(filtered.size() + " of " + master.size() + " user(s) match filter");
+        }
+    }
+
     private void loadUsers() {
-        try {
+        if (!UserSession.getInstance().isAdmin()) {
+            return;
+        }
+        lblStatus.setText("Loading users…");
+        if (btnRefresh != null) {
+            btnRefresh.setDisable(true);
+        }
+        if (btnNewUser != null) {
+            btnNewUser.setDisable(true);
+        }
+        if (tblUsers != null) {
+            tblUsers.setDisable(true);
+        }
+        Task<List<UserManagementApi.UserRow>> task = new Task<>() {
+            @Override
+            protected List<UserManagementApi.UserRow> call() throws Exception {
+                return UserManagementApi.listUsers();
+            }
+        };
+        task.setOnSucceeded(e -> {
+            if (btnRefresh != null) {
+                btnRefresh.setDisable(false);
+            }
+            if (btnNewUser != null) {
+                btnNewUser.setDisable(false);
+            }
+            if (tblUsers != null) {
+                tblUsers.setDisable(false);
+            }
             master.clear();
-            for (UserManagementApi.UserRow u : UserManagementApi.listUsers()) {
+            for (UserManagementApi.UserRow u : task.getValue()) {
                 master.add(new UserRow(u));
             }
-            lblStatus.setText(master.size() + " user(s) loaded");
+            updateUserListStatusLabel();
             LogData.logAction("READ", "User");
-        } catch (Exception e) {
-            LogData.handleException("READ_USERS", e);
-            ErrorHandler.showErrorDialog("API Error", "Could not load users.", e.getMessage());
-        }
+        });
+        task.setOnFailed(e -> {
+            if (btnRefresh != null) {
+                btnRefresh.setDisable(false);
+            }
+            if (btnNewUser != null) {
+                btnNewUser.setDisable(false);
+            }
+            if (tblUsers != null) {
+                tblUsers.setDisable(false);
+            }
+            Throwable t = task.getException();
+            LogData.handleException("READ_USERS", new RuntimeException(t));
+            lblStatus.setText("Could not load users.");
+            ErrorHandler.showErrorDialog("API Error", "Could not load users.", t);
+        });
+        Thread.ofVirtual().name("users-load").start(task);
     }
 
     @FXML
@@ -138,6 +226,13 @@ public class UserManagementController {
 
     @FXML
     private void onNewUser() {
+        if (!UserSession.getInstance().isAdmin()) {
+            ErrorHandler.showErrorDialog(
+                    "Access Denied",
+                    "User management is not available",
+                    "Only administrators can create user accounts.");
+            return;
+        }
         TextField tfUsername = new TextField();
         tfUsername.setPromptText("e.g., jsmith");
         TextField tfEmail = new TextField();
@@ -147,6 +242,10 @@ public class UserManagementController {
         ComboBox<String> cbRole = new ComboBox<>(
                 FXCollections.observableArrayList("Employee", "Customer"));
         cbRole.setMaxWidth(Double.MAX_VALUE);
+
+        Label lblRoleHint = new Label("Role must be Employee or Customer. Admin users cannot be created here.");
+        lblRoleHint.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 11px; -fx-wrap-text: true;");
+        lblRoleHint.setMaxWidth(400);
 
         Label lblError = new Label();
         lblError.setStyle("-fx-text-fill: #B85C4C; -fx-font-size: 12px;");
@@ -159,11 +258,11 @@ public class UserManagementController {
         addRow(grid, 2, "Password *", pfPassword);
         addRow(grid, 3, "Role *", cbRole);
 
-        VBox content = new VBox(12, grid, lblError);
+        VBox content = new VBox(12, grid, lblRoleHint, lblError);
         content.setPadding(new Insets(20, 24, 8, 24));
 
         Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("New User Account");
+        dialog.setTitle("New login (Employee or Customer)");
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().setPrefWidth(440);
         dialog.getDialogPane().getStylesheets().add(
@@ -187,19 +286,40 @@ public class UserManagementController {
         dialog.showAndWait().ifPresent(result -> {
             if (result.getButtonData() != ButtonBar.ButtonData.OK_DONE) return;
             String roleApi = "Employee".equals(cbRole.getValue()) ? "employee" : "customer";
-            try {
-                UserManagementApi.createUser(
-                        tfUsername.getText().trim(),
-                        tfEmail.getText().trim(),
-                        pfPassword.getText(),
-                        roleApi);
-                LogData.logAction("CREATE", "User: " + tfUsername.getText().trim());
-                loadUsers();
-                lblStatus.setText("User '" + tfUsername.getText().trim() + "' created.");
-            } catch (Exception ex) {
-                LogData.handleException("CREATE_USER", ex);
-                ErrorHandler.showErrorDialog("Create Failed", "Could not create user account.", ex.getMessage());
+            String uname = tfUsername.getText().trim();
+            String email = tfEmail.getText().trim();
+            String password = pfPassword.getText();
+            lblStatus.setText("Creating user…");
+            if (btnNewUser != null) {
+                btnNewUser.setDisable(true);
             }
+            Task<UserManagementApi.UserRow> createTask = new Task<>() {
+                @Override
+                protected UserManagementApi.UserRow call() throws Exception {
+                    return UserManagementApi.createUser(uname, email, password, roleApi);
+                }
+            };
+            createTask.setOnSucceeded(ev -> {
+                if (btnNewUser != null) {
+                    btnNewUser.setDisable(false);
+                }
+                LogData.logAction("CREATE", "User: " + uname);
+                loadUsers();
+                lblStatus.setText("User '" + uname + "' created.");
+            });
+            createTask.setOnFailed(ev -> {
+                if (btnNewUser != null) {
+                    btnNewUser.setDisable(false);
+                }
+                Throwable t = createTask.getException();
+                LogData.handleException("CREATE_USER", new RuntimeException(t));
+                ErrorHandler.showErrorDialog(
+                        "Create Failed",
+                        "Could not create user account.",
+                        t);
+                updateUserListStatusLabel();
+            });
+            Thread.ofVirtual().name("user-create").start(createTask);
         });
     }
 
@@ -220,8 +340,19 @@ public class UserManagementController {
     // ────────────────────────────────────────────────────────────
 
     private void handleToggleActive(UserRow row) {
+        if (!UserSession.getInstance().isAdmin()) {
+            return;
+        }
         boolean newActive = !row.isActive();
         String action = newActive ? "activate" : "deactivate";
+
+        String selfId = UserSession.getInstance().getApiUserId();
+        if (!newActive && selfId != null && selfId.equals(row.getId())) {
+            ErrorHandler.showWarning(
+                    "Cannot deactivate",
+                    "You cannot deactivate the account you are currently using.");
+            return;
+        }
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirm");
@@ -235,15 +366,56 @@ public class UserManagementController {
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
-        try {
-            UserManagementApi.setActive(row.getId(), newActive);
+        lblStatus.setText("Updating user…");
+        if (tblUsers != null) {
+            tblUsers.setDisable(true);
+        }
+        if (btnRefresh != null) {
+            btnRefresh.setDisable(true);
+        }
+        if (btnNewUser != null) {
+            btnNewUser.setDisable(true);
+        }
+
+        Task<Void> toggleTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                UserManagementApi.setActive(row.getId(), newActive);
+                return null;
+            }
+        };
+        toggleTask.setOnSucceeded(ev -> {
+            if (tblUsers != null) {
+                tblUsers.setDisable(false);
+            }
+            if (btnRefresh != null) {
+                btnRefresh.setDisable(false);
+            }
+            if (btnNewUser != null) {
+                btnNewUser.setDisable(false);
+            }
             LogData.logAction(newActive ? "ACTIVATE" : "DEACTIVATE", "User: " + row.getUsername());
             loadUsers();
-            lblStatus.setText("User '" + row.getUsername() + "' " + action + "d.");
-        } catch (Exception ex) {
-            LogData.handleException("TOGGLE_USER_ACTIVE", ex);
-            ErrorHandler.showErrorDialog("Update Failed", "Could not update user status.", ex.getMessage());
-        }
+        });
+        toggleTask.setOnFailed(ev -> {
+            if (tblUsers != null) {
+                tblUsers.setDisable(false);
+            }
+            if (btnRefresh != null) {
+                btnRefresh.setDisable(false);
+            }
+            if (btnNewUser != null) {
+                btnNewUser.setDisable(false);
+            }
+            Throwable t = toggleTask.getException();
+            LogData.handleException("TOGGLE_USER_ACTIVE", new RuntimeException(t));
+            ErrorHandler.showErrorDialog(
+                    "Update Failed",
+                    "Could not update user status.",
+                    t);
+            updateUserListStatusLabel();
+        });
+        Thread.ofVirtual().name("user-toggle-active").start(toggleTask);
     }
 
     // ────────────────────────────────────────────────────────────

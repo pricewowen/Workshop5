@@ -7,11 +7,13 @@ import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StageIconHelper;
+import com.sait.workshop05.util.UserInitialsHelper;
 import io.sentry.Sentry;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -19,7 +21,11 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 public class MainController {
@@ -76,6 +82,9 @@ public class MainController {
     private Label lblInitials;
 
     @FXML
+    private ImageView imgUserAvatar;
+
+    @FXML
     private Label lblPageTitle;
 
     private Button activeButton;
@@ -96,6 +105,11 @@ public class MainController {
         PAGE_TITLES.put(btnActivityLog, "Activity Log");
         PAGE_TITLES.put(btnUsers,       "Users");
 
+        if (imgUserAvatar != null) {
+            Circle clip = new Circle(18, 18, 18);
+            imgUserAvatar.setClip(clip);
+        }
+
         setUserLabels();
         applyRoleBasedVisibility();
         showDashboard();
@@ -115,8 +129,66 @@ public class MainController {
         lblUsername.setText(username);
 
         if (lblInitials != null) {
-            lblInitials.setText(username.isEmpty() ? "?" :
-                    String.valueOf(username.charAt(0)).toUpperCase());
+            String initials = UserInitialsHelper.compute(
+                    session.getProfileFirstName(),
+                    session.getProfileLastName(),
+                    username);
+            lblInitials.setText(initials);
+        }
+
+        configureSidebarAvatar(session, username);
+    }
+
+    private void configureSidebarAvatar(UserSession session, String username) {
+        if (imgUserAvatar == null || lblInitials == null) {
+            return;
+        }
+
+        String photoUrl = session.getProfilePhotoUrl();
+        if (photoUrl == null || photoUrl.isBlank()) {
+            showSidebarInitialsOnly();
+            return;
+        }
+
+        Image image = new Image(photoUrl, 72, 72, true, true, true);
+
+        Runnable applyLoadedOrFallback = () -> {
+            if (image.isError()) {
+                showSidebarInitialsOnly();
+            } else {
+                imgUserAvatar.setImage(image);
+                imgUserAvatar.setVisible(true);
+                imgUserAvatar.setManaged(true);
+                lblInitials.setVisible(false);
+                lblInitials.setManaged(false);
+            }
+        };
+
+        if (image.getProgress() >= 1.0) {
+            Platform.runLater(applyLoadedOrFallback);
+        } else {
+            image.progressProperty().addListener((obs, oldV, newV) -> {
+                if (newV != null && newV.doubleValue() >= 1.0) {
+                    Platform.runLater(applyLoadedOrFallback);
+                }
+            });
+            image.errorProperty().addListener((obs, oldErr, isErr) -> {
+                if (Boolean.TRUE.equals(isErr)) {
+                    Platform.runLater(this::showSidebarInitialsOnly);
+                }
+            });
+        }
+    }
+
+    private void showSidebarInitialsOnly() {
+        if (imgUserAvatar != null) {
+            imgUserAvatar.setImage(null);
+            imgUserAvatar.setVisible(false);
+            imgUserAvatar.setManaged(false);
+        }
+        if (lblInitials != null) {
+            lblInitials.setVisible(true);
+            lblInitials.setManaged(true);
         }
     }
 
@@ -127,6 +199,7 @@ public class MainController {
      * Employee:
      *  - no Employees
      *  - no Locations
+     *  - no Users (login account management is admin-only)
      *  - Analytics only if "real" employee (Employee row + bakery access)
      */
     private void applyRoleBasedVisibility() {
@@ -143,6 +216,10 @@ public class MainController {
             }
         }
         // Admin sees everything — no hiding needed
+        if (btnUsers != null && btnUsers.isVisible()) {
+            btnUsers.setTooltip(new Tooltip(
+                    "User accounts: create Employee or Customer logins (admin only)."));
+        }
     }
 
     /**
@@ -234,6 +311,14 @@ public class MainController {
 
     @FXML
     void onUsersClick(ActionEvent event) {
+        UserSession session = UserSession.getInstance();
+        if (!session.isAdmin()) {
+            ErrorHandler.showErrorDialog(
+                    "Access Denied",
+                    "User management is not available",
+                    "Only administrators can open User management.");
+            return;
+        }
         setActiveButton(btnUsers);
         loadPage("user-management-view.fxml");
     }
@@ -259,13 +344,13 @@ public class MainController {
             stage.setScene(scene);
             stage.setTitle("Login");
             StageIconHelper.setAppIcon(stage);
-            stage.setWidth(700);
+            stage.setWidth(750);
             stage.setHeight(730);
-            stage.setMinWidth(700);
+            stage.setMinWidth(750);
             stage.setMinHeight(730);
             stage.centerOnScreen();
         } catch (IOException e) {
-            ErrorHandler.showErrorDialog("Logout Error", "Could not return to login screen", e.getMessage());
+            ErrorHandler.showErrorDialog("Logout Error", "Could not return to login screen", e);
             LogData.handleException("LOGOUT", e);
         }
     }
@@ -310,7 +395,7 @@ public class MainController {
             AnchorPane.setRightAnchor(page, 0.0);
 
         } catch (Exception e) {
-            ErrorHandler.showErrorDialog("Navigation Error", "Could not load page: " + view, e.getMessage());
+            ErrorHandler.showErrorDialog("Navigation Error", "Could not load page: " + view, e);
             LogData.handleException("LOAD_PAGE", e);
         }
     }
