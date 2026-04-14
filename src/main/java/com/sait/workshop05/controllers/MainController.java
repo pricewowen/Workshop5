@@ -62,6 +62,9 @@ public class MainController {
     private Button btnProducts;
 
     @FXML
+    private Button btnProductSpecials;
+
+    @FXML
     private Button btnRewards;
 
     @FXML
@@ -95,8 +98,9 @@ public class MainController {
     void initialize() {
         PAGE_TITLES.put(btnDashboard,   "Dashboard");
         PAGE_TITLES.put(btnOrders,      "Orders");
-        PAGE_TITLES.put(btnProducts,    "Products");
-        PAGE_TITLES.put(btnCustomers,   "Customers");
+        PAGE_TITLES.put(btnProducts,        "Products");
+        PAGE_TITLES.put(btnProductSpecials, "Product Specials");
+        PAGE_TITLES.put(btnCustomers,       "Customers");
         PAGE_TITLES.put(btnEmployees,   "Employees");
         PAGE_TITLES.put(btnLocations,   "Locations");
         PAGE_TITLES.put(btnRewards,     "Rewards");
@@ -296,6 +300,12 @@ public class MainController {
     void onProductsClick(ActionEvent event) {
         setActiveButton(btnProducts);
         loadPage("product-management-view.fxml");
+    }
+
+    @FXML
+    void onProductSpecialsClick(ActionEvent event) {
+        setActiveButton(btnProductSpecials);
+        loadPage("product-specials-view.fxml");
     }
 
     @FXML
