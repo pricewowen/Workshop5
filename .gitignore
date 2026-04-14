@@ -39,8 +39,12 @@ build/
 
 # Environment variables (local only)
 .env.local
-.gitnexus
-.claude*
-AGENTS.md
-CLAUDE.md
+
+# Runtime log (LogData.java / Activity log). App writes "Log.txt" at project root.
+# If Git still shows changes, the file was committed before this rule — run once:
+#   git rm --cached --ignore-unmatch Log.txt
+#   (from this folder if the repo root is Workshop5, or use the path from your repo root)
 Log.txt
+log.txt
+**/Log.txt
+**/log.txt
