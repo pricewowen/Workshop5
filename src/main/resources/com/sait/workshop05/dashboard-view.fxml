@@ -83,6 +83,8 @@
                     <Region HBox.hgrow="ALWAYS"/>
                     <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
                             styleClass="btn-muted toolbar-action"/>
+                    <Button fx:id="btnNewOrder" text="Manage Orders"
+                            styleClass="btn-accent toolbar-action"/>
                 </HBox>
 
                 <TableView fx:id="tbvRecentOrders" VBox.vgrow="ALWAYS">
@@ -99,7 +101,6 @@
 
                 <Label fx:id="lblStatus" text=""
                        styleClass="hint-label"/>
-
             </VBox>
 
         </VBox>

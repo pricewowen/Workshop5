@@ -61,6 +61,9 @@ public class MainController {
     private Button btnProducts;
 
     @FXML
+    private Button btnProductSpecials;
+
+    @FXML
     private Button btnRewards;
 
     @FXML
@@ -100,7 +103,7 @@ public class MainController {
         PAGE_TITLES.put(btnLocations,   "Locations");
         PAGE_TITLES.put(btnRewards,     "Rewards");
         PAGE_TITLES.put(btnRewardTier,  "Reward Tiers");
-        PAGE_TITLES.put(btnMessages,    "Messages");
+        PAGE_TITLES.put(btnMessages,    "Support Chat");
         PAGE_TITLES.put(btnAnalytics,   "Analytics");
         PAGE_TITLES.put(btnActivityLog, "Activity Log");
         PAGE_TITLES.put(btnUsers,       "Users");
@@ -282,7 +285,7 @@ public class MainController {
     @FXML
     void onMessagesClick(ActionEvent event) {
         setActiveButton(btnMessages);
-        loadPage("messaging-view.fxml");
+        loadPage("chat-view.fxml");
     }
 
     @FXML
@@ -295,6 +298,12 @@ public class MainController {
     void onProductsClick(ActionEvent event) {
         setActiveButton(btnProducts);
         loadPage("product-management-view.fxml");
+    }
+
+    @FXML
+    void onProductSpecialsClick(ActionEvent event) {
+        setActiveButton(btnProductSpecials);
+        loadPage("product-specials-view.fxml");
     }
 
     @FXML

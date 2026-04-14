@@ -11,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +29,10 @@ public class ApiClient {
     private String jwtToken;
 
     private ApiClient() {
-        this.http = HttpClient.newHttpClient();
+        this.http = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
         this.mapper = new ObjectMapper();
         this.baseUrl = loadBaseUrl();
     }

@@ -72,6 +72,19 @@
                     </HBox>
                 </VBox>
 
+                <Label fx:id="errorLabel"
+                       styleClass="error-text"
+                       wrapText="true"
+                       visible="false" managed="true"/>
+
+                <Button fx:id="loginButton"
+                        text="Sign In"
+                        onAction="#handleLogin"
+                        defaultButton="true"
+                        prefHeight="44"
+                        maxWidth="1.7976931348623157E308"
+                        styleClass="btn-primary"/>
+
                 <VBox alignment="CENTER" spacing="5">
                     <VBox.margin>
                         <Insets top="10"/>
@@ -80,6 +93,6 @@
                 </VBox>
             </VBox>
         </VBox>
-    </center>
+    </VBox>
 
-</BorderPane>
+</HBox>
