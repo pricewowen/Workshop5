@@ -5,7 +5,7 @@ import java.net.http.HttpResponse;
 
 /**
  * Uploads product images to DigitalOcean Spaces via the admin API.
- * Images land in the {@code bakery/} folder and are publicly accessible at
+ * Images land in the {@code products/} folder and are publicly accessible at
  * {@code https://peelin-good-storage.tor1.digitaloceanspaces.com}.
  * The API URL is read from {@code .env.local} by {@link ApiClient}.
  */
@@ -14,7 +14,7 @@ public final class ImageUploadApi {
     private ImageUploadApi() {}
 
     /**
-     * Uploads an image for a product to the {@code bakery/} folder.
+     * Uploads an image for a product to the {@code products/} folder.
      * The backend validates the file, stores it in DigitalOcean Spaces, and
      * persists the resulting public URL on the product record.
      *
