@@ -39,3 +39,7 @@ build/
 
 # Environment variables (local only)
 .env.local
+.gitnexus
+.claude*
+AGENTS.md
+CLAUDE.md
