@@ -72,26 +72,14 @@
                     </HBox>
                 </VBox>
 
-                <Label fx:id="errorLabel"
-                       text=""
-                       styleClass="error-text"
-                       wrapText="true"
-                       visible="false"/>
-
-                <Button fx:id="loginButton"
-                        text="Sign In"
-                        onAction="#handleLogin"
-                        styleClass="btn-cta"
-                        maxWidth="1.7976931348623157E308"
-                        prefHeight="44">
-                    <VBox.margin><Insets top="4"/></VBox.margin>
-                </Button>
-
+                <VBox alignment="CENTER" spacing="5">
+                    <VBox.margin>
+                        <Insets top="10"/>
+                    </VBox.margin>
+                    <Label text="Contact your administrator for login credentials" styleClass="login-hint"/>
+                </VBox>
             </VBox>
-
-            <Label text="Contact your administrator for access" styleClass="login-hint"/>
-
         </VBox>
-    </VBox>
+    </center>
 
-</HBox>
+</BorderPane>

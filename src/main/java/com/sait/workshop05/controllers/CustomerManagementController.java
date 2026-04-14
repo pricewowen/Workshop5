@@ -138,25 +138,11 @@ public class CustomerManagementController {
                         || String.valueOf(cust.getRewardBalance()).contains(q);
             });
             lblStatus.setText(filtered.size() + " customer(s) shown");
-            updateCustomerTablePlaceholder();
         });
 
         SortedList<Customer> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblCustomers.comparatorProperty());
         tblCustomers.setItems(sorted);
-        tblCustomers.setPlaceholder(new Label("Loading customers…"));
-    }
-
-    private void updateCustomerTablePlaceholder() {
-        if (tblCustomers == null || filtered == null) {
-            return;
-        }
-        if (filtered.isEmpty()) {
-            tblCustomers.setPlaceholder(new Label(
-                    master.isEmpty()
-                            ? "No customers to display."
-                            : "No customers match the current filter."));
-        }
     }
 
     // ────────────────────────────────────────────────────────────
@@ -170,7 +156,6 @@ public class CustomerManagementController {
      */
     private void loadAllAsync() {
         lblStatus.setText("Loading...");
-        tblCustomers.setPlaceholder(new Label("Loading customers…"));
         Task<CombinedData> task = new Task<>() {
             @Override
             protected CombinedData call() throws Exception {
@@ -184,7 +169,6 @@ public class CustomerManagementController {
         task.setOnFailed(e -> {
             Throwable t = task.getException();
             LogData.handleException("LOAD_CUSTOMERS", new RuntimeException(t));
-            tblCustomers.setPlaceholder(new Label("Could not load customers."));
             ErrorHandler.showErrorDialog("API Error", "Could not load customers.", t);
         });
         new Thread(task).start();
@@ -211,7 +195,6 @@ public class CustomerManagementController {
             master.add(fromCustomerRow(row, tierMap, addrMap));
         }
         lblStatus.setText(master.size() + " customer(s) loaded");
-        updateCustomerTablePlaceholder();
         LogData.logAction("READ", "Customer");
     }
 
@@ -222,7 +205,6 @@ public class CustomerManagementController {
      */
     private void refreshCustomersOnlyAsync(Runnable afterRefresh) {
         ReferenceApi.invalidateCustomersCache();
-        tblCustomers.setPlaceholder(new Label("Loading customers…"));
         Task<CustomerRefreshData> task = new Task<>() {
             @Override
             protected CustomerRefreshData call() throws Exception {
@@ -252,14 +234,12 @@ public class CustomerManagementController {
                 master.add(fromCustomerRow(row, tierMap, addrMap));
             }
             lblStatus.setText(master.size() + " customer(s) loaded");
-            updateCustomerTablePlaceholder();
             LogData.logAction("READ", "Customer");
             if (afterRefresh != null) afterRefresh.run();
         });
         task.setOnFailed(e -> {
             Throwable t = task.getException();
             LogData.handleException("READ_CUSTOMERS", new RuntimeException(t));
-            tblCustomers.setPlaceholder(new Label("Could not load customers."));
             ErrorHandler.showErrorDialog("API Error", "Could not load customers.", t);
         });
         new Thread(task).start();
@@ -349,8 +329,8 @@ public class CustomerManagementController {
                 List<UserOption> match = lc.isEmpty()
                         ? new ArrayList<>(assignableForFilter)
                         : assignableForFilter.stream()
-                                .filter(u -> u.getUsername().toLowerCase().contains(lc))
-                                .collect(Collectors.toList());
+                        .filter(u -> u.getUsername().toLowerCase().contains(lc))
+                        .collect(Collectors.toList());
                 cbUserNew.setItems(FXCollections.observableArrayList(match));
                 if (typed != null) {
                     cbUserNew.getEditor().setText(typed);
@@ -684,7 +664,7 @@ public class CustomerManagementController {
             int newBalance = selected.getRewardBalance() + adjustment;
             if (newBalance < 0) { ErrorHandler.showWarning("Invalid", "Reward balance cannot go below 0."); return; }
             try {
-                java.util.Map<String, Object> patchBody = new LinkedHashMap<>(CustomerApi.patchRewardBalance(newBalance));
+                Map<String, Object> patchBody = new LinkedHashMap<>(CustomerApi.patchRewardBalance(newBalance));
                 Integer newTierId = findTierForBalance(newBalance);
                 if (newTierId != null) {
                     patchBody.put("rewardTierId", newTierId);

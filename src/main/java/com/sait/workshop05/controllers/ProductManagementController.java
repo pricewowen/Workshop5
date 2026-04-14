@@ -9,11 +9,11 @@ import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -199,25 +199,11 @@ public class ProductManagementController {
                         || String.format("%.2f", prod.getProductBasePrice()).contains(q);
             });
             lblStatus.setText(filtered.size() + " product(s) shown");
-            updateProductTablePlaceholder();
         });
 
         SortedList<Product> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblProducts.comparatorProperty());
         tblProducts.setItems(sorted);
-        tblProducts.setPlaceholder(new Label("Loading products…"));
-    }
-
-    private void updateProductTablePlaceholder() {
-        if (tblProducts == null || filtered == null) {
-            return;
-        }
-        if (filtered.isEmpty()) {
-            tblProducts.setPlaceholder(new Label(
-                    master.isEmpty()
-                            ? "No products to display."
-                            : "No products match the search filter."));
-        }
     }
 
     // ────────────────────────────────────────────────────────────
@@ -231,7 +217,6 @@ public class ProductManagementController {
      */
     private void loadAllAsync() {
         lblStatus.setText("Loading...");
-        tblProducts.setPlaceholder(new Label("Loading products…"));
         Task<ProductLoadData> task = new Task<>() {
             @Override
             protected ProductLoadData call() throws Exception {
@@ -244,7 +229,6 @@ public class ProductManagementController {
         task.setOnFailed(e -> {
             Throwable t = task.getException();
             LogData.handleException("LOAD_PRODUCTS", new RuntimeException(t));
-            tblProducts.setPlaceholder(new Label("Could not load products."));
             ErrorHandler.showErrorDialog("API Error", "Could not load products.", t);
         });
         new Thread(task).start();
@@ -260,7 +244,6 @@ public class ProductManagementController {
             master.add(toProduct(p, idToName));
         }
         lblStatus.setText(master.size() + " product(s) loaded");
-        updateProductTablePlaceholder();
         LogData.logAction("READ", "Product");
     }
 
@@ -269,7 +252,6 @@ public class ProductManagementController {
      * tagNameToId map to avoid an extra tags API call.
      */
     private void refreshProductsOnlyAsync(Runnable afterRefresh) {
-        tblProducts.setPlaceholder(new Label("Loading products…"));
         Task<List<CatalogApi.ProductResponse>> task = new Task<>() {
             @Override
             protected List<CatalogApi.ProductResponse> call() throws Exception {
@@ -284,14 +266,12 @@ public class ProductManagementController {
                 master.add(toProduct(p, idToName));
             }
             lblStatus.setText(master.size() + " product(s) loaded");
-            updateProductTablePlaceholder();
             LogData.logAction("READ", "Product");
             if (afterRefresh != null) afterRefresh.run();
         });
         task.setOnFailed(e -> {
             Throwable t = task.getException();
             LogData.handleException("READ_PRODUCTS", new RuntimeException(t));
-            tblProducts.setPlaceholder(new Label("Could not load products."));
             ErrorHandler.showErrorDialog("API Error", "Could not load products.", t);
         });
         new Thread(task).start();

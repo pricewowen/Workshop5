@@ -1,5 +1,3 @@
-// η℩.cαηtor ↈ (and his AI, ⌈𝗆𝖾𝗍𝖺𝖼𝗈𝖽𝖺⌋ ⊛)
-
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.analytics.*;
@@ -23,7 +21,6 @@ public class AnalyticsController {
     @FXML private ComboBox<String> bakeryComboBox;
     @FXML private ComboBox<String> kpiComboBox;
     @FXML private ComboBox<String> chartTypeComboBox;
-    @FXML private CheckBox compressedViewCheckBox;
     @FXML private Label kpiValueLabel;
     @FXML private Label kpiTitleLabel;
     @FXML private Label secondaryValueLabel;
@@ -50,16 +47,8 @@ public class AnalyticsController {
 
         configureKpiOptions();
         configureChartOptions();
-
-        if (compressedViewCheckBox != null) {
-            compressedViewCheckBox.setSelected(true);
-            compressedViewCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
-                configureDatePickers(bakeryComboBox.getValue());
-                onRefresh();
-            });
-        }
-
         loadBakeryOptions();
+
         configureDatePickers(bakeryComboBox.getValue());
 
         bakeryComboBox.setOnAction(e -> {
@@ -113,7 +102,6 @@ public class AnalyticsController {
         if (bakeryComboBox != null) bakeryComboBox.setDisable(true);
         if (kpiComboBox != null) kpiComboBox.setDisable(true);
         if (chartTypeComboBox != null) chartTypeComboBox.setDisable(true);
-        if (compressedViewCheckBox != null) compressedViewCheckBox.setDisable(true);
         if (startDatePicker != null) startDatePicker.setDisable(true);
         if (endDatePicker != null) endDatePicker.setDisable(true);
 
@@ -152,7 +140,7 @@ public class AnalyticsController {
                 ChartType.LINE.getDisplayName(),
                 ChartType.BAR.getDisplayName(),
                 ChartType.PIE.getDisplayName()
-            ));
+        ));
         chartTypeComboBox.setValue(ChartType.LINE.getDisplayName());
     }
 
@@ -317,10 +305,6 @@ public class AnalyticsController {
                 || type == KPIType.COMPLETION_RATE;
     }
 
-    private boolean isCompressedView() {
-        return compressedViewCheckBox == null || compressedViewCheckBox.isSelected();
-    }
-
     private double getSecondaryValue(KPIType type,
                                      LocalDate start,
                                      LocalDate end,
@@ -454,8 +438,13 @@ public class AnalyticsController {
                 orderedCategories, primaryMap, secondaryMap, kpiType, recognizedSeries, inProgressSeries);
 
         chart.getData().add(recognizedSeries);
-        chart.getData().add(inProgressSeries);
-        chart.setLegendVisible(true);
+
+        if (secondaryData != null && !secondaryData.isEmpty()) {
+            chart.getData().add(inProgressSeries);
+            chart.setLegendVisible(true);
+        } else {
+            chart.setLegendVisible(false);
+        }
 
         chartContainer.getChildren().add(chart);
     }
@@ -498,15 +487,20 @@ public class AnalyticsController {
                 orderedCategories, primaryMap, secondaryMap, kpiType, recognizedSeries, inProgressSeries);
 
         chart.getData().add(recognizedSeries);
-        chart.getData().add(inProgressSeries);
-        chart.setLegendVisible(true);
+
+        if (secondaryData != null && !secondaryData.isEmpty()) {
+            chart.getData().add(inProgressSeries);
+            chart.setLegendVisible(true);
+        } else {
+            chart.setLegendVisible(false);
+        }
 
         chartContainer.getChildren().add(chart);
     }
 
     private void applyDualSeriesNames(KPIType kpiType,
-                                      XYChart.Series<String, Number> primarySeries,
-                                      XYChart.Series<String, Number> secondarySeries) {
+                                     XYChart.Series<String, Number> primarySeries,
+                                     XYChart.Series<String, Number> secondarySeries) {
         if (kpiType == KPIType.COMPLETION_RATE) {
             primarySeries.setName("Completed");
             secondarySeries.setName("In progress");
@@ -526,11 +520,11 @@ public class AnalyticsController {
     }
 
     private void addCompletionAwareSeriesPoints(List<String> orderedCategories,
-                                                Map<String, Double> primaryMap,
-                                                Map<String, Double> secondaryMap,
-                                                KPIType kpiType,
-                                                XYChart.Series<String, Number> primarySeries,
-                                                XYChart.Series<String, Number> secondarySeries) {
+                                               Map<String, Double> primaryMap,
+                                               Map<String, Double> secondaryMap,
+                                               KPIType kpiType,
+                                               XYChart.Series<String, Number> primarySeries,
+                                               XYChart.Series<String, Number> secondarySeries) {
         for (String category : orderedCategories) {
             double primary = primaryMap.getOrDefault(category, 0.0);
             double secondary = secondaryMap.getOrDefault(category, 0.0);
@@ -542,7 +536,9 @@ public class AnalyticsController {
                 }
             }
             primarySeries.getData().add(new XYChart.Data<>(category, primary));
-            secondarySeries.getData().add(new XYChart.Data<>(category, secondary));
+            if (secondaryMap != null && !secondaryMap.isEmpty()) {
+                secondarySeries.getData().add(new XYChart.Data<>(category, secondary));
+            }
         }
     }
 
@@ -551,8 +547,8 @@ public class AnalyticsController {
      * in both standard (full date range) and compressed (sparse / grouped) modes.
      */
     private void applyRotatedDateCategoryAxisLabels(KPIType kpiType,
-                                                    CategoryAxis xAxis,
-                                                    XYChart<String, Number> chart) {
+                                                   CategoryAxis xAxis,
+                                                   XYChart<String, Number> chart) {
         if (!usesDateLabels(kpiType)) {
             return;
         }
@@ -562,27 +558,35 @@ public class AnalyticsController {
     }
 
     private List<String> buildOrderedCategories(List<DataPoint> primaryData,
-                                                List<DataPoint> secondaryData,
-                                                KPIType kpiType,
-                                                LocalDate start,
-                                                LocalDate end,
-                                                boolean compressedView,
-                                                TimeSeriesGranularity chartGranularity) {
+                                               List<DataPoint> secondaryData,
+                                               KPIType kpiType,
+                                               LocalDate start,
+                                               LocalDate end,
+                                               boolean compressedView,
+                                               TimeSeriesGranularity chartGranularity) {
 
         if (usesDateLabels(kpiType)) {
             return buildOrderedDateCategories(
                     primaryData, secondaryData, start, end, compressedView, chartGranularity);
         }
 
-        return buildOrderedCategoricalLabels(primaryData, secondaryData);
+        // Non-date KPI categories: just use labels present in the data (stable, union of both).
+        Set<String> labels = new LinkedHashSet<>();
+        if (primaryData != null) {
+            for (DataPoint dp : primaryData) labels.add(dp.getLabel());
+        }
+        if (secondaryData != null) {
+            for (DataPoint dp : secondaryData) labels.add(dp.getLabel());
+        }
+        return new ArrayList<>(labels);
     }
 
     private List<String> buildOrderedDateCategories(List<DataPoint> primaryData,
-                                                    List<DataPoint> secondaryData,
-                                                    LocalDate start,
-                                                    LocalDate end,
-                                                    boolean compressedView,
-                                                    TimeSeriesGranularity chartGranularity) {
+                                                   List<DataPoint> secondaryData,
+                                                   LocalDate start,
+                                                   LocalDate end,
+                                                   boolean compressedView,
+                                                   TimeSeriesGranularity chartGranularity) {
 
         if (!compressedView && start != null && end != null) {
             List<String> ordered = new ArrayList<>();
@@ -626,26 +630,6 @@ public class AnalyticsController {
         }
 
         return ordered;
-    }
-
-    private List<String> buildOrderedCategoricalLabels(List<DataPoint> primaryData,
-                                                       List<DataPoint> secondaryData) {
-
-        LinkedHashSet<String> labels = new LinkedHashSet<>();
-
-        if (primaryData != null) {
-            for (DataPoint dp : primaryData) {
-                labels.add(dp.getLabel());
-            }
-        }
-
-        if (secondaryData != null) {
-            for (DataPoint dp : secondaryData) {
-                labels.add(dp.getLabel());
-            }
-        }
-
-        return new ArrayList<>(labels);
     }
 
     private Map<String, Double> toValueMap(List<DataPoint> data) {
@@ -791,8 +775,6 @@ public class AnalyticsController {
             if (validDates.isEmpty()) {
                 startDatePicker.setValue(null);
                 endDatePicker.setValue(null);
-                startDatePicker.setDayCellFactory(null);
-                endDatePicker.setDayCellFactory(null);
                 return;
             }
 
@@ -808,44 +790,9 @@ public class AnalyticsController {
                 endDatePicker.setValue(last);
             }
 
-            if (isCompressedView()) {
-                if (!validDates.contains(startDatePicker.getValue())) {
-                    startDatePicker.setValue(first);
-                }
-                if (!validDates.contains(endDatePicker.getValue())) {
-                    endDatePicker.setValue(last);
-                }
-
-                Set<LocalDate> validSet = new HashSet<>(validDates);
-
-                startDatePicker.setDayCellFactory(picker ->
-                        new DateCell() {
-                            @Override
-                            public void updateItem(LocalDate date, boolean empty) {
-                                super.updateItem(date, empty);
-                                if (empty || !validSet.contains(date)) {
-                                    setDisable(true);
-                                }
-                            }
-                        });
-
-                endDatePicker.setDayCellFactory(picker ->
-                        new DateCell() {
-                            @Override
-                            public void updateItem(LocalDate date, boolean empty) {
-                                super.updateItem(date, empty);
-                                if (empty || !validSet.contains(date)) {
-                                    setDisable(true);
-                                }
-                            }
-                        });
-            } else {
-                startDatePicker.setDayCellFactory(null);
-                endDatePicker.setDayCellFactory(null);
-            }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 }

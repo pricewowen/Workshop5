@@ -146,28 +146,14 @@ public class BakeryLocationsController {
                         || StringUtil.containsIgnoreCase(bakery.getBakeryPhone(), q)
                         || (addr != null && (
                                 StringUtil.containsIgnoreCase(addr.getAddressLine1(), q)
-                                || StringUtil.containsIgnoreCase(addr.getAddressCity(), q)
-                                || StringUtil.containsIgnoreCase(addr.getAddressProvince(), q)
+                                        || StringUtil.containsIgnoreCase(addr.getAddressCity(), q)
+                                        || StringUtil.containsIgnoreCase(addr.getAddressProvince(), q)
                         ));
             });
-            updateBakeryTablePlaceholder();
         });
         SortedList<Bakery> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblBakeryLocations.comparatorProperty());
         tblBakeryLocations.setItems(sorted);
-        tblBakeryLocations.setPlaceholder(new Label("Loading locations…"));
-    }
-
-    private void updateBakeryTablePlaceholder() {
-        if (tblBakeryLocations == null || filtered == null) {
-            return;
-        }
-        if (filtered.isEmpty()) {
-            tblBakeryLocations.setPlaceholder(new Label(
-                    bakeryList.isEmpty()
-                            ? "No locations to display."
-                            : "No locations match the current filter."));
-        }
     }
 
     // ────────────────────────────────────────────────────────────
@@ -175,15 +161,12 @@ public class BakeryLocationsController {
     // ────────────────────────────────────────────────────────────
 
     private void refreshTable() {
-        tblBakeryLocations.setPlaceholder(new Label("Loading locations…"));
         try {
             bakeryList.setAll(BakeryApi.listAll());
             if (lblStatus != null) lblStatus.setText(bakeryList.size() + " location(s) loaded");
-            updateBakeryTablePlaceholder();
             LogData.logAction("READ", "Bakeries");
         } catch (Exception e) {
             LogData.handleException("READ_BAKERIES", e);
-            tblBakeryLocations.setPlaceholder(new Label("Could not load locations."));
             ErrorHandler.showErrorDialog("API Error", "Could not load bakeries.", e);
         }
     }
@@ -354,8 +337,8 @@ public class BakeryLocationsController {
     }
 
     private String validateDialog(TextField tfName, TextField tfPhone, TextField tfEmail,
-                                   TextField tfLine1, TextField tfLine2, TextField tfCity,
-                                   Province prov, TextField tfPostal) {
+                                  TextField tfLine1, TextField tfLine2, TextField tfCity,
+                                  Province prov, TextField tfPostal) {
         String nameErr = Validator.isValidName(tfName.getText(), "Name");
         if (nameErr != null) return nameErr;
         String phoneErr = Validator.isValidPhoneNumber(tfPhone.getText());

@@ -6,7 +6,6 @@ import java.net.URL;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
-import com.sait.workshop05.util.StageSizing;
 import com.sait.workshop05.util.StageIconHelper;
 import com.sait.workshop05.util.UserInitialsHelper;
 import io.sentry.Sentry;
@@ -62,9 +61,6 @@ public class MainController {
     private Button btnProducts;
 
     @FXML
-    private Button btnProductSpecials;
-
-    @FXML
     private Button btnRewards;
 
     @FXML
@@ -98,9 +94,8 @@ public class MainController {
     void initialize() {
         PAGE_TITLES.put(btnDashboard,   "Dashboard");
         PAGE_TITLES.put(btnOrders,      "Orders");
-        PAGE_TITLES.put(btnProducts,        "Products");
-        PAGE_TITLES.put(btnProductSpecials, "Product Specials");
-        PAGE_TITLES.put(btnCustomers,       "Customers");
+        PAGE_TITLES.put(btnProducts,    "Products");
+        PAGE_TITLES.put(btnCustomers,   "Customers");
         PAGE_TITLES.put(btnEmployees,   "Employees");
         PAGE_TITLES.put(btnLocations,   "Locations");
         PAGE_TITLES.put(btnRewards,     "Rewards");
@@ -303,12 +298,6 @@ public class MainController {
     }
 
     @FXML
-    void onProductSpecialsClick(ActionEvent event) {
-        setActiveButton(btnProductSpecials);
-        loadPage("product-specials-view.fxml");
-    }
-
-    @FXML
     void onRewardsClick(ActionEvent event) {
         setActiveButton(btnRewards);
         loadPage("reward-view.fxml");
@@ -355,8 +344,11 @@ public class MainController {
             stage.setScene(scene);
             stage.setTitle("Login");
             StageIconHelper.setAppIcon(stage);
-            StageSizing.applyMainShellBounds(stage);
-            stage.setResizable(true);
+            stage.setWidth(750);
+            stage.setHeight(730);
+            stage.setMinWidth(750);
+            stage.setMinHeight(730);
+            stage.centerOnScreen();
         } catch (IOException e) {
             ErrorHandler.showErrorDialog("Logout Error", "Could not return to login screen", e);
             LogData.handleException("LOGOUT", e);
