@@ -196,6 +196,7 @@ public final class OrderApi {
         public String scheduledAt;
         public String deliveredAt;
         public String comment;
+        public String customerName;
         public List<ItemJson> items;
     }
 

@@ -795,4 +795,7 @@ public class AnalyticsController {
         }
     }
 
+    private boolean isCompressedView() {
+        return true;
+    }
 }

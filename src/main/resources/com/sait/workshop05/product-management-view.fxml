@@ -27,6 +27,8 @@
                 <Label text="Product Management" styleClass="page-title"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
+                <TextField fx:id="txtSearch" promptText="Search products..."
+                           prefWidth="260" styleClass="toolbar-search"/>
                 <Button fx:id="btnRefresh" text="Refresh" onAction="#onRefresh"
                         styleClass="btn-muted toolbar-action"/>
                 <Button fx:id="btnNewProduct" text="New Product" onAction="#onNewProduct"
