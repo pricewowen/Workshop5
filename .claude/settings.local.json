@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn compile:*)",
+      "Bash(where:*)",
+      "Bash(grep:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(mvnw.cmd compile:*)",
+      "Bash(powershell.exe -Command \"Set-Location 'H:\\\\School\\\\Workshops\\\\Phase 3\\\\Workshop5'; & '.\\\\mvnw.cmd' compile 2>&1\")",
+      "Bash(./mvnw.cmd compile:*)",
+      "mcp__gitnexus__context",
+      "Bash(ls mvnw*)",
+      "Bash(which mvn.cmd)",
+      "Bash(ls \"C:/Program Files/apache-maven\"*)",
+      "Bash(./mvnw compile:*)",
+      "Bash(ls src/main/resources/com/sait/workshop05/*.fxml)",
+      "Bash(./mvnw javafx:run)",
+      "Bash(tee /tmp/w5-runtime.log)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} from %{url_effective}\\\\n\" http://localhost:8080/actuator/health)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} from %{url_effective}\\\\n\" http://localhost:8080/api/v1/auth/login)",
+      "mcp__gitnexus__query"
+    ]
+  },
+  "remote": {
+    "defaultEnvironmentId": "env_011f4XDZUtMykJ9Fqh6TSRtk"
+  }
+}
