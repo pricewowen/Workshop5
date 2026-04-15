@@ -27,6 +27,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,6 +65,7 @@ public class CustomerManagementController {
     // Cached options for dialogs
     private List<RewardTierOption> tierOptions = new ArrayList<>();
     private List<AddressOption> addressOptions = new ArrayList<>();
+    private boolean isLoading = false;
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -77,6 +79,9 @@ public class CustomerManagementController {
         setupActionsColumn();
         setupSearchFiltering();
         setupSelectionButtons();
+        if (tblCustomers != null) {
+            tblCustomers.setPlaceholder(new Label("Loading customers…"));
+        }
         loadAllAsync();
     }
 
@@ -138,11 +143,28 @@ public class CustomerManagementController {
                         || String.valueOf(cust.getRewardBalance()).contains(q);
             });
             lblStatus.setText(filtered.size() + " customer(s) shown");
+            updateCustomerTablePlaceholder();
         });
 
         SortedList<Customer> sorted = new SortedList<>(filtered);
         sorted.comparatorProperty().bind(tblCustomers.comparatorProperty());
         tblCustomers.setItems(sorted);
+    }
+
+    private void updateCustomerTablePlaceholder() {
+        if (tblCustomers == null || filtered == null) {
+            return;
+        }
+        if (isLoading) {
+            tblCustomers.setPlaceholder(new Label("Loading customers…"));
+            return;
+        }
+        if (filtered.isEmpty()) {
+            tblCustomers.setPlaceholder(new Label(
+                    master.isEmpty()
+                            ? "No customers to display."
+                            : "No customers match the current filter."));
+        }
     }
 
     // ────────────────────────────────────────────────────────────
@@ -155,7 +177,9 @@ public class CustomerManagementController {
      * HTTP calls on the FX thread (2 of which were duplicates).
      */
     private void loadAllAsync() {
+        isLoading = true;
         lblStatus.setText("Loading...");
+        updateCustomerTablePlaceholder();
         Task<CombinedData> task = new Task<>() {
             @Override
             protected CombinedData call() throws Exception {
@@ -169,12 +193,15 @@ public class CustomerManagementController {
         task.setOnFailed(e -> {
             Throwable t = task.getException();
             LogData.handleException("LOAD_CUSTOMERS", new RuntimeException(t));
+            isLoading = false;
+            updateCustomerTablePlaceholder();
             ErrorHandler.showErrorDialog("API Error", "Could not load customers.", t);
         });
         new Thread(task).start();
     }
 
     private void applyData(CombinedData d) {
+        isLoading = false;
         tierData = new ArrayList<>(d.tiers);
         tierOptions = d.tiers.stream()
                 .filter(t -> t.id != null)
@@ -195,6 +222,7 @@ public class CustomerManagementController {
             master.add(fromCustomerRow(row, tierMap, addrMap));
         }
         lblStatus.setText(master.size() + " customer(s) loaded");
+        updateCustomerTablePlaceholder();
         LogData.logAction("READ", "Customer");
     }
 
@@ -475,9 +503,10 @@ public class CustomerManagementController {
                     CustomerApi.patch(existing.getCustomerId(), body);
                     LogData.logAction("UPDATE", "Customer");
                     String cid = existing.getCustomerId();
+                    String displayName = (tfFirstName.getText().trim() + " " + tfLastName.getText().trim()).trim();
                     refreshCustomersOnlyAsync(() -> {
                         selectCustomerById(cid);
-                        lblStatus.setText("Updated customer " + cid);
+                        lblStatus.setText("Updated customer " + displayName);
                     });
                 }
             } catch (Exception ex) {
@@ -523,15 +552,13 @@ public class CustomerManagementController {
         colOrderNum.setCellValueFactory(new PropertyValueFactory<>("orderNumber"));
         colOrderNum.setPrefWidth(110);
 
-        TableColumn<Order, String> colDate = new TableColumn<>("Placed");
+        TableColumn<Order, LocalDateTime> colDate = new TableColumn<>("Placed");
         colDate.setCellValueFactory(new PropertyValueFactory<>("orderPlacedDateTime"));
         colDate.setPrefWidth(140);
         colDate.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
+            @Override protected void updateItem(LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) { setText(""); return; }
-                Order o = getTableView().getItems().get(getIndex());
-                setText(o.getOrderPlacedDateTime() != null ? o.getOrderPlacedDateTime().format(DT_FMT) : "");
+                setText(empty || item == null ? "" : item.format(DT_FMT));
             }
         });
 

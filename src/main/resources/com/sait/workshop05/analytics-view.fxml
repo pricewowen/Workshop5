@@ -1,51 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.chart.*?>
 
-<VBox spacing="20"
-      xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.sait.workshop05.controllers.AnalyticsController"
-      styleClass="page-root"
-      style="-fx-padding: 20;">
+<AnchorPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.sait.workshop05.controllers.AnalyticsController"
+            styleClass="page-root">
+    <children>
+        <VBox spacing="12"
+              AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+              AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+              fillWidth="true">
+            <padding>
+                <Insets top="14" right="14" bottom="14" left="14"/>
+            </padding>
 
-    <Label text="Analytics Overview"
-           styleClass="page-title" />
+            <Label text="Analytics Overview" styleClass="page-title"/>
 
-    <HBox spacing="15">
-        <DatePicker fx:id="startDatePicker" promptText="Start Date" />
-        <DatePicker fx:id="endDatePicker" promptText="End Date" />
+            <HBox spacing="12">
+                <DatePicker fx:id="startDatePicker" promptText="Start Date"/>
+                <DatePicker fx:id="endDatePicker" promptText="End Date"/>
+                <ComboBox fx:id="bakeryComboBox" promptText="All Bakeries"/>
+                <ComboBox fx:id="kpiComboBox" promptText="Select KPI"/>
+                <ComboBox fx:id="chartTypeComboBox" promptText="Chart Type"/>
+            </HBox>
 
-        <ComboBox fx:id="bakeryComboBox" promptText="All Bakeries" />
+            <HBox spacing="12">
+                <VBox styleClass="analytics-card" spacing="5">
+                    <Label fx:id="kpiValueLabel" text="0.00" styleClass="kpi-value"/>
+                    <Label fx:id="kpiTitleLabel" text="KPI Name" styleClass="hint-label"/>
+                </VBox>
+                <VBox styleClass="analytics-card" spacing="5">
+                    <Label fx:id="secondaryValueLabel" text="0.00" styleClass="kpi-value"/>
+                    <Label fx:id="secondaryTitleLabel" text="Pending / In Progress" styleClass="hint-label"/>
+                </VBox>
+            </HBox>
 
-        <ComboBox fx:id="kpiComboBox" promptText="Select KPI" />
-
-        <ComboBox fx:id="chartTypeComboBox" promptText="Chart Type" />
-    </HBox>
-
-    <HBox spacing="15">
-        <VBox styleClass="analytics-card" spacing="5">
-            <Label fx:id="kpiValueLabel"
-                   text="0.00"
-                   styleClass="kpi-value" />
-            <Label fx:id="kpiTitleLabel"
-                   text="KPI Name"
-                   styleClass="hint-label" />
+            <StackPane fx:id="chartContainer"
+                       VBox.vgrow="ALWAYS"
+                       styleClass="analytics-chart-container"/>
         </VBox>
-
-        <VBox styleClass="analytics-card" spacing="5">
-            <Label fx:id="secondaryValueLabel"
-                   text="0.00"
-                   styleClass="kpi-value" />
-            <Label fx:id="secondaryTitleLabel"
-                   text="Pending / In Progress"
-                   styleClass="hint-label" />
-        </VBox>
-    </HBox>
-
-    <StackPane fx:id="chartContainer"
-               prefHeight="400"
-               styleClass="analytics-chart-container"/>
-</VBox>
+    </children>
+</AnchorPane>

@@ -11,10 +11,10 @@ public final class StageSizing {
     private StageSizing() {
     }
 
-    public static final double MAIN_WIDTH = 1400;
-    public static final double MAIN_HEIGHT = 850;
-    public static final double MAIN_MIN_WIDTH = 1200;
-    public static final double MAIN_MIN_HEIGHT = 750;
+    public static final double MAIN_WIDTH = 1450;
+    public static final double MAIN_HEIGHT = 900;
+    public static final double MAIN_MIN_WIDTH = 1250;
+    public static final double MAIN_MIN_HEIGHT = 800;
 
     /**
      * Sets min size first, then outer size, then centers — same sequence for cold boot, login,

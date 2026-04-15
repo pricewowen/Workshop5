@@ -6,6 +6,7 @@ import java.net.URL;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.StageSizing;
 import com.sait.workshop05.util.StageIconHelper;
 import com.sait.workshop05.util.UserInitialsHelper;
 import io.sentry.Sentry;
@@ -97,8 +98,9 @@ public class MainController {
     void initialize() {
         PAGE_TITLES.put(btnDashboard,   "Dashboard");
         PAGE_TITLES.put(btnOrders,      "Orders");
-        PAGE_TITLES.put(btnProducts,    "Products");
-        PAGE_TITLES.put(btnCustomers,   "Customers");
+        PAGE_TITLES.put(btnProducts,        "Products");
+        PAGE_TITLES.put(btnProductSpecials, "Product Specials");
+        PAGE_TITLES.put(btnCustomers,       "Customers");
         PAGE_TITLES.put(btnEmployees,   "Employees");
         PAGE_TITLES.put(btnLocations,   "Locations");
         PAGE_TITLES.put(btnRewards,     "Rewards");
@@ -200,6 +202,8 @@ public class MainController {
      *
      * Admin: sees everything.
      * Employee:
+     *  - no Customers (customer PII is admin-only)
+     *  - no Rewards (GET /api/v1/rewards requires ADMIN on the backend)
      *  - no Employees
      *  - no Locations
      *  - no Users (login account management is admin-only)
@@ -209,6 +213,8 @@ public class MainController {
         UserSession session = UserSession.getInstance();
 
         if (session.isEmployee()) {
+            hideButton(btnCustomers);
+            hideButton(btnRewards);
             hideButton(btnEmployees);
             hideButton(btnLocations);
             hideButton(btnUsers);
@@ -353,11 +359,8 @@ public class MainController {
             stage.setScene(scene);
             stage.setTitle("Login");
             StageIconHelper.setAppIcon(stage);
-            stage.setWidth(750);
-            stage.setHeight(730);
-            stage.setMinWidth(750);
-            stage.setMinHeight(730);
-            stage.centerOnScreen();
+            StageSizing.applyMainShellBounds(stage);
+            stage.setResizable(true);
         } catch (IOException e) {
             ErrorHandler.showErrorDialog("Logout Error", "Could not return to login screen", e);
             LogData.handleException("LOGOUT", e);

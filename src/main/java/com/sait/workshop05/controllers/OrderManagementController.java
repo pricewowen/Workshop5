@@ -420,12 +420,18 @@ public class OrderManagementController {
         tblCatalog.setItems(sortedCatalog);
         tblCatalog.setPlaceholder(new Label("Loading catalog…"));
 
-        // Customer selection -> show reward balance
+        // Customer selection -> show reward balance and auto-populate their address
         cboNewCustomer.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 lblRewardInfo.setText("Balance: " + newVal.getRewardBalance() + " pts");
+                if (newVal.getAddressId() != null) {
+                    AddressInputHelper.selectAddressById(cboNewAddress, newVal.getAddressId());
+                } else {
+                    AddressInputHelper.clearAddressField(cboNewAddress);
+                }
             } else {
                 lblRewardInfo.setText("Select a customer");
+                AddressInputHelper.clearAddressField(cboNewAddress);
             }
         });
 
@@ -997,9 +1003,12 @@ public class OrderManagementController {
 
         NewOrderEstimate est = estimateNewOrderCheckout();
 
-        // Validation: discount cannot exceed MAX_STAFF_DISCOUNT_PERCENT of subtotal (dollar cap = same rule)
+        // Validation: discount cannot exceed MAX_STAFF_DISCOUNT_PERCENT of subtotal (0–50% inclusive)
         double maxDiscount = est.subtotal * (MAX_STAFF_DISCOUNT_PERCENT / 100.0);
-        if (est.discount > maxDiscount + 0.0001) {
+        // Round both sides to 2 decimal places before comparing to avoid floating-point false positives
+        double discountRounded  = Math.round(est.discount  * 100.0) / 100.0;
+        double maxDiscountRounded = Math.round(maxDiscount * 100.0) / 100.0;
+        if (discountRounded > maxDiscountRounded) {
             double pctEntered = est.subtotal > 1e-9 ? (est.discount / est.subtotal) * 100.0 : 0;
             ErrorHandler.showWarning("Validation", String.format(
                     "Discount cannot exceed %.0f%% of the subtotal (about $%.2f max). You entered about %.1f%% ($%.2f).",
@@ -1007,38 +1016,59 @@ public class OrderManagementController {
             return;
         }
 
-        // Parse scheduled date/time
-        LocalDateTime scheduledDateTime = null;
+        // Parse scheduled date/time (both fields required)
         LocalDate schedDate = dpScheduledDate.getValue();
         String timeStr = txtScheduledTime.getText() != null ? txtScheduledTime.getText().trim() : "";
 
-        if (schedDate != null) {
-            LocalTime schedTime = LocalTime.of(12, 0); // default noon
-            if (!timeStr.isEmpty()) {
-                try {
-                    schedTime = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"));
-                } catch (DateTimeParseException e) {
-                    ErrorHandler.showWarning("Validation", "Scheduled time format must be HH:mm (e.g., 14:30).");
-                    return;
-                }
-            }
-            scheduledDateTime = LocalDateTime.of(schedDate, schedTime);
-
-            // Validation: scheduled date must be after now (proposal rule)
-            if (scheduledDateTime.isBefore(LocalDateTime.now())) {
-                ErrorHandler.showWarning("Validation", "Scheduled date/time must be in the future.");
-                return;
-            }
+        if (schedDate == null) {
+            ErrorHandler.showWarning("Validation", "Please select a scheduled date.");
+            return;
+        }
+        if (timeStr.isEmpty()) {
+            ErrorHandler.showWarning("Validation", "Please enter a scheduled time (HH:mm).");
+            return;
         }
 
-        // Delivery address
+        LocalTime schedTime;
+        try {
+            schedTime = LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"));
+        } catch (DateTimeParseException e) {
+            ErrorHandler.showWarning("Validation", "Scheduled time format must be HH:mm (e.g., 14:30).");
+            return;
+        }
+
+        LocalDateTime scheduledDateTime = LocalDateTime.of(schedDate, schedTime);
+
+        // Validation: scheduled date must be after now
+        if (scheduledDateTime.isBefore(LocalDateTime.now())) {
+            ErrorHandler.showWarning("Validation", "Scheduled date/time must be in the future.");
+            return;
+        }
+
+        // Validation: scheduled time must fall within the selected bakery's hours of operation
+        try {
+            String hoursError = validateScheduledTimeAgainstBakeryHours(
+                    scheduledDateTime, bakery.getBakeryId());
+            if (hoursError != null) {
+                ErrorHandler.showWarning("Validation", hoursError);
+                return;
+            }
+        } catch (Exception ex) {
+            LogData.handleException("BAKERY_HOURS_CHECK", ex);
+            ErrorHandler.showWarning("Validation",
+                    "Could not verify bakery hours. Please confirm the scheduled time is correct.");
+        }
+
+        // Delivery address — required when method is Delivery
+        boolean isDeliveryMethod = "Delivery".equalsIgnoreCase(method);
         AddressOption address;
         try {
-            address = resolveAddressSelection(false);
+            address = resolveAddressSelection(isDeliveryMethod);
         } catch (IllegalArgumentException ex) {
-            String v = ErrorHandler.userFacingMessage(ex);
             ErrorHandler.showWarning("Validation",
-                    v != null && !v.isBlank() ? v : "Check your address and order details.");
+                    isDeliveryMethod
+                            ? "A delivery address is required. Please select or enter an address."
+                            : "Check your address and order details.");
             return;
         } catch (Exception ex) {
             LogData.handleException("CREATE_ORDER_ADDRESS", ex);
@@ -1048,8 +1078,7 @@ public class OrderManagementController {
 
         List<OrderItem> items = new ArrayList<>(cartItems);
 
-        boolean isDelivery = "Delivery".equalsIgnoreCase(method);
-        String deliveryLine = !isDelivery
+        String deliveryLine = !isDeliveryMethod
                 ? "Delivery: —"
                 : (est.deliveryFee <= 0.001
                         ? "Delivery: $0.00 (free over $50)"
@@ -1183,6 +1212,55 @@ public class OrderManagementController {
                 setText(item.format(DT_FMT));
             }
         }
+    }
+
+    /**
+     * Checks that {@code scheduledDateTime} falls within the given bakery's operating hours for
+     * that day of week. Returns {@code null} when the time is valid (or no hours are configured),
+     * or a user-facing error string when it is not.
+     */
+    private String validateScheduledTimeAgainstBakeryHours(
+            LocalDateTime scheduledDateTime, int bakeryId) throws Exception {
+
+        List<com.sait.workshop05.api.CatalogApi.BakeryHourJson> hours =
+                com.sait.workshop05.api.CatalogApi.fetchBakeryHours(bakeryId);
+
+        if (hours == null || hours.isEmpty()) {
+            return null; // no hours configured — skip validation
+        }
+
+        int dow = scheduledDateTime.getDayOfWeek().getValue(); // 1=Mon … 7=Sun (ISO)
+        LocalTime schedTime = scheduledDateTime.toLocalTime();
+
+        com.sait.workshop05.api.CatalogApi.BakeryHourJson dayHour = hours.stream()
+                .filter(h -> h.dayOfWeek == dow)
+                .findFirst()
+                .orElse(null);
+
+        if (dayHour == null) {
+            return "The bakery has no hours configured for " +
+                    scheduledDateTime.getDayOfWeek().getDisplayName(
+                            java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH) + ".";
+        }
+        if (dayHour.closed) {
+            return "The bakery is closed on " +
+                    scheduledDateTime.getDayOfWeek().getDisplayName(
+                            java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH) + ".";
+        }
+
+        if (dayHour.openTime != null && dayHour.closeTime != null) {
+            LocalTime open  = LocalTime.parse(dayHour.openTime.substring(0, 5));
+            LocalTime close = LocalTime.parse(dayHour.closeTime.substring(0, 5));
+            if (schedTime.isBefore(open) || schedTime.isAfter(close)) {
+                return String.format(
+                        "Scheduled time (%s) is outside bakery hours (%s – %s).",
+                        schedTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                        dayHour.openTime.substring(0, 5),
+                        dayHour.closeTime.substring(0, 5));
+            }
+        }
+
+        return null; // valid
     }
 
     private AddressOption resolveAddressSelection(boolean required) throws Exception {

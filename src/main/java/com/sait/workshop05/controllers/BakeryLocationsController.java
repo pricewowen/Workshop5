@@ -254,20 +254,20 @@ public class BakeryLocationsController {
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
 
-        // Wire browse button after scene is available
-        dialog.getDialogPane().sceneProperty().addListener((obs, old, scene) -> {
-            if (scene == null) return;
-            btnBrowse.setOnAction(e -> {
-                FileChooser chooser = new FileChooser();
-                chooser.setTitle("Select Location Image");
-                chooser.getExtensionFilters().add(
-                        new FileChooser.ExtensionFilter("Image files (JPG, PNG)", "*.jpg", "*.jpeg", "*.png"));
-                File file = chooser.showOpenDialog(scene.getWindow());
-                if (file != null) {
-                    selectedImageFile[0] = file;
-                    lblImage.setText(file.getName());
-                }
-            });
+        // Wire browse button — obtain the window at click time so timing is never an issue
+        btnBrowse.setOnAction(e -> {
+            javafx.stage.Window owner = btnBrowse.getScene() != null
+                    ? btnBrowse.getScene().getWindow()
+                    : null;
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Select Location Image");
+            chooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("Image files (JPG, PNG)", "*.jpg", "*.jpeg", "*.png"));
+            File file = chooser.showOpenDialog(owner);
+            if (file != null) {
+                selectedImageFile[0] = file;
+                lblImage.setText(file.getName());
+            }
         });
 
         ButtonType saveType = new ButtonType(

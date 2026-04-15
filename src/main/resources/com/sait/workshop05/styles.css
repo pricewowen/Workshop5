@@ -74,6 +74,18 @@
     -fx-padding: 0;
 }
 
+.sidebar-user-name {
+    /* Use an existing light sidebar text color for contrast */
+    -fx-text-fill: #E8E0D8;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.sidebar-user-role {
+    -fx-text-fill: #C9B8A8;
+    -fx-font-size: 12px;
+}
+
 .sidebar-user-initials {
     -fx-background-color: #E4B363;
     -fx-text-fill: #4e342e;
@@ -382,19 +394,54 @@
 }
 
 .btn-muted {
-    -fx-background-color: #FFFFFF;
-    -fx-text-fill: #4e342e;
-    -fx-border-color: #D4CCC4;
+    /* Match the classic JavaFX gray button look (like your screenshot). */
+    -fx-text-fill: #000000;
+    -fx-font-weight: normal;
+
+    -fx-background-color: linear-gradient(#f2f2f2, #d6d6d6);
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+
+    -fx-border-color: #bcbcbc;
     -fx-border-width: 1;
-    -fx-border-radius: 10;
-    -fx-background-radius: 10;
+    -fx-border-radius: 8;
 }
 
-.btn-muted:hover { -fx-background-color: #FAF8F5; }
+.btn-muted:hover {
+    -fx-background-color: linear-gradient(#ffffff, #dcdcdc);
+}
 
 .btn-muted:disabled {
     -fx-opacity: 0.5;
     -fx-cursor: default;
+}
+
+/* Orders page: hard-force muted toolbar styling */
+#btnRefreshOrders,
+#btnUpdateStatus,
+#btnAddToOrder,
+#btnRemoveFromOrder,
+#btnPlaceOrder {
+    -fx-background-color: linear-gradient(#f2f2f2, #d6d6d6);
+    -fx-text-fill: #000000;
+    -fx-font-weight: normal;
+    -fx-border-color: #bcbcbc;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-max-height: 36;
+    -fx-padding: 8 16;
+    -fx-cursor: hand;
+}
+
+#btnRefreshOrders:hover,
+#btnUpdateStatus:hover,
+#btnAddToOrder:hover,
+#btnRemoveFromOrder:hover,
+#btnPlaceOrder:hover {
+    -fx-background-color: linear-gradient(#ffffff, #dcdcdc);
 }
 
 .btn-primary {

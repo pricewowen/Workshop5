@@ -4,70 +4,96 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane prefHeight="800" prefWidth="1200" styleClass="page-root" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.sait.workshop05.controllers.RewardController">
+<AnchorPane prefHeight="800" prefWidth="1200" styleClass="page-root"
+            xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.sait.workshop05.controllers.RewardController">
     <children>
-        <VBox fillWidth="true" spacing="12" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
+        <VBox fillWidth="true" spacing="12"
+              AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0"
+              AnchorPane.rightAnchor="0" AnchorPane.topAnchor="0">
             <padding>
-                <Insets bottom="14" left="14" right="14" top="14" />
+                <Insets bottom="14" left="14" right="14" top="14"/>
             </padding>
+
             <HBox alignment="CENTER_LEFT" spacing="12">
                 <Label text="Reward Management" styleClass="page-title"/>
-                <Region HBox.hgrow="ALWAYS" />
-                <Label style="-fx-font-size: 13px;" text="Search:" />
-                <TextField fx:id="txtSearch" prefWidth="420" prefHeight="36" promptText="Search rewards..." style="-fx-font-size: 13px;" />
-                <Button fx:id="btnRefresh" onAction="#onRefresh" prefWidth="100" styleClass="btn-muted toolbar-action" text="Refresh" />
+                <Region HBox.hgrow="ALWAYS"/>
+                <TextField fx:id="txtSearch" prefWidth="260" promptText="Search rewards..."
+                           styleClass="toolbar-search"/>
+                <Button fx:id="btnRefresh" onAction="#onRefresh"
+                        styleClass="btn-muted toolbar-action" text="Refresh"/>
             </HBox>
+
             <SplitPane dividerPositions="0.7" prefHeight="1.0" prefWidth="1.0" VBox.vgrow="ALWAYS">
                 <items>
                     <VBox fillWidth="true" spacing="10" SplitPane.resizableWithParent="true">
-                        <TableView fx:id="tblRewards" prefWidth="1.0" style="-fx-font-size: 13px;" VBox.vgrow="ALWAYS">
+                        <TableView fx:id="tblRewards" prefWidth="1.0" VBox.vgrow="ALWAYS">
                             <fixedCellSize>28</fixedCellSize>
                             <columns>
-                                <TableColumn fx:id="colCustomer" prefWidth="200" text="Customer" />
-                                <TableColumn fx:id="colOrder" prefWidth="200" text="Order" />
-                                <TableColumn fx:id="colPoints" prefWidth="80" text="Points" />
-                                <TableColumn fx:id="colTransactionDate" prefWidth="180" text="Transaction Date" />
+                                <TableColumn fx:id="colCustomer" prefWidth="200" text="CUSTOMER"/>
+                                <TableColumn fx:id="colOrder" prefWidth="200" text="ORDER"/>
+                                <TableColumn fx:id="colPoints" prefWidth="80" text="POINTS"/>
+                                <TableColumn fx:id="colTransactionDate" prefWidth="180" text="TRANSACTION DATE"/>
                             </columns>
                             <columnResizePolicy>
-                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
                             </columnResizePolicy>
                         </TableView>
-                        <Label fx:id="lblStatus" style="-fx-text-fill: #444; -fx-font-size: 13px;" text="0 reward(s) loaded" />
+                        <Label fx:id="lblStatus" text="0 reward(s) loaded" styleClass="hint-label"/>
                     </VBox>
-                    <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" prefWidth="420" vbarPolicy="AS_NEEDED" SplitPane.resizableWithParent="true">
+
+                    <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER"
+                                prefWidth="420" vbarPolicy="AS_NEEDED"
+                                SplitPane.resizableWithParent="true">
                         <content>
                             <VBox fillWidth="true" prefWidth="1.0" spacing="14" styleClass="form-panel">
                                 <padding>
-                                    <Insets bottom="16" left="16" right="16" top="16" />
+                                    <Insets bottom="16" left="16" right="16" top="16"/>
                                 </padding>
-                                <Label styleClass="form-panel-title" text="Reward Details" />
+                                <Label styleClass="form-panel-title" text="Reward Details"/>
                                 <GridPane hgap="12" prefWidth="1.0" vgap="12">
                                     <columnConstraints>
-                                        <ColumnConstraints minWidth="150" />
-                                        <ColumnConstraints hgrow="ALWAYS" />
+                                        <ColumnConstraints minWidth="150"/>
+                                        <ColumnConstraints hgrow="ALWAYS"/>
                                     </columnConstraints>
-                                    <Label text="Customer:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                                    <ComboBox fx:id="cboCustomer" disable="true" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                                    <Label style="-fx-font-size: 13px;" text="Order:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                                    <ComboBox fx:id="cboOrder" disable="true" prefHeight="27.0" prefWidth="150.0" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                    <Label style="-fx-font-size: 13px;" text="Points Earned:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                    <TextField fx:id="txtPoints" editable="false" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                    <Label style="-fx-font-size: 13px;" text="Transaction Date:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                                    <HBox spacing="5" style="-fx-font-size: 13px;" GridPane.columnIndex="1" GridPane.rowIndex="3">
-                                        <DatePicker fx:id="dtpTransactionDate" disable="true" prefWidth="150" />
-                                        <TextField fx:id="txtTransactionTime" editable="false" prefWidth="60" promptText="HH:MM" />
+                                    <rowConstraints>
+                                        <RowConstraints/>
+                                        <RowConstraints/>
+                                        <RowConstraints/>
+                                        <RowConstraints/>
+                                    </rowConstraints>
+                                    <Label text="Customer:" styleClass="form-label"
+                                           GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                    <TextField fx:id="txtCustomer" editable="false"
+                                               focusTraversable="false"
+                                               style="-fx-opacity: 1; -fx-control-inner-background: #f0ebe4;"
+                                               GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                    <Label text="Order:" styleClass="form-label"
+                                           GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <TextField fx:id="txtOrder" editable="false"
+                                               focusTraversable="false"
+                                               style="-fx-opacity: 1; -fx-control-inner-background: #f0ebe4;"
+                                               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                    <Label text="Points Earned:" styleClass="form-label"
+                                           GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                    <TextField fx:id="txtPoints" editable="false"
+                                               focusTraversable="false"
+                                               style="-fx-opacity: 1; -fx-control-inner-background: #f0ebe4;"
+                                               GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                    <Label text="Transaction Date:" styleClass="form-label"
+                                           GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                                    <HBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                                        <DatePicker fx:id="dtpTransactionDate" disable="true" prefWidth="150"/>
+                                        <TextField fx:id="txtTransactionTime" editable="false"
+                                                   prefWidth="60" promptText="HH:MM"/>
                                     </HBox>
-                           <rowConstraints>
-                              <RowConstraints />
-                              <RowConstraints />
-                              <RowConstraints />
-                              <RowConstraints />
-                           </rowConstraints>
                                 </GridPane>
-                                <Separator />
-                                <Label style="-fx-text-fill: #8A8178; -fx-font-size: 12px; -fx-wrap-text: true;"
-                                       text="Reward transactions are read-only. Points are awarded automatically when orders are placed." />
-                                <Button fx:id="btnClear" maxWidth="1.7976931348623157E308" onAction="#onClear" styleClass="btn-muted toolbar-action" text="Clear Selection" />
+                                <Separator/>
+                                <Label styleClass="hint-label" wrapText="true"
+                                       text="Reward transactions are read-only. Points are awarded automatically when orders are placed."/>
+                                <Button fx:id="btnClear" maxWidth="1.7976931348623157E308"
+                                        onAction="#onClear" styleClass="btn-muted toolbar-action"
+                                        text="Clear Selection"/>
                             </VBox>
                         </content>
                     </ScrollPane>
