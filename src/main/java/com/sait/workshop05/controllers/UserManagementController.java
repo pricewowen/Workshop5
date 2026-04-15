@@ -107,6 +107,7 @@ public class UserManagementController {
             private final Button toggleBtn = new Button();
 
             {
+                toggleBtn.getStyleClass().add("btn-muted");
                 toggleBtn.setOnAction(e -> {
                     UserRow row = getTableView().getItems().get(getIndex());
                     handleToggleActive(row);
@@ -119,7 +120,6 @@ public class UserManagementController {
                 if (empty) { setGraphic(null); return; }
                 UserRow row = getTableView().getItems().get(getIndex());
                 toggleBtn.setText(row.isActive() ? "Deactivate" : "Activate");
-                toggleBtn.getStyleClass().setAll(row.isActive() ? "btn-icon-delete" : "btn-icon-edit");
                 setGraphic(toggleBtn);
             }
         });

@@ -27,6 +27,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -551,15 +552,13 @@ public class CustomerManagementController {
         colOrderNum.setCellValueFactory(new PropertyValueFactory<>("orderNumber"));
         colOrderNum.setPrefWidth(110);
 
-        TableColumn<Order, String> colDate = new TableColumn<>("Placed");
+        TableColumn<Order, LocalDateTime> colDate = new TableColumn<>("Placed");
         colDate.setCellValueFactory(new PropertyValueFactory<>("orderPlacedDateTime"));
         colDate.setPrefWidth(140);
         colDate.setCellFactory(col -> new TableCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
+            @Override protected void updateItem(LocalDateTime item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) { setText(""); return; }
-                Order o = getTableView().getItems().get(getIndex());
-                setText(o.getOrderPlacedDateTime() != null ? o.getOrderPlacedDateTime().format(DT_FMT) : "");
+                setText(empty || item == null ? "" : item.format(DT_FMT));
             }
         });
 

@@ -19,6 +19,7 @@ public class Employee {
 
     private final StringProperty userDisplay = new SimpleStringProperty();
     private final StringProperty addressDisplay = new SimpleStringProperty();
+    private final StringProperty bakeryDisplay = new SimpleStringProperty();
 
     public Employee() { }
 
@@ -73,4 +74,8 @@ public class Employee {
     public String getAddressDisplay() { return addressDisplay.get(); }
     public void setAddressDisplay(String value) { addressDisplay.set(value); }
     public StringProperty addressDisplayProperty() { return addressDisplay; }
+
+    public String getBakeryDisplay() { return bakeryDisplay.get(); }
+    public void setBakeryDisplay(String value) { bakeryDisplay.set(value != null ? value : ""); }
+    public StringProperty bakeryDisplayProperty() { return bakeryDisplay; }
 }

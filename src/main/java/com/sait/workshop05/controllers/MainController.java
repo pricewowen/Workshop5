@@ -202,6 +202,8 @@ public class MainController {
      *
      * Admin: sees everything.
      * Employee:
+     *  - no Customers (customer PII is admin-only)
+     *  - no Rewards (GET /api/v1/rewards requires ADMIN on the backend)
      *  - no Employees
      *  - no Locations
      *  - no Users (login account management is admin-only)
@@ -211,6 +213,8 @@ public class MainController {
         UserSession session = UserSession.getInstance();
 
         if (session.isEmployee()) {
+            hideButton(btnCustomers);
+            hideButton(btnRewards);
             hideButton(btnEmployees);
             hideButton(btnLocations);
             hideButton(btnUsers);

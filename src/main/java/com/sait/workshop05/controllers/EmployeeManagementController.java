@@ -42,6 +42,7 @@ public class EmployeeManagementController {
     @FXML private TableColumn<Employee, String> colFirstName;
     @FXML private TableColumn<Employee, String> colLastName;
     @FXML private TableColumn<Employee, String> colRole;
+    @FXML private TableColumn<Employee, String> colBakery;
     @FXML private TableColumn<Employee, String> colPhone;
     @FXML private TableColumn<Employee, String> colEmail;
     @FXML private TableColumn<Employee, String> colAddress;
@@ -79,6 +80,7 @@ public class EmployeeManagementController {
         colFirstName.setCellValueFactory(new PropertyValueFactory<>("employeeFirstName"));
         colLastName.setCellValueFactory(new PropertyValueFactory<>("employeeLastName"));
         colRole.setCellValueFactory(new PropertyValueFactory<>("employeeRole"));
+        colBakery.setCellValueFactory(new PropertyValueFactory<>("bakeryDisplay"));
         colPhone.setCellValueFactory(new PropertyValueFactory<>("employeePhone"));
         colEmail.setCellValueFactory(new PropertyValueFactory<>("employeeEmail"));
         colAddress.setCellValueFactory(new PropertyValueFactory<>("addressDisplay"));
@@ -121,6 +123,7 @@ public class EmployeeManagementController {
                 return StringUtil.containsIgnoreCase(emp.getEmployeeFirstName(), q)
                         || StringUtil.containsIgnoreCase(emp.getEmployeeLastName(), q)
                         || StringUtil.containsIgnoreCase(emp.getEmployeeRole(), q)
+                        || StringUtil.containsIgnoreCase(emp.getBakeryDisplay(), q)
                         || StringUtil.containsIgnoreCase(emp.getEmployeePhone(), q)
                         || StringUtil.containsIgnoreCase(emp.getEmployeeEmail(), q)
                         || StringUtil.containsIgnoreCase(emp.getAddressDisplay(), q)
@@ -190,9 +193,13 @@ public class EmployeeManagementController {
         for (AddressOption a : d.addresses) {
             addrMap.put(a.getAddressId(), a.getLine1() + ", " + a.getCity());
         }
+        Map<Integer, String> bakeryMap = new HashMap<>();
+        for (BakeryOption b : d.bakeries) {
+            bakeryMap.put(b.getBakeryId(), b.getBakeryName());
+        }
         master.clear();
         for (EmployeeApi.EmployeeRow row : d.rows) {
-            master.add(fromRow(row, addrMap));
+            master.add(fromRow(row, addrMap, bakeryMap));
         }
         lblStatus.setText(master.size() + " employee(s) loaded");
         if (filtered != null && filtered.isEmpty()) {
@@ -203,7 +210,8 @@ public class EmployeeManagementController {
         }
     }
 
-    private Employee fromRow(EmployeeApi.EmployeeRow row, Map<Integer, String> addrMap) {
+    private Employee fromRow(EmployeeApi.EmployeeRow row, Map<Integer, String> addrMap,
+                             Map<Integer, String> bakeryMap) {
         Employee e = new Employee();
         e.setEmployeeId(row.id != null ? row.id : "");
         e.setUserId(row.userId != null ? row.userId : "");
@@ -217,6 +225,8 @@ public class EmployeeManagementController {
         e.setEmployeeEmail(row.workEmail != null ? row.workEmail : "");
         String ad = row.addressId != null ? addrMap.get(row.addressId) : null;
         e.setAddressDisplay(ad != null ? ad : "");
+        String bk = row.bakeryId != null ? bakeryMap.get(row.bakeryId) : null;
+        e.setBakeryDisplay(bk != null ? bk : "");
         return e;
     }
 

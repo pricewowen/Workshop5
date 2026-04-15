@@ -64,14 +64,16 @@
                                     </rowConstraints>
                                     <Label text="Customer:" styleClass="form-label"
                                            GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                                    <ComboBox fx:id="cboCustomer" disable="true"
-                                              prefHeight="27.0" prefWidth="150.0"
-                                              GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                    <TextField fx:id="txtCustomer" editable="false"
+                                               focusTraversable="false"
+                                               style="-fx-opacity: 1; -fx-control-inner-background: #f0ebe4;"
+                                               GridPane.columnIndex="1" GridPane.rowIndex="0"/>
                                     <Label text="Order:" styleClass="form-label"
                                            GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                                    <ComboBox fx:id="cboOrder" disable="true"
-                                              prefHeight="27.0" prefWidth="150.0"
-                                              GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                    <TextField fx:id="txtOrder" editable="false"
+                                               focusTraversable="false"
+                                               style="-fx-opacity: 1; -fx-control-inner-background: #f0ebe4;"
+                                               GridPane.columnIndex="1" GridPane.rowIndex="1"/>
                                     <Label text="Points Earned:" styleClass="form-label"
                                            GridPane.columnIndex="0" GridPane.rowIndex="2"/>
                                     <TextField fx:id="txtPoints" editable="false"
