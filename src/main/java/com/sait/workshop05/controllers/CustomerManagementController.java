@@ -502,9 +502,10 @@ public class CustomerManagementController {
                     CustomerApi.patch(existing.getCustomerId(), body);
                     LogData.logAction("UPDATE", "Customer");
                     String cid = existing.getCustomerId();
+                    String displayName = (tfFirstName.getText().trim() + " " + tfLastName.getText().trim()).trim();
                     refreshCustomersOnlyAsync(() -> {
                         selectCustomerById(cid);
-                        lblStatus.setText("Updated customer " + cid);
+                        lblStatus.setText("Updated customer " + displayName);
                     });
                 }
             } catch (Exception ex) {

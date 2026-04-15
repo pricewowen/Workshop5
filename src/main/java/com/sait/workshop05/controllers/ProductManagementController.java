@@ -405,21 +405,21 @@ public class ProductManagementController {
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
         dialog.setResizable(true);
 
-        // Wire image browse after dialog is shown (needs window reference)
-        dialog.getDialogPane().sceneProperty().addListener((obs, old, scene) -> {
-            if (scene == null) return;
-            btnBrowse.setOnAction(e -> {
-                FileChooser chooser = new FileChooser();
-                chooser.setTitle("Select Product Image");
-                chooser.getExtensionFilters().add(
-                        new FileChooser.ExtensionFilter("Image files (JPG, PNG)", "*.jpg", "*.jpeg", "*.png"));
-                File file = chooser.showOpenDialog(scene.getWindow());
-                if (file != null) {
-                    selectedImageFile[0] = file;
-                    lblImage.setText(file.getName());
-                    lblImage.setStyle("-fx-text-fill: #2C6AA0; -fx-font-size: 12px;");
-                }
-            });
+        // Wire image browse — obtain the window at click time so timing is never an issue
+        btnBrowse.setOnAction(e -> {
+            javafx.stage.Window owner = btnBrowse.getScene() != null
+                    ? btnBrowse.getScene().getWindow()
+                    : null;
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Select Product Image");
+            chooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("Image files (JPG, PNG)", "*.jpg", "*.jpeg", "*.png"));
+            File file = chooser.showOpenDialog(owner);
+            if (file != null) {
+                selectedImageFile[0] = file;
+                lblImage.setText(file.getName());
+                lblImage.setStyle("-fx-text-fill: #2C6AA0; -fx-font-size: 12px;");
+            }
         });
 
         ButtonType saveType = new ButtonType(

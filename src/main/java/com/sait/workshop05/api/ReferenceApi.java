@@ -154,6 +154,7 @@ public final class ReferenceApi {
         public String firstName;
         public String lastName;
         public int rewardBalance;
+        public Integer addressId;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -197,7 +198,7 @@ public final class ReferenceApi {
         List<CustomerOption> out = new ArrayList<>();
         for (CustomerJson c : rows) {
             String name = ((c.firstName != null ? c.firstName : "") + " " + (c.lastName != null ? c.lastName : "")).trim();
-            out.add(new CustomerOption(c.id, name.isEmpty() ? "(customer)" : name, c.rewardBalance));
+            out.add(new CustomerOption(c.id, name.isEmpty() ? "(customer)" : name, c.rewardBalance, c.addressId));
         }
         return out;
     }

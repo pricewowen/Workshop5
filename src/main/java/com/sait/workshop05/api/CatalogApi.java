@@ -217,6 +217,29 @@ public final class CatalogApi {
         public String name;
     }
 
+    /**
+     * Returns the weekly operating hours for a bakery ({@code GET /api/v1/bakeries/{id}/hours}).
+     * Returns an empty list when no hours are configured (validation is skipped in that case).
+     */
+    public static List<BakeryHourJson> fetchBakeryHours(int bakeryId) throws Exception {
+        HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/bakeries/" + bakeryId + "/hours");
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("GET /api/v1/bakeries/" + bakeryId + "/hours failed: "
+                    + res.statusCode() + " " + res.body());
+        }
+        return readList(ApiClient.getInstance().getMapper(), res.body(), BakeryHourJson.class);
+    }
+
+    /** JSON shape for GET /api/v1/bakeries/{id}/hours */
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    public static class BakeryHourJson {
+        public Integer id;
+        public short dayOfWeek;    // 1 = Monday … 7 = Sunday (ISO)
+        public String openTime;    // "HH:mm:ss"
+        public String closeTime;   // "HH:mm:ss"
+        public boolean closed;
+    }
+
     /** JSON shape for GET /api/v1/product-specials/all. */
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class ProductSpecialResponse {
