@@ -25,42 +25,34 @@
                 <HBox spacing="12" alignment="CENTER_LEFT">
                     <Label text="User Management" styleClass="page-title"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Label text="Search:" style="-fx-font-size: 13px;"/>
                     <TextField fx:id="txtSearch"
                                promptText="Search username, email, role, or status"
-                               prefWidth="320" prefHeight="36"
-                               style="-fx-font-size: 13px;"/>
+                               prefWidth="320"
+                               styleClass="toolbar-search"/>
                     <Button text="Refresh" fx:id="btnRefresh"
                             onAction="#onRefresh"
-                            prefWidth="90"
                             styleClass="btn-muted toolbar-action"/>
                     <Button text="Add User" fx:id="btnNewUser"
                             onAction="#onNewUser"
-                            prefWidth="100"
                             styleClass="btn-accent toolbar-action"/>
                 </HBox>
                 <Label fx:id="lblPolicy" wrapText="true" maxWidth="920"
-                       style="-fx-text-fill: #8A8178; -fx-font-size: 12px;"
+                       styleClass="hint-label"
                        text=""/>
             </VBox>
 
             <!-- Table -->
-            <TableView fx:id="tblUsers"
-                       VBox.vgrow="ALWAYS"
-                       style="-fx-font-size: 13px;">
-                <fixedCellSize>30</fixedCellSize>
+            <TableView fx:id="tblUsers" VBox.vgrow="ALWAYS">
                 <columns>
-                    <TableColumn fx:id="colUsername" text="Username"  prefWidth="160"/>
-                    <TableColumn fx:id="colEmail"    text="Email"     prefWidth="240"/>
-                    <TableColumn fx:id="colRole"     text="Role"      prefWidth="100"/>
-                    <TableColumn fx:id="colStatus"   text="Status"    prefWidth="90"/>
-                    <TableColumn fx:id="colActions"  text="Actions"   prefWidth="110"/>
+                    <TableColumn fx:id="colUsername" text="USERNAME"  prefWidth="160"/>
+                    <TableColumn fx:id="colEmail"    text="EMAIL"     prefWidth="240"/>
+                    <TableColumn fx:id="colRole"     text="ROLE"      prefWidth="100"/>
+                    <TableColumn fx:id="colStatus"   text="STATUS"    prefWidth="90"/>
+                    <TableColumn fx:id="colActions"  text=""          prefWidth="110"/>
                 </columns>
             </TableView>
 
-            <Label fx:id="lblStatus"
-                   text="Loading..."
-                   style="-fx-text-fill: #444; -fx-font-size: 13px;"/>
+            <Label fx:id="lblStatus" text="Loading..." styleClass="hint-label"/>
         </VBox>
     </children>
 </AnchorPane>

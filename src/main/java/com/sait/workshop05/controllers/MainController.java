@@ -98,8 +98,9 @@ public class MainController {
     void initialize() {
         PAGE_TITLES.put(btnDashboard,   "Dashboard");
         PAGE_TITLES.put(btnOrders,      "Orders");
-        PAGE_TITLES.put(btnProducts,    "Products");
-        PAGE_TITLES.put(btnCustomers,   "Customers");
+        PAGE_TITLES.put(btnProducts,        "Products");
+        PAGE_TITLES.put(btnProductSpecials, "Product Specials");
+        PAGE_TITLES.put(btnCustomers,       "Customers");
         PAGE_TITLES.put(btnEmployees,   "Employees");
         PAGE_TITLES.put(btnLocations,   "Locations");
         PAGE_TITLES.put(btnRewards,     "Rewards");

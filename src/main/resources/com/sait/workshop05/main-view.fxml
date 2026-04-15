@@ -59,53 +59,71 @@
                   </Button>
                </children>
                <padding>
-                  <Insets bottom="15.0" top="15.0" />
+                  <Insets bottom="5.0" top="5.0" />
                </padding>
             </VBox>
 
             <!-- Nav: Management -->
-            <VBox>
-                <padding><Insets top="8" bottom="8" left="12" right="12"/></padding>
-                <Label text="MANAGEMENT" styleClass="sidebar-section-title">
-                    <VBox.margin><Insets left="8" bottom="6"/></VBox.margin>
-                </Label>
-                <Button fx:id="btnProducts" mnemonicParsing="false" onAction="#onProductsClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Products">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnProductSpecials" mnemonicParsing="false" onAction="#onProductSpecialsClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Product Specials">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnCustomers" mnemonicParsing="false" onAction="#onCustomersClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Customers">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnEmployees" mnemonicParsing="false" onAction="#onEmployeesClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Employees">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnLocations" mnemonicParsing="false" onAction="#onLocationsClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Locations">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
-                <Button fx:id="btnUsers" mnemonicParsing="false" onAction="#onUsersClick"
-                        prefWidth="196" styleClass="sidebar_button" text="Users">
-                    <VBox.margin><Insets bottom="2"/></VBox.margin>
-                </Button>
+            <VBox prefWidth="191.0">
+               <children>
+                  <Label text="Management" styleClass="sidebar-section-title">
+                     <VBox.margin>
+                        <Insets bottom="10.0" left="15.0" />
+                     </VBox.margin>
+                  </Label>
+                  <Button fx:id="btnProducts" mnemonicParsing="false" onAction="#onProductsClick"
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Products">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+                  <Button fx:id="btnProductSpecials" mnemonicParsing="false" onAction="#onProductSpecialsClick"
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Product Specials">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+                  <Button fx:id="btnCustomers" mnemonicParsing="false" onAction="#onCustomersClick"
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Customers">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+                  <Button fx:id="btnEmployees" mnemonicParsing="false" onAction="#onEmployeesClick"
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Employees">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+                  <Button fx:id="btnLocations" mnemonicParsing="false" onAction="#onLocationsClick"
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Locations">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+                  <Button fx:id="btnUsers" mnemonicParsing="false" onAction="#onUsersClick"
+                          prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Users">
+                     <VBox.margin>
+                        <Insets bottom="10.0" />
+                     </VBox.margin>
+                  </Button>
+               </children>
+               <padding>
+                  <Insets bottom="5.0" top="5.0" />
+               </padding>
             </VBox>
 
             <VBox prefHeight="203.0" prefWidth="191.0">
                <children>
                   <Label text="System" styleClass="sidebar-section-title">
                      <VBox.margin>
-                        <Insets left="15.0" />
+                        <Insets bottom="10.0" left="15.0" />
                      </VBox.margin>
                   </Label>
 
                   <Button fx:id="btnRewards" mnemonicParsing="false" onAction="#onRewardsClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Rewards">
                      <VBox.margin>
-                        <Insets bottom="10.0" top="10.0" />
+                        <Insets bottom="10.0" />
                      </VBox.margin>
                   </Button>
 
@@ -123,11 +141,11 @@
                      </VBox.margin>
                   </Button>
 
-                  <Button fx:id="btnAnalytics" mnemonicParsing="false" onAction="#onAnalyticsClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Analytics">
-                     <VBox.margin>
-                        <Insets bottom="10.0" />
-                     </VBox.margin>
-                  </Button>
+<!--                  <Button fx:id="btnAnalytics" mnemonicParsing="false" onAction="#onAnalyticsClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Analytics">-->
+<!--                     <VBox.margin>-->
+<!--                        <Insets bottom="10.0" />-->
+<!--                     </VBox.margin>-->
+<!--                  </Button>-->
 
                   <Button fx:id="btnActivityLog" mnemonicParsing="false" onAction="#onActivityLogClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Activity Log">
                      <VBox.margin>
@@ -137,7 +155,7 @@
 
                </children>
                <padding>
-                  <Insets bottom="15.0" top="15.0" />
+                  <Insets bottom="5.0" top="5.0" />
                </padding>
             </VBox>
 

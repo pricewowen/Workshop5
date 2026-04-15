@@ -376,7 +376,7 @@ public class ProductSpecialsController {
 
         TextField tfDiscount = new TextField(
                 isNew ? "0.00" : String.format("%.2f", existing.getDiscountPercent()));
-        tfDiscount.setPromptText("0.00");
+        tfDiscount.setPromptText("0.00 – 50.00");
 
         // ── Read-only product detail fields ──────────────────────
         Label lblDescValue  = new Label();
@@ -409,12 +409,17 @@ public class ProductSpecialsController {
         lblError.setVisible(false);
         lblError.setManaged(false);
 
+        // Discount cap hint shown below the discount field
+        Label lblDiscountHint = new Label("Max 50%");
+        lblDiscountHint.setStyle("-fx-font-size: 11px; -fx-text-fill: #8A8178;");
+
         // ── Layout ───────────────────────────────────────────────
         GridPane grid = buildFormGrid();
         int row = 0;
         addRow(grid, row++, "Product *",     cbProduct);
         addRow(grid, row++, "Featured On *", dpFeaturedOn);
         addRow(grid, row++, "Discount %",    tfDiscount);
+        grid.add(lblDiscountHint, 1, row++);
 
         // Separator between editable and read-only sections
         Label sep = new Label("Product Details  (read-only)");
@@ -497,7 +502,7 @@ public class ProductSpecialsController {
         if (!discStr.isBlank()) {
             try {
                 double d = Double.parseDouble(discStr);
-                if (d < 0 || d > 100) return "Discount must be between 0 and 100.";
+                if (d < 0 || d > 50) return "Discount must be between 0 and 50.";
             } catch (NumberFormatException e) {
                 return "Discount must be a valid number (e.g. 10.00).";
             }

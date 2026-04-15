@@ -38,14 +38,13 @@
             <!-- Table -->
             <TableView fx:id="tblEmployees" VBox.vgrow="ALWAYS">
                 <columns>
-                    <TableColumn fx:id="colEmployeeId" text="ID" prefWidth="70"/>
                     <TableColumn fx:id="colFirstName" text="FIRST NAME" prefWidth="130"/>
                     <TableColumn fx:id="colLastName" text="LAST NAME" prefWidth="130"/>
                     <TableColumn fx:id="colRole" text="ROLE" prefWidth="140"/>
                     <TableColumn fx:id="colPhone" text="PHONE" prefWidth="140"/>
                     <TableColumn fx:id="colEmail" text="EMAIL" prefWidth="220"/>
                     <TableColumn fx:id="colAddress" text="ADDRESS" prefWidth="230"/>
-                    <TableColumn fx:id="colActions" text="" prefWidth="120"/>
+                    <TableColumn fx:id="colActions" text="" prefWidth="130"/>
                 </columns>
             </TableView>
 

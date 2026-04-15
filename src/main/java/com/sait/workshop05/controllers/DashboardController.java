@@ -233,25 +233,11 @@ public class DashboardController {
     }
 
     private void onNewOrder() {
-        try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
-                    getClass().getResource("/com/sait/workshop05/order-management-view.fxml"));
-            javafx.scene.Node page = loader.load();
-
-            javafx.scene.layout.AnchorPane contentArea =
-                    (javafx.scene.layout.AnchorPane) btnNewOrder.getScene().lookup("#contentArea");
-
-            if (contentArea != null) {
-                contentArea.getChildren().clear();
-                contentArea.getChildren().add(page);
-                javafx.scene.layout.AnchorPane.setTopAnchor(page, 0.0);
-                javafx.scene.layout.AnchorPane.setBottomAnchor(page, 0.0);
-                javafx.scene.layout.AnchorPane.setLeftAnchor(page, 0.0);
-                javafx.scene.layout.AnchorPane.setRightAnchor(page, 0.0);
-            }
-        } catch (Exception e) {
-            LogData.handleException("NAV_NEW_ORDER", e);
-            ErrorHandler.showErrorDialog("Navigation Error", "Could not open Order Management", e);
+        // Delegate to the sidebar button so setActiveButton() and the top-bar title
+        // update exactly as they do when the user clicks "Orders" directly.
+        Button btnOrders = (Button) btnNewOrder.getScene().lookup("#btnOrders");
+        if (btnOrders != null) {
+            btnOrders.fire();
         }
     }
 

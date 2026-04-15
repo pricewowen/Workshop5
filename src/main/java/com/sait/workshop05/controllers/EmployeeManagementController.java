@@ -39,7 +39,6 @@ public class EmployeeManagementController {
 
     // ── Table ──────────────────────────────────────────────────
     @FXML private TableView<Employee> tblEmployees;
-    @FXML private TableColumn<Employee, String> colEmployeeId;
     @FXML private TableColumn<Employee, String> colFirstName;
     @FXML private TableColumn<Employee, String> colLastName;
     @FXML private TableColumn<Employee, String> colRole;
@@ -77,7 +76,6 @@ public class EmployeeManagementController {
     }
 
     private void setupColumns() {
-        colEmployeeId.setCellValueFactory(new PropertyValueFactory<>("employeeId"));
         colFirstName.setCellValueFactory(new PropertyValueFactory<>("employeeFirstName"));
         colLastName.setCellValueFactory(new PropertyValueFactory<>("employeeLastName"));
         colRole.setCellValueFactory(new PropertyValueFactory<>("employeeRole"));
