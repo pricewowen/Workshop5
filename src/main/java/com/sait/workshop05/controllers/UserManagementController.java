@@ -4,7 +4,9 @@ import com.sait.workshop05.api.UserManagementApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.FormValidator;
 import com.sait.workshop05.util.StringUtil;
+import com.sait.workshop05.util.Validator;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -12,6 +14,7 @@ import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.ColumnConstraints;
@@ -260,6 +263,8 @@ public class UserManagementController {
         tfEmail.setPromptText("e.g., jane@peelin.ca");
         PasswordField pfPassword = new PasswordField();
         pfPassword.setPromptText("Min 6 characters");
+        PasswordField pfConfirm = new PasswordField();
+        pfConfirm.setPromptText("Re-enter password");
         ComboBox<String> cbRole = new ComboBox<>(
                 FXCollections.observableArrayList("Employee", "Customer"));
         cbRole.setMaxWidth(Double.MAX_VALUE);
@@ -268,18 +273,35 @@ public class UserManagementController {
         lblRoleHint.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 11px; -fx-wrap-text: true;");
         lblRoleHint.setMaxWidth(400);
 
-        Label lblError = new Label();
-        lblError.setStyle("-fx-text-fill: #B85C4C; -fx-font-size: 12px;");
-        lblError.setVisible(false);
-        lblError.setManaged(false);
+        FormValidator form = new FormValidator();
+        Node usernameField = form.field(tfUsername)
+                .required("Username is required")
+                .min(3, "At least 3 characters")
+                .wrap();
+        Node emailField = form.field(tfEmail)
+                .required("Email is required")
+                .rule(Validator::isValidEmail)
+                .wrap();
+        Node passwordField = form.field(pfPassword)
+                .required("Password is required")
+                .min(6, "At least 6 characters")
+                .wrap();
+        Node confirmField = form.field(pfConfirm)
+                .required("Please confirm the password")
+                .wrap();
+        form.match(pfPassword, pfConfirm, "Passwords do not match");
+        Node roleField = form.choice(cbRole)
+                .required("Role is required")
+                .wrap();
 
         GridPane grid = buildFormGrid();
-        addRow(grid, 0, "Username *", tfUsername);
-        addRow(grid, 1, "Email *", tfEmail);
-        addRow(grid, 2, "Password *", pfPassword);
-        addRow(grid, 3, "Role *", cbRole);
+        addRow(grid, 0, "Username *", usernameField);
+        addRow(grid, 1, "Email *", emailField);
+        addRow(grid, 2, "Password *", passwordField);
+        addRow(grid, 3, "Confirm Password *", confirmField);
+        addRow(grid, 4, "Role *", roleField);
 
-        VBox content = new VBox(12, grid, lblRoleHint, lblError);
+        VBox content = new VBox(12, grid, lblRoleHint);
         content.setPadding(new Insets(20, 24, 8, 24));
 
         Dialog<ButtonType> dialog = new Dialog<>();
@@ -295,11 +317,7 @@ public class UserManagementController {
 
         Button saveBtn = (Button) dialog.getDialogPane().lookupButton(saveType);
         saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
-            String err = validateCreate(tfUsername, tfEmail, pfPassword, cbRole);
-            if (err != null) {
-                lblError.setText(err);
-                lblError.setVisible(true);
-                lblError.setManaged(true);
+            if (!form.validateAll()) {
                 event.consume();
             }
         });
@@ -342,18 +360,6 @@ public class UserManagementController {
             });
             Thread.ofVirtual().name("user-create").start(createTask);
         });
-    }
-
-    private String validateCreate(TextField tfUser, TextField tfEmail,
-                                  PasswordField pfPw, ComboBox<String> cbRole) {
-        if (StringUtil.safe(tfUser.getText()).isBlank()) return "Username is required.";
-        if (tfUser.getText().trim().length() < 3) return "Username must be at least 3 characters.";
-        if (StringUtil.safe(tfEmail.getText()).isBlank()) return "Email is required.";
-        if (!tfEmail.getText().trim().contains("@")) return "Enter a valid email address.";
-        if (StringUtil.safe(pfPw.getText()).isBlank()) return "Password is required.";
-        if (pfPw.getText().length() < 6) return "Password must be at least 6 characters.";
-        if (cbRole.getValue() == null) return "Role is required.";
-        return null;
     }
 
     // ────────────────────────────────────────────────────────────
@@ -457,12 +463,14 @@ public class UserManagementController {
         return grid;
     }
 
-    private void addRow(GridPane grid, int row, String labelText, Control control) {
+    private void addRow(GridPane grid, int row, String labelText, Node node) {
         Label lbl = new Label(labelText);
         lbl.getStyleClass().add("form-label");
-        control.setMaxWidth(Double.MAX_VALUE);
+        if (node instanceof javafx.scene.layout.Region r) {
+            r.setMaxWidth(Double.MAX_VALUE);
+        }
         grid.add(lbl, 0, row);
-        grid.add(control, 1, row);
+        grid.add(node, 1, row);
     }
 
     // ────────────────────────────────────────────────────────────
