@@ -2,9 +2,7 @@ package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -12,16 +10,15 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Singleton HTTP client for the Spring Boot API.
- * Reads API_URL from .env.local and attaches the JWT on authenticated requests.
+ * Uses the deployed API URL and attaches the JWT on authenticated requests.
  */
 public class ApiClient {
 
     private static ApiClient instance;
+    private static final String DEPLOYED_API_BASE_URL = "https://peelin-good-kdeft.ondigitalocean.app";
 
     private final HttpClient http;
     private final ObjectMapper mapper;
@@ -34,7 +31,7 @@ public class ApiClient {
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
         this.mapper = new ObjectMapper();
-        this.baseUrl = loadBaseUrl();
+        this.baseUrl = DEPLOYED_API_BASE_URL.replaceAll("/+$", "");
     }
 
     public static ApiClient getInstance() {
@@ -42,29 +39,6 @@ public class ApiClient {
             instance = new ApiClient();
         }
         return instance;
-    }
-
-    private String loadBaseUrl() {
-        String envPath = System.getProperty("user.dir") + "/.env.local";
-        Map<String, String> env = new HashMap<>();
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(envPath))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith("#")) continue;
-                String[] parts = line.split("=", 2);
-                if (parts.length == 2) env.put(parts[0].trim(), parts[1].trim());
-            }
-        } catch (Exception e) {
-            System.err.println("ApiClient: could not read .env.local — " + e.getMessage());
-        }
-
-        String url = env.get("API_URL");
-        if (url == null || url.isBlank()) {
-            throw new RuntimeException("API_URL is missing from .env.local");
-        }
-        return url.replaceAll("/+$", ""); // strip trailing slash
     }
 
     public void setToken(String token) {
@@ -75,7 +49,7 @@ public class ApiClient {
         this.jwtToken = null;
     }
 
-    /** Base URL from {@code API_URL} in {@code .env.local} (no trailing slash). */
+    /** Base URL for the deployed API (no trailing slash). */
     public String getBaseUrl() {
         return baseUrl;
     }

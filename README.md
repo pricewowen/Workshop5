@@ -16,7 +16,7 @@
 ## Prerequisites
 
 - JDK 23
-- **Workshop 7 backend** running (default `http://localhost:8080`) with database migrated and seeded
+- **Workshop 7 backend** deployed and reachable at `https://peelin-good-kdeft.ondigitalocean.app`
 - IntelliJ IDEA (recommended) or any Java IDE
 
 ## Setup
@@ -27,13 +27,9 @@ Clone the repo and open the `Workshop5` Maven module.
 
 ### 2. API base URL
 
-Create **`.env.local`** in the **project root** (`Workshop5/` — same directory as `pom.xml`):
+No local `.env.local` is required. Workshop 5 is configured to use the deployed API:
 
-```properties
-API_URL=http://localhost:8080
-```
-
-Use a different host or port if your API listens elsewhere (no trailing slash required).
+`https://peelin-good-kdeft.ondigitalocean.app`
 
 ### 3. Run the application
 
@@ -60,13 +56,9 @@ Log in with the **username** (or email if your login screen accepts it) and pass
 
 ## Troubleshooting
 
-### `API_URL is missing from .env.local`
-
-Create `.env.local` in the project root with `API_URL=...` as above.
-
 ### Login fails / connection errors
 
-- Confirm Workshop 7 is running and reachable at `API_URL`.
+- Confirm Workshop 7 is deployed and reachable at `https://peelin-good-kdeft.ondigitalocean.app`.
 - Check firewall and port (`8080` by default).
 - Use the same credentials as in the API database (BCrypt hashes are on the server only).
 
