@@ -15,6 +15,10 @@ import javafx.scene.layout.StackPane;
 import java.time.LocalDate;
 import java.util.*;
 
+import com.sait.workshop05.api.OrderApi;
+import com.sait.workshop05.models.Order;
+import java.time.LocalDateTime;
+
 public class AnalyticsController {
 
     @FXML private DatePicker startDatePicker;
@@ -33,6 +37,8 @@ public class AnalyticsController {
 
     private static final String ALL_BAKERIES_ADMIN = "All Bakeries";
     private static final String ALL_MY_BAKERIES = "All My Bakeries";
+
+    private List<LocalDate> allValidDates = new ArrayList<>();
 
     @FXML
     public void initialize() {
@@ -407,13 +413,9 @@ public class AnalyticsController {
         inProgressSeries.setName("In Progress");
 
         if (usesDateLabels(kpiType)) {
-            List<LocalDate> orderedDates = buildOrderedDateList(
-                    primaryData,
-                    secondaryData,
-                    startDatePicker.getValue(),
-                    endDatePicker.getValue(),
-                    isCompressedView()
-            );
+            List<LocalDate> orderedDates = isCompressedView()
+                    ? buildCompressedDateList(startDatePicker.getValue(), endDatePicker.getValue())
+                    : buildOrderedDateList(primaryData, secondaryData, startDatePicker.getValue(), endDatePicker.getValue(), false);
 
             List<String> orderedCategories = buildDisplayDateCategories(orderedDates);
 
@@ -515,13 +517,9 @@ public class AnalyticsController {
         inProgressSeries.setName("In Progress");
 
         if (usesDateLabels(kpiType)) {
-            List<LocalDate> orderedDates = buildOrderedDateList(
-                    primaryData,
-                    secondaryData,
-                    startDatePicker.getValue(),
-                    endDatePicker.getValue(),
-                    isCompressedView()
-            );
+            List<LocalDate> orderedDates = isCompressedView()
+                    ? buildCompressedDateList(startDatePicker.getValue(), endDatePicker.getValue())
+                    : buildOrderedDateList(primaryData, secondaryData, startDatePicker.getValue(), endDatePicker.getValue(), false);
 
             List<String> orderedCategories = buildDisplayDateCategories(orderedDates);
 
@@ -644,6 +642,22 @@ public class AnalyticsController {
         return orderedDates;
     }
 
+    private List<LocalDate> buildCompressedDateList(LocalDate start, LocalDate end) {
+        List<LocalDate> orderedDates = new ArrayList<>();
+
+        if (start == null || end == null) {
+            return orderedDates;
+        }
+
+        for (LocalDate date : allValidDates) {
+            if (!date.isBefore(start) && !date.isAfter(end)) {
+                orderedDates.add(date);
+            }
+        }
+
+        return orderedDates;
+    }
+
     private List<String> buildDisplayDateCategories(List<LocalDate> orderedDates) {
         int labelStride = 1;
         int count = orderedDates.size();
@@ -682,7 +696,9 @@ public class AnalyticsController {
                                                 boolean compressedView) {
 
         if (usesDateLabels(kpiType)) {
-            List<LocalDate> orderedDates = buildOrderedDateList(primaryData, secondaryData, start, end, compressedView);
+            List<LocalDate> orderedDates = compressedView
+                    ? buildCompressedDateList(start, end)
+                    : buildOrderedDateList(primaryData, secondaryData, start, end, false);
             return buildDisplayDateCategories(orderedDates);
         }
 
@@ -860,9 +876,10 @@ public class AnalyticsController {
         try {
             List<Integer> scopeBakeryIds = session.isAdmin() ? null : session.getAccessibleBakeryIds();
 
-            List<LocalDate> validDates = AnalyticsApi.getAvailableOrderDates(bakerySelection, scopeBakeryIds);
+            List<LocalDate> validDates = loadValidOrderDates(bakerySelection);
 
             if (validDates.isEmpty()) {
+                allValidDates = new ArrayList<>();
                 startDatePicker.setValue(null);
                 endDatePicker.setValue(null);
                 startDatePicker.setDayCellFactory(null);
@@ -871,24 +888,17 @@ public class AnalyticsController {
             }
 
             validDates.sort(LocalDate::compareTo);
+            allValidDates = new ArrayList<>(validDates);
 
             LocalDate first = validDates.get(0);
             LocalDate last  = validDates.get(validDates.size() - 1);
 
-            if (startDatePicker.getValue() == null) {
-                startDatePicker.setValue(first);
-            }
-            if (endDatePicker.getValue() == null) {
-                endDatePicker.setValue(last);
-            }
-
             if (isCompressedView()) {
-                if (!validDates.contains(startDatePicker.getValue())) {
+                if (startDatePicker.getValue() == null || !validDates.contains(startDatePicker.getValue())) {
                     startDatePicker.setValue(first);
                 }
-                if (!validDates.contains(endDatePicker.getValue())) {
-                    endDatePicker.setValue(last);
-                }
+
+                endDatePicker.setValue(last);
 
                 Set<LocalDate> validSet = new HashSet<>(validDates);
 
@@ -914,6 +924,13 @@ public class AnalyticsController {
                             }
                         });
             } else {
+                if (startDatePicker.getValue() == null || !validDates.contains(startDatePicker.getValue())) {
+                    startDatePicker.setValue(first);
+                }
+                if (endDatePicker.getValue() == null || !validDates.contains(endDatePicker.getValue())) {
+                    endDatePicker.setValue(last);
+                }
+
                 startDatePicker.setDayCellFactory(null);
                 endDatePicker.setDayCellFactory(null);
             }
@@ -921,5 +938,63 @@ public class AnalyticsController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private List<LocalDate> loadValidOrderDates(String bakerySelection) throws Exception {
+        List<Order> orders = OrderApi.listOrders();
+        Set<LocalDate> dates = new TreeSet<>();
+
+        for (Order order : orders) {
+            if (order == null || order.getOrderStatus() == null) {
+                continue;
+            }
+
+            String status = order.getOrderStatus().trim().toLowerCase(Locale.ROOT);
+            if ("cancelled".equals(status)) {
+                continue;
+            }
+
+            if (!bakeryMatches(order, bakerySelection)) {
+                continue;
+            }
+
+            LocalDate date = analyticsDate(order);
+            if (date != null) {
+                dates.add(date);
+            }
+        }
+
+        return new ArrayList<>(dates);
+    }
+
+    private boolean bakeryMatches(Order order, String bakerySelection) {
+        if (bakerySelection == null
+                || bakerySelection.isBlank()
+                || ALL_BAKERIES_ADMIN.equals(bakerySelection)
+                || ALL_MY_BAKERIES.equals(bakerySelection)) {
+            return true;
+        }
+
+        String bakery = order.getBakeryDisplay();
+        return bakery != null && bakery.equals(bakerySelection);
+    }
+
+    private LocalDate analyticsDate(Order order) {
+        LocalDateTime placed = order.getOrderPlacedDateTime();
+        if (placed != null) {
+            return placed.toLocalDate();
+        }
+
+        LocalDateTime scheduled = order.getOrderScheduledDateTime();
+        if (scheduled != null) {
+            return scheduled.toLocalDate();
+        }
+
+        LocalDateTime delivered = order.getOrderDeliveredDateTime();
+        if (delivered != null) {
+            return delivered.toLocalDate();
+        }
+
+        return null;
     }
 }

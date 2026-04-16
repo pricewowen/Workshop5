@@ -223,6 +223,9 @@ public final class AnalyticsApi {
         batchToEmployee.put(16, employeeIdToName.get(5));
         batchToEmployee.put(17, employeeIdToName.get(4));
         batchToEmployee.put(18, employeeIdToName.get(2));
+        batchToEmployee.put(19, "John Doe");
+        batchToEmployee.put(20, "John Doe");
+        batchToEmployee.put(21, "John Doe");
 
         return batchToEmployee;
     }
@@ -513,11 +516,18 @@ public final class AnalyticsApi {
                 if (!isRecognized(order)) continue;
 
                 List<OrderItem> items = getOrderItemsCached(order.getOrderId());
+
+                Set<String> employeesInOrder = new HashSet<>();
                 for (OrderItem item : items) {
                     String employee = employeeNameForBatch(item.getBatchId());
-                    if (!shouldDisplayEmployee(employee)) continue;
-                    fallback += item.getOrderItemLineTotal();
+                    if (shouldDisplayEmployee(employee)) {
+                        employeesInOrder.add(employee);
+                    }
                 }
+
+                if (employeesInOrder.isEmpty()) continue;
+
+                fallback += finalAmount(order);
             }
         } catch (Exception ignored) {
         }
@@ -548,10 +558,22 @@ public final class AnalyticsApi {
             if (!isRecognized(order)) continue;
 
             List<OrderItem> items = getOrderItemsCached(order.getOrderId());
+
+            Set<String> employeesInOrder = new HashSet<>();
             for (OrderItem item : items) {
                 String employee = employeeNameForBatch(item.getBatchId());
-                if (!shouldDisplayEmployee(employee)) continue;
-                totals.merge(employee, item.getOrderItemLineTotal(), Double::sum);
+                if (shouldDisplayEmployee(employee)) {
+                    employeesInOrder.add(employee);
+                }
+            }
+
+            if (employeesInOrder.isEmpty()) continue;
+
+            double orderTotal = finalAmount(order);
+            double splitAmount = orderTotal / employeesInOrder.size();
+
+            for (String employee : employeesInOrder) {
+                totals.merge(employee, splitAmount, Double::sum);
             }
         }
 
@@ -670,11 +692,18 @@ public final class AnalyticsApi {
                 if (!isInProgress(order)) continue;
 
                 List<OrderItem> items = getOrderItemsCached(order.getOrderId());
+
+                Set<String> employeesInOrder = new HashSet<>();
                 for (OrderItem item : items) {
                     String employee = employeeNameForBatch(item.getBatchId());
-                    if (!shouldDisplayEmployee(employee)) continue;
-                    fallback += item.getOrderItemLineTotal();
+                    if (shouldDisplayEmployee(employee)) {
+                        employeesInOrder.add(employee);
+                    }
                 }
+
+                if (employeesInOrder.isEmpty()) continue;
+
+                fallback += finalAmount(order);
             }
         } catch (Exception ignored) {
         }
@@ -740,10 +769,22 @@ public final class AnalyticsApi {
             if (!isInProgress(order)) continue;
 
             List<OrderItem> items = getOrderItemsCached(order.getOrderId());
+
+            Set<String> employeesInOrder = new HashSet<>();
             for (OrderItem item : items) {
                 String employee = employeeNameForBatch(item.getBatchId());
-                if (!shouldDisplayEmployee(employee)) continue;
-                totals.merge(employee, item.getOrderItemLineTotal(), Double::sum);
+                if (shouldDisplayEmployee(employee)) {
+                    employeesInOrder.add(employee);
+                }
+            }
+
+            if (employeesInOrder.isEmpty()) continue;
+
+            double orderTotal = finalAmount(order);
+            double splitAmount = orderTotal / employeesInOrder.size();
+
+            for (String employee : employeesInOrder) {
+                totals.merge(employee, splitAmount, Double::sum);
             }
         }
 

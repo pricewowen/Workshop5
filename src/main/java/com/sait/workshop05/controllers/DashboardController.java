@@ -54,6 +54,7 @@ public class DashboardController {
     void initialize() {
         setupColumns();
         loadDashboard();
+        LogData.logAction("VIEW", "Dashboard opened");
         if (btnNewOrder != null) btnNewOrder.setOnAction(e -> onNewOrder());
     }
 
@@ -209,6 +210,8 @@ public class DashboardController {
 
     @FXML
     private void onRefresh() {
+
+        LogData.logAction("REFRESH", "Dashboard refreshed");
         loadDashboard();
     }
 
@@ -236,6 +239,7 @@ public class DashboardController {
     }
 
     private void showOrderDetails(Order order) {
+        LogData.logAction("VIEW_ORDER", "Viewed order #" + order.getOrderId());
         try {
             List<OrderItem> items = OrderApi.getOrderItems(order.getOrderId());
 
