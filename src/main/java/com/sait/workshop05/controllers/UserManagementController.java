@@ -3,6 +3,7 @@ package com.sait.workshop05.controllers;
 import com.sait.workshop05.api.UserManagementApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.session.UserSession;
+import com.sait.workshop05.util.DialogHelper;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.FormValidator;
 import com.sait.workshop05.util.StringUtil;
@@ -266,10 +267,11 @@ public class UserManagementController {
         PasswordField pfConfirm = new PasswordField();
         pfConfirm.setPromptText("Re-enter password");
         ComboBox<String> cbRole = new ComboBox<>(
-                FXCollections.observableArrayList("Employee", "Customer"));
+                FXCollections.observableArrayList("Employee Login", "Customer Login"));
         cbRole.setMaxWidth(Double.MAX_VALUE);
 
-        Label lblRoleHint = new Label("Role must be Employee or Customer. Admin users cannot be created here.");
+        Label lblRoleHint = new Label(
+                "This creates a login account only. After saving, go to the Employee or Customer tab to create their full profile and link it to this account.");
         lblRoleHint.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 11px; -fx-wrap-text: true;");
         lblRoleHint.setMaxWidth(400);
 
@@ -305,9 +307,9 @@ public class UserManagementController {
         content.setPadding(new Insets(20, 24, 8, 24));
 
         Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("New login (Employee or Customer)");
+        dialog.setTitle("New Login Account");
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(440);
+        DialogHelper.configureResponsive(dialog, 440);
         dialog.getDialogPane().getStylesheets().add(
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
@@ -324,7 +326,7 @@ public class UserManagementController {
 
         dialog.showAndWait().ifPresent(result -> {
             if (result.getButtonData() != ButtonBar.ButtonData.OK_DONE) return;
-            String roleApi = "Employee".equals(cbRole.getValue()) ? "employee" : "customer";
+            String roleApi = cbRole.getValue() != null && cbRole.getValue().startsWith("Employee") ? "employee" : "customer";
             String uname = tfUsername.getText().trim();
             String email = tfEmail.getText().trim();
             String password = pfPassword.getText();

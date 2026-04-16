@@ -648,12 +648,20 @@
 }
 
 .table-row-cell:selected {
-    -fx-background-color: #F0E4CC;
+    -fx-background-color: #E8D4A8;
+    -fx-text-fill: #4e342e;
+}
+
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: #4e342e;
+}
+
+.table-row-cell:selected .table-cell .label {
     -fx-text-fill: #4e342e;
 }
 
 .table-row-cell:hover:selected {
-    -fx-background-color: #EBD9B8;
+    -fx-background-color: #DFCA96;
 }
 
 .table-row-cell:hover {
@@ -752,7 +760,11 @@
 }
 
 .list-cell:selected {
-    -fx-background-color: #F0E4CC;
+    -fx-background-color: #E8D4A8;
+    -fx-text-fill: #4e342e;
+}
+
+.list-cell:selected .label {
     -fx-text-fill: #4e342e;
 }
 

@@ -7,7 +7,9 @@ import com.sait.workshop05.api.RewardTierApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.*;
 import com.sait.workshop05.util.AddressInputHelper;
+import com.sait.workshop05.util.DialogHelper;
 import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.PhoneFieldFormatter;
 import com.sait.workshop05.util.OrderStatus;
 import com.sait.workshop05.util.StringUtil;
 import io.sentry.Sentry;
@@ -316,8 +318,12 @@ public class CustomerManagementController {
         TextField tfMiddleInitial = new TextField(isNew ? "" : StringUtil.nz(existing.getMiddleInitial()));
         tfMiddleInitial.setMaxWidth(70);
         TextField tfLastName = new TextField(isNew ? "" : StringUtil.nz(existing.getLastName()));
-        TextField tfPhone = new TextField(isNew ? "" : StringUtil.nz(existing.getPhone()));
-        TextField tfBusinessPhone = new TextField(isNew ? "" : StringUtil.nz(existing.getBusinessPhone()));
+        TextField tfPhone = new TextField();
+        PhoneFieldFormatter.apply(tfPhone);
+        if (!isNew) PhoneFieldFormatter.setPhone(tfPhone, existing.getPhone());
+        TextField tfBusinessPhone = new TextField();
+        PhoneFieldFormatter.apply(tfBusinessPhone);
+        if (!isNew) PhoneFieldFormatter.setPhone(tfBusinessPhone, existing.getBusinessPhone());
         TextField tfEmail = new TextField(isNew ? "" : StringUtil.nz(existing.getEmail()));
         TextField tfRewardBalance = new TextField(isNew ? "0" : String.valueOf(existing.getRewardBalance()));
         tfRewardBalance.setEditable(false);
@@ -441,7 +447,7 @@ public class CustomerManagementController {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(isNew ? "New Customer" : "Edit Customer");
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(500);
+        DialogHelper.configureResponsive(dialog, 500);
         dialog.getDialogPane().getStylesheets().add(
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
@@ -561,7 +567,7 @@ public class CustomerManagementController {
         dialog.setTitle("Order History — " + customer.getFirstName() + " " + customer.getLastName());
         dialog.setHeaderText(orders.size() + " order(s) found");
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-        dialog.setResizable(true);
+        DialogHelper.configureResponsive(dialog, 500);
         dialog.getDialogPane().getStylesheets().add(
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
 
@@ -672,6 +678,7 @@ public class CustomerManagementController {
         dialog.setHeaderText("Customer: " + selected.getFirstName() + " " + selected.getLastName()
                 + "\nCurrent Balance: " + selected.getRewardBalance() + " points");
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        DialogHelper.configureResponsive(dialog, 400);
         dialog.getDialogPane().getStylesheets().add(
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
 

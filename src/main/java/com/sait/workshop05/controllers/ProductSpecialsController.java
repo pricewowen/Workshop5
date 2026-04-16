@@ -4,6 +4,7 @@ import com.sait.workshop05.api.ApiClient;
 import com.sait.workshop05.api.CatalogApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.ProductSpecial;
+import com.sait.workshop05.util.DialogHelper;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
 import io.sentry.Sentry;
@@ -436,7 +437,7 @@ public class ProductSpecialsController {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(isNew ? "New Product Special" : "Edit Product Special");
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(520);
+        DialogHelper.configureResponsive(dialog, 520);
         dialog.getDialogPane().getStylesheets().add(
                 Objects.requireNonNull(getClass().getResource(
                         "/com/sait/workshop05/styles.css")).toExternalForm());

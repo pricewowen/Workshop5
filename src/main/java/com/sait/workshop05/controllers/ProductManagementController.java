@@ -5,6 +5,7 @@ import com.sait.workshop05.api.CatalogApi;
 import com.sait.workshop05.api.ImageUploadApi;
 import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Product;
+import com.sait.workshop05.util.DialogHelper;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
 import io.sentry.Sentry;
@@ -433,11 +434,10 @@ public class ProductManagementController {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(isNew ? "New Product" : "Edit Product");
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(520);
+        DialogHelper.configureResponsive(dialog, 520);
         dialog.getDialogPane().getStylesheets().add(
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
-        dialog.setResizable(true);
 
         // Wire image browse — obtain the window at click time so timing is never an issue
         btnBrowse.setOnAction(e -> {

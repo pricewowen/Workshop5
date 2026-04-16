@@ -9,7 +9,9 @@ import com.sait.workshop05.models.Employee;
 import com.sait.workshop05.models.UserOption;
 import com.sait.workshop05.session.UserSession;
 import com.sait.workshop05.util.AddressInputHelper;
+import com.sait.workshop05.util.DialogHelper;
 import com.sait.workshop05.util.ErrorHandler;
+import com.sait.workshop05.util.PhoneFieldFormatter;
 import com.sait.workshop05.util.StringUtil;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
@@ -251,8 +253,12 @@ public class EmployeeManagementController {
         TextField tfMiddleInitial = new TextField(isNew ? "" : StringUtil.nz(existing.getEmployeeMiddleInitial()));
         tfMiddleInitial.setMaxWidth(70);
         TextField tfLastName = new TextField(isNew ? "" : StringUtil.nz(existing.getEmployeeLastName()));
-        TextField tfPhone = new TextField(isNew ? "" : StringUtil.nz(existing.getEmployeePhone()));
-        TextField tfBusinessPhone = new TextField(isNew ? "" : StringUtil.nz(existing.getEmployeeBusinessPhone()));
+        TextField tfPhone = new TextField();
+        PhoneFieldFormatter.apply(tfPhone);
+        if (!isNew) PhoneFieldFormatter.setPhone(tfPhone, existing.getEmployeePhone());
+        TextField tfBusinessPhone = new TextField();
+        PhoneFieldFormatter.apply(tfBusinessPhone);
+        if (!isNew) PhoneFieldFormatter.setPhone(tfBusinessPhone, existing.getEmployeeBusinessPhone());
         TextField tfEmail = new TextField(isNew ? "" : StringUtil.nz(existing.getEmployeeEmail()));
 
         List<String> roleList = new ArrayList<>(java.util.Arrays.asList(
@@ -379,7 +385,7 @@ public class EmployeeManagementController {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(isNew ? "New Employee" : "Edit Employee");
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(500);
+        DialogHelper.configureResponsive(dialog, 500);
         dialog.getDialogPane().getStylesheets().add(
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");

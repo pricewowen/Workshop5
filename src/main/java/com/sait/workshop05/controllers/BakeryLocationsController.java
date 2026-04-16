@@ -6,6 +6,7 @@ import com.sait.workshop05.logging.LogData;
 import com.sait.workshop05.models.Address;
 import com.sait.workshop05.models.Bakery;
 import com.sait.workshop05.models.Province;
+import com.sait.workshop05.util.DialogHelper;
 import com.sait.workshop05.util.ErrorHandler;
 import com.sait.workshop05.util.StringUtil;
 import com.sait.workshop05.util.Validator;
@@ -249,7 +250,7 @@ public class BakeryLocationsController {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(isNew ? "New Location" : "Edit Location");
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(500);
+        DialogHelper.configureResponsive(dialog, 500);
         dialog.getDialogPane().getStylesheets().add(
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
