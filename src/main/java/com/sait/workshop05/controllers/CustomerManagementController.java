@@ -345,6 +345,21 @@ public class CustomerManagementController {
             cbUserNew = new ComboBox<>(FXCollections.observableArrayList(assignablePool));
             cbUserNew.setMaxWidth(Double.MAX_VALUE);
             cbUserNew.setEditable(true);
+            cbUserNew.setConverter(new javafx.util.StringConverter<UserOption>() {
+                @Override
+                public String toString(UserOption option) {
+                    return option == null ? "" : option.getUsername();
+                }
+                @Override
+                public UserOption fromString(String s) {
+                    if (s == null || s.isBlank()) return null;
+                    String norm = s.trim();
+                    return assignableForFilter.stream()
+                            .filter(u -> u.getUsername().equalsIgnoreCase(norm))
+                            .findFirst()
+                            .orElse(null);
+                }
+            });
             cbUserNew.setOnKeyReleased(evt -> {
                 javafx.scene.input.KeyCode code = evt.getCode();
                 if (code == javafx.scene.input.KeyCode.ENTER || code == javafx.scene.input.KeyCode.ESCAPE
@@ -438,12 +453,17 @@ public class CustomerManagementController {
 
         Button saveBtn = (Button) dialog.getDialogPane().lookupButton(saveType);
         saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            if (isNew && cbUserNew != null && cbUserNew.isEditable() && cbUserNew.getConverter() != null) {
+                String typed = cbUserNew.getEditor().getText();
+                UserOption match = cbUserNew.getConverter().fromString(typed);
+                cbUserNew.setValue(match);
+            }
             if (StringUtil.safe(tfFirstName.getText()).isBlank()) { showErr(lblError, "First name is required."); event.consume(); return; }
             if (StringUtil.safe(tfLastName.getText()).isBlank()) { showErr(lblError, "Last name is required."); event.consume(); return; }
             if (StringUtil.safe(tfPhone.getText()).isBlank()) { showErr(lblError, "Phone is required."); event.consume(); return; }
             if (StringUtil.safe(tfEmail.getText()).isBlank()) { showErr(lblError, "Email is required."); event.consume(); return; }
-            if (isNew && (cbUserNew == null || cbUserNew.getValue() == null)) {
-                showErr(lblError, "Username is required (create a customer login first if the list is empty).");
+            if (isNew && (cbUserNew == null || !(cbUserNew.getValue() instanceof UserOption))) {
+                showErr(lblError, "Pick a user account from the list (create a customer login first if the list is empty).");
                 event.consume();
                 return;
             }

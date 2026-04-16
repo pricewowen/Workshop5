@@ -278,6 +278,21 @@ public class EmployeeManagementController {
             cbUserNew = new ComboBox<>(FXCollections.observableArrayList(assignablePool));
             cbUserNew.setMaxWidth(Double.MAX_VALUE);
             cbUserNew.setEditable(true);
+            cbUserNew.setConverter(new javafx.util.StringConverter<UserOption>() {
+                @Override
+                public String toString(UserOption option) {
+                    return option == null ? "" : option.getUsername();
+                }
+                @Override
+                public UserOption fromString(String s) {
+                    if (s == null || s.isBlank()) return null;
+                    String norm = s.trim();
+                    return assignableForFilter.stream()
+                            .filter(u -> u.getUsername().equalsIgnoreCase(norm))
+                            .findFirst()
+                            .orElse(null);
+                }
+            });
             cbUserNew.setOnKeyReleased(evt -> {
                 javafx.scene.input.KeyCode code = evt.getCode();
                 if (code == javafx.scene.input.KeyCode.ENTER || code == javafx.scene.input.KeyCode.ESCAPE
@@ -378,11 +393,16 @@ public class EmployeeManagementController {
         saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
             if (StringUtil.safe(tfFirstName.getText()).isBlank()) { showErr(lblError, "First name is required."); event.consume(); return; }
             if (StringUtil.safe(tfLastName.getText()).isBlank()) { showErr(lblError, "Last name is required."); event.consume(); return; }
+            if (isNew && cbUserNew != null && cbUserNew.isEditable() && cbUserNew.getConverter() != null) {
+                String typed = cbUserNew.getEditor().getText();
+                UserOption match = cbUserNew.getConverter().fromString(typed);
+                cbUserNew.setValue(match);
+            }
             if (cbRole.getValue() == null) { showErr(lblError, "Role is required."); event.consume(); return; }
             if (StringUtil.safe(tfPhone.getText()).isBlank()) { showErr(lblError, "Phone is required."); event.consume(); return; }
             if (StringUtil.safe(tfEmail.getText()).isBlank()) { showErr(lblError, "Email is required."); event.consume(); return; }
-            if (isNew && (cbUserNew == null || cbUserNew.getValue() == null)) {
-                showErr(lblError, "Username is required.");
+            if (isNew && (cbUserNew == null || !(cbUserNew.getValue() instanceof UserOption))) {
+                showErr(lblError, "Pick a user account from the list.");
                 event.consume();
                 return;
             }
