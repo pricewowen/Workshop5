@@ -366,8 +366,42 @@ public class ProductManagementController {
                 : "-fx-text-fill: #888; -fx-font-size: 12px;");
         Button btnBrowse = new Button("Browse Image...");
         btnBrowse.getStyleClass().add("btn-muted");
-        HBox imageRow = new HBox(8, btnBrowse, lblImage);
-        imageRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        final int previewSize = 140;
+        ImageView preview = new ImageView();
+        preview.setFitWidth(previewSize);
+        preview.setFitHeight(previewSize);
+        preview.setPreserveRatio(true);
+        preview.setSmooth(true);
+        Label lblPreviewPlaceholder = new Label("No preview");
+        lblPreviewPlaceholder.setStyle("-fx-text-fill: #8A8178; -fx-font-size: 11px;");
+        javafx.scene.layout.StackPane previewBox = new javafx.scene.layout.StackPane(lblPreviewPlaceholder, preview);
+        previewBox.setMinSize(previewSize, previewSize);
+        previewBox.setPrefSize(previewSize, previewSize);
+        previewBox.setMaxSize(previewSize, previewSize);
+        previewBox.setStyle("-fx-background-color: #F5F3EF; -fx-border-color: #D9D3CC; -fx-border-width: 1; -fx-border-radius: 4; -fx-background-radius: 4;");
+        Runnable showPlaceholder = () -> {
+            preview.setImage(null);
+            lblPreviewPlaceholder.setVisible(true);
+        };
+        Runnable showPreviewImage = () -> {
+            preview.setVisible(true);
+            lblPreviewPlaceholder.setVisible(false);
+        };
+        if (existingHasImage) {
+            Image remote = new Image(resolveProductImageUrl(existing.getImageUrl()), previewSize, previewSize, true, true, true);
+            preview.setImage(remote);
+            remote.errorProperty().addListener((obs, o, isErr) -> {
+                if (Boolean.TRUE.equals(isErr)) {
+                    Platform.runLater(showPlaceholder);
+                }
+            });
+            lblPreviewPlaceholder.setVisible(false);
+        }
+
+        HBox browseRow = new HBox(8, btnBrowse, lblImage);
+        browseRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        VBox imageRow = new VBox(6, previewBox, browseRow);
 
         Label lblError = new Label();
         lblError.setStyle("-fx-text-fill: #B85C4C; -fx-font-size: 12px;");
@@ -419,6 +453,18 @@ public class ProductManagementController {
                 selectedImageFile[0] = file;
                 lblImage.setText(file.getName());
                 lblImage.setStyle("-fx-text-fill: #2C6AA0; -fx-font-size: 12px;");
+                try {
+                    Image local = new Image(file.toURI().toString(), previewSize, previewSize, true, true, true);
+                    preview.setImage(local);
+                    showPreviewImage.run();
+                    local.errorProperty().addListener((obs, o, isErr) -> {
+                        if (Boolean.TRUE.equals(isErr)) {
+                            Platform.runLater(showPlaceholder);
+                        }
+                    });
+                } catch (Exception ex) {
+                    showPlaceholder.run();
+                }
             }
         });
 
