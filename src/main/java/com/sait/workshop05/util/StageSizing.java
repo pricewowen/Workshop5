@@ -3,8 +3,8 @@ package com.sait.workshop05.util;
 import javafx.stage.Stage;
 
 /**
- * Default stage dimensions for the main shell: first-run login, post-login main view, and
- * login after logout all use the same bounds via {@link #applyMainShellBounds(Stage)}.
+ * Stage dimensions for the login shell ({@link #applyLoginShellBounds(Stage)}) and the
+ * post-login main shell ({@link #applyMainShellBounds(Stage)}).
  */
 public final class StageSizing {
 
@@ -13,21 +13,34 @@ public final class StageSizing {
 
     public static final double MAIN_WIDTH = 1450;
     public static final double MAIN_HEIGHT = 900;
-    public static final double MAIN_MIN_WIDTH = 1250;
-    public static final double MAIN_MIN_HEIGHT = 800;
+    public static final double MAIN_MIN_WIDTH = 1100;
+    public static final double MAIN_MIN_HEIGHT = 650;
+
+    public static final double LOGIN_WIDTH = 900;
+    public static final double LOGIN_HEIGHT = 600;
+    public static final double LOGIN_MIN_WIDTH = 780;
+    public static final double LOGIN_MIN_HEIGHT = 540;
 
     /**
      * Sets min size first, then outer size, then centers — same sequence for cold boot, login,
      * and logout so the window geometry always matches.
      */
     public static void applyMainShellBounds(Stage stage) {
+        applyBounds(stage, MAIN_MIN_WIDTH, MAIN_MIN_HEIGHT, MAIN_WIDTH, MAIN_HEIGHT);
+    }
+
+    public static void applyLoginShellBounds(Stage stage) {
+        applyBounds(stage, LOGIN_MIN_WIDTH, LOGIN_MIN_HEIGHT, LOGIN_WIDTH, LOGIN_HEIGHT);
+    }
+
+    private static void applyBounds(Stage stage, double minW, double minH, double w, double h) {
         if (stage == null) {
             return;
         }
-        stage.setMinWidth(MAIN_MIN_WIDTH);
-        stage.setMinHeight(MAIN_MIN_HEIGHT);
-        stage.setWidth(MAIN_WIDTH);
-        stage.setHeight(MAIN_HEIGHT);
+        stage.setMinWidth(minW);
+        stage.setMinHeight(minH);
+        stage.setWidth(w);
+        stage.setHeight(h);
         stage.centerOnScreen();
     }
 }

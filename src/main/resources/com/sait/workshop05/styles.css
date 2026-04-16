@@ -26,6 +26,27 @@
     -fx-padding: 0;
 }
 
+.sidebar-scroll {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+.sidebar-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+.sidebar-scroll > .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 6;
+}
+.sidebar-scroll > .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-background-radius: 3;
+}
+.sidebar-scroll > .scroll-bar:vertical .track,
+.sidebar-scroll > .scroll-bar:vertical .increment-button,
+.sidebar-scroll > .scroll-bar:vertical .decrement-button {
+    -fx-background-color: transparent;
+}
+
 .sidebar-section-title {
     -fx-text-fill: #E4B363;
     -fx-font-size: 11px;

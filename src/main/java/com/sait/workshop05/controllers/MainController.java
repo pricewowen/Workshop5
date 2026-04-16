@@ -359,7 +359,7 @@ public class MainController {
             stage.setScene(scene);
             stage.setTitle("Login");
             StageIconHelper.setAppIcon(stage);
-            StageSizing.applyMainShellBounds(stage);
+            StageSizing.applyLoginShellBounds(stage);
             stage.setResizable(true);
         } catch (IOException e) {
             ErrorHandler.showErrorDialog("Logout Error", "Could not return to login screen", e);

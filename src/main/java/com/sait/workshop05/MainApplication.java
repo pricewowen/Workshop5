@@ -49,7 +49,7 @@ public class MainApplication extends Application {
         StageIconHelper.setAppIcon(stage);
         stage.setScene(scene);
 
-        StageSizing.applyMainShellBounds(stage);
+        StageSizing.applyLoginShellBounds(stage);
         stage.setResizable(true);
 
         stage.show();
