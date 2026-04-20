@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.math.BigDecimal;
 import java.net.http.HttpResponse;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -54,13 +53,14 @@ public final class DashboardApi {
                 .limit(10)
                 .collect(java.util.stream.Collectors.toList());
 
-        // Total revenue — analytics endpoint with wide date range
-        try {
-            s.totalRevenue = BigDecimal.valueOf(
-                    AnalyticsApi.getTotalRevenue(LocalDate.of(2000, 1, 1), LocalDate.of(2100, 1, 1), null));
-        } catch (Exception e) {
-            s.totalRevenue = BigDecimal.ZERO;
-        }
+        // Total revenue — sum completed order totals from the already-fetched order list
+        s.totalRevenue = allOrderJson.stream()
+                .map(j -> {
+                    BigDecimal total = j.orderTotal != null ? j.orderTotal : BigDecimal.ZERO;
+                    BigDecimal discount = j.orderDiscount != null ? j.orderDiscount : BigDecimal.ZERO;
+                    return total.subtract(discount);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Customer count
         try {
