@@ -122,6 +122,7 @@
 
 .sidebar-user-initials {
     -fx-background-color: #E4B363;
+    -fx-background-radius: 999;
     -fx-text-fill: #4e342e;
     -fx-font-weight: bold;
     -fx-font-size: 11px;

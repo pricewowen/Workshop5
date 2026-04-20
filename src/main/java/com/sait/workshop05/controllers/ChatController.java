@@ -21,13 +21,17 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
+import javafx.geometry.Rectangle2D;
 import javafx.util.Duration;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ChatController {
 
@@ -75,6 +79,10 @@ public class ChatController {
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("MMM d, HH:mm");
     private static final int POLL_SECONDS = 3;
+    private static final String AVATAR_URL_KEY = "avatarUrl";
+    private static final String EMPTY_AVATAR_KEY = "";
+    private final Map<String, Image> avatarImageCache = new HashMap<>();
+    private final Set<String> failedAvatarUrls = new HashSet<>();
 
     @FXML
     void initialize() {
@@ -150,10 +158,7 @@ public class ChatController {
                 avatarImage.setFitWidth(36);
                 avatarImage.setFitHeight(36);
                 avatarImage.setPreserveRatio(true);
-                Rectangle clip = new Rectangle(36, 36);
-                clip.setArcWidth(36);
-                clip.setArcHeight(36);
-                avatarImage.setClip(clip);
+                avatarImage.setClip(new Circle(18, 18, 18));
                 avatarImage.setVisible(false);
                 avatarImage.setManaged(false);
                 nameLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2C1A0E;");
@@ -264,8 +269,6 @@ public class ChatController {
         vboxMessages.getChildren().clear();
         updateHeader(t);
         lblActionError.setText("");
-        composerBox.setVisible(true);
-        composerBox.setManaged(true);
         loadMessagesAsync(t.id, true);
         if (!"closed".equalsIgnoreCase(t.status)) {
             markReadAsync(t.id);
@@ -296,11 +299,12 @@ public class ChatController {
         btnClose.setVisible(!closed && mine);
         btnClose.setManaged(!closed && mine);
 
-        boolean showBanner = closed;
+        boolean showBanner = closed || viewingArchived;
         lblClosedBanner.setVisible(showBanner);
         lblClosedBanner.setManaged(showBanner);
-        composerBox.setVisible(!showBanner);
-        composerBox.setManaged(!showBanner);
+        boolean allowCompose = !closed && !viewingArchived;
+        composerBox.setVisible(allowCompose);
+        composerBox.setManaged(allowCompose);
     }
 
     private void loadMessagesAsync(int threadId, boolean replaceAll) {
@@ -600,41 +604,101 @@ public class ChatController {
         if (lblHeaderAvatarInitials == null || imgHeaderAvatar == null) return;
         lblHeaderAvatarInitials.setText(initialsFor(displayName));
         if (imgHeaderAvatar.getClip() == null) {
-            Rectangle clip = new Rectangle(44, 44);
-            clip.setArcWidth(44);
-            clip.setArcHeight(44);
-            imgHeaderAvatar.setClip(clip);
+            imgHeaderAvatar.setClip(new Circle(22, 22, 22));
         }
         loadAvatarInto(imgHeaderAvatar, lblHeaderAvatarInitials, photoPath);
     }
 
     private void loadAvatarInto(ImageView target, Label initialsLabel, String photoPath) {
+        String normalized = photoPath != null ? photoPath.trim() : "";
+        if (normalized.isEmpty()) {
+            target.getProperties().put(AVATAR_URL_KEY, EMPTY_AVATAR_KEY);
+            showInitials(target, initialsLabel);
+            return;
+        }
+
+        Object currentKey = target.getProperties().get(AVATAR_URL_KEY);
+        if (normalized.equals(currentKey) && target.getImage() != null && target.isVisible()) {
+            return;
+        }
+        target.getProperties().put(AVATAR_URL_KEY, normalized);
+
+        if (failedAvatarUrls.contains(normalized)) {
+            showInitials(target, initialsLabel);
+            return;
+        }
+
+        Image cached = avatarImageCache.get(normalized);
+        if (cached != null && cached.getProgress() >= 1.0 && !cached.isError()) {
+            applyLoadedAvatar(target, initialsLabel, normalized, cached);
+            return;
+        }
+
+        showInitials(target, initialsLabel);
+        Image image = cached != null ? cached : new Image(normalized, 88, 88, true, true, true);
+        avatarImageCache.put(normalized, image);
+        Runnable apply = () -> applyLoadedAvatar(target, initialsLabel, normalized, image);
+        if (image.getProgress() >= 1.0) {
+            Platform.runLater(apply);
+        } else {
+            image.progressProperty().addListener((obs, o, n) -> {
+                if (n != null && n.doubleValue() >= 1.0) {
+                    Platform.runLater(apply);
+                }
+            });
+            image.errorProperty().addListener((obs, oldErr, isErr) -> {
+                if (Boolean.TRUE.equals(isErr)) {
+                    failedAvatarUrls.add(normalized);
+                    Platform.runLater(() -> {
+                        Object key = target.getProperties().get(AVATAR_URL_KEY);
+                        if (normalized.equals(key)) {
+                            showInitials(target, initialsLabel);
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private void applyLoadedAvatar(ImageView target, Label initialsLabel, String expectedUrl, Image image) {
+        Object activeKey = target.getProperties().get(AVATAR_URL_KEY);
+        if (!expectedUrl.equals(activeKey) || image.isError()) {
+            return;
+        }
+        applyCenterCrop(target, image);
+        target.setImage(image);
+        target.setVisible(true);
+        target.setManaged(true);
+        if (initialsLabel != null) {
+            initialsLabel.setVisible(false);
+            initialsLabel.setManaged(false);
+        }
+    }
+
+    private void showInitials(ImageView target, Label initialsLabel) {
         target.setImage(null);
+        target.setViewport(null);
         target.setVisible(false);
         target.setManaged(false);
         if (initialsLabel != null) {
             initialsLabel.setVisible(true);
             initialsLabel.setManaged(true);
         }
-        if (photoPath == null || photoPath.isBlank()) return;
-        Image image = new Image(photoPath.trim(), 88, 88, true, true, true);
-        Runnable apply = () -> {
-            if (image.isError()) return;
-            target.setImage(image);
-            target.setVisible(true);
-            target.setManaged(true);
-            if (initialsLabel != null) {
-                initialsLabel.setVisible(false);
-                initialsLabel.setManaged(false);
+    }
+
+    private void applyCenterCrop(ImageView target, Image image) {
+        if (target == null || image == null || image.getWidth() <= 0 || image.getHeight() <= 0) {
+            if (target != null) {
+                target.setViewport(null);
             }
-        };
-        if (image.getProgress() >= 1.0) {
-            Platform.runLater(apply);
-        } else {
-            image.progressProperty().addListener((obs, o, n) -> {
-                if (n != null && n.doubleValue() >= 1.0) Platform.runLater(apply);
-            });
+            return;
         }
+        double width = image.getWidth();
+        double height = image.getHeight();
+        double side = Math.min(width, height);
+        double x = (width - side) / 2.0;
+        double y = (height - side) / 2.0;
+        target.setViewport(new Rectangle2D(x, y, side, side));
     }
 
     private String initialsFor(String name) {

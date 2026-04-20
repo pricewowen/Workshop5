@@ -15,12 +15,15 @@ import java.time.Duration;
 
 /**
  * Singleton HTTP client for the Spring Boot API.
- * Uses the deployed API URL and attaches the JWT on authenticated requests.
+ * Uses the configured base URL and attaches the JWT on authenticated requests.
  */
 public class ApiClient {
 
     private static ApiClient instance;
-    private static final String DEPLOYED_API_BASE_URL = "https://peelin-good-kdeft.ondigitalocean.app";
+
+    // Deployed Workshop 7 API (uncomment and swap with local below when testing against DO):
+    // private static final String API_BASE_URL = "https://peelin-good-kdeft.ondigitalocean.app";
+    private static final String API_BASE_URL = "http://localhost:8080";
 
     private final HttpClient http;
     private final ObjectMapper mapper;
@@ -41,7 +44,7 @@ public class ApiClient {
      * Resolve API base URL. Priority:
      * 1. API_URL from .env.local (project root)
      * 2. API_URL system property / environment variable
-     * 3. DEPLOYED_API_BASE_URL fallback
+     * 3. API_BASE_URL fallback
      */
     private static String resolveBaseUrl() {
         String envPath = System.getProperty("user.dir") + "/.env.local";
@@ -60,7 +63,7 @@ public class ApiClient {
         }
         String sys = System.getProperty("API_URL", System.getenv("API_URL"));
         if (sys != null && !sys.isEmpty()) return sys;
-        return DEPLOYED_API_BASE_URL;
+        return API_BASE_URL;
     }
 
     public static ApiClient getInstance() {
@@ -78,7 +81,7 @@ public class ApiClient {
         this.jwtToken = null;
     }
 
-    /** Base URL for the deployed API (no trailing slash). */
+    /** Base URL for the API (no trailing slash). */
     public String getBaseUrl() {
         return baseUrl;
     }

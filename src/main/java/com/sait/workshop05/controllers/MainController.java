@@ -13,6 +13,7 @@ import io.sentry.Sentry;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -27,9 +28,12 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.shape.Circle;
+import javafx.geometry.Rectangle2D;
 import javafx.stage.Stage;
 
 public class MainController {
+    private static final String SIDEBAR_AVATAR_URL_KEY = "sidebarAvatarUrl";
+    private final Map<String, Image> sidebarAvatarCache = new ConcurrentHashMap<>();
 
     @FXML
     private AnchorPane contentArea;
@@ -151,16 +155,26 @@ public class MainController {
 
         String photoUrl = session.getProfilePhotoUrl();
         if (photoUrl == null || photoUrl.isBlank()) {
+            imgUserAvatar.getProperties().put(SIDEBAR_AVATAR_URL_KEY, "");
             showSidebarInitialsOnly();
             return;
         }
+        String normalized = photoUrl.trim();
+        Object current = imgUserAvatar.getProperties().get(SIDEBAR_AVATAR_URL_KEY);
+        if (normalized.equals(current) && imgUserAvatar.getImage() != null && imgUserAvatar.isVisible()) {
+            return;
+        }
+        imgUserAvatar.getProperties().put(SIDEBAR_AVATAR_URL_KEY, normalized);
 
-        Image image = new Image(photoUrl, 72, 72, true, true, true);
+        Image image = sidebarAvatarCache.computeIfAbsent(
+                normalized, key -> new Image(key, 72, 72, true, true, true));
 
         Runnable applyLoadedOrFallback = () -> {
-            if (image.isError()) {
+            Object active = imgUserAvatar.getProperties().get(SIDEBAR_AVATAR_URL_KEY);
+            if (!normalized.equals(active) || image.isError()) {
                 showSidebarInitialsOnly();
             } else {
+                applyCenterCrop(imgUserAvatar, image);
                 imgUserAvatar.setImage(image);
                 imgUserAvatar.setVisible(true);
                 imgUserAvatar.setManaged(true);
@@ -179,6 +193,7 @@ public class MainController {
             });
             image.errorProperty().addListener((obs, oldErr, isErr) -> {
                 if (Boolean.TRUE.equals(isErr)) {
+                    sidebarAvatarCache.remove(normalized);
                     Platform.runLater(this::showSidebarInitialsOnly);
                 }
             });
@@ -188,6 +203,7 @@ public class MainController {
     private void showSidebarInitialsOnly() {
         if (imgUserAvatar != null) {
             imgUserAvatar.setImage(null);
+            imgUserAvatar.setViewport(null);
             imgUserAvatar.setVisible(false);
             imgUserAvatar.setManaged(false);
         }
@@ -195,6 +211,21 @@ public class MainController {
             lblInitials.setVisible(true);
             lblInitials.setManaged(true);
         }
+    }
+
+    private void applyCenterCrop(ImageView target, Image image) {
+        if (target == null || image == null || image.getWidth() <= 0 || image.getHeight() <= 0) {
+            if (target != null) {
+                target.setViewport(null);
+            }
+            return;
+        }
+        double width = image.getWidth();
+        double height = image.getHeight();
+        double side = Math.min(width, height);
+        double x = (width - side) / 2.0;
+        double y = (height - side) / 2.0;
+        target.setViewport(new Rectangle2D(x, y, side, side));
     }
 
     /**

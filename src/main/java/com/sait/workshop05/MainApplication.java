@@ -36,7 +36,7 @@ public class MainApplication extends Application {
                 Sentry.captureException(e);
             });
             e.printStackTrace();
-            System.err.println("Cannot reach deployed Workshop 7 API at https://peelin-good-kdeft.ondigitalocean.app.");
+            System.err.println("Cannot reach Workshop 7 API at " + ApiClient.getInstance().getBaseUrl() + ".");
             System.exit(1);
         }
 
