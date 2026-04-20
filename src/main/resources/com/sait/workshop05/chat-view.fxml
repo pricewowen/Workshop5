@@ -2,7 +2,9 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
 
 <AnchorPane xmlns="http://javafx.com/javafx/17.0.6"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -58,9 +60,18 @@
                 <HBox alignment="CENTER_LEFT" spacing="12" minHeight="64"
                       style="-fx-background-color: #FFFFFF; -fx-border-color: #E6DCCF; -fx-border-width: 0 0 1 0;">
                     <padding><Insets top="10" right="16" bottom="10" left="20"/></padding>
+                    <StackPane fx:id="paneHeaderAvatar" prefWidth="44" prefHeight="44" minWidth="44" minHeight="44">
+                        <Circle fx:id="circleHeaderAvatarBg" radius="22" fill="#8A9E7F"/>
+                        <Label fx:id="lblHeaderAvatarInitials" text=""
+                               style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                        <ImageView fx:id="imgHeaderAvatar" fitWidth="44" fitHeight="44"
+                                   preserveRatio="true" smooth="true" visible="false" managed="false"/>
+                    </StackPane>
                     <VBox spacing="2">
                         <Label fx:id="lblHeaderName" text="Select a conversation"
                                style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2C1A0E;"/>
+                        <Label fx:id="lblHeaderUsername" text=""
+                               style="-fx-font-size: 11px; -fx-text-fill: #8A8178;"/>
                         <HBox spacing="8" alignment="CENTER_LEFT">
                             <Label fx:id="lblHeaderCategory" text=""
                                    style="-fx-font-size: 11px; -fx-text-fill: #8A8178;"/>
@@ -73,6 +84,10 @@
                            style="-fx-font-size: 11px; -fx-text-fill: #B85C4C;"/>
                     <Button fx:id="btnAssign" text="Assign to me"
                             style="-fx-background-color: #8A9E7F; -fx-text-fill: white; -fx-font-size: 12px; -fx-background-radius: 8; -fx-padding: 6 12 6 12; -fx-cursor: hand;"/>
+                    <Button fx:id="btnTransfer" text="Transfer"
+                            style="-fx-background-color: transparent; -fx-text-fill: #8A9E7F; -fx-font-size: 12px; -fx-background-radius: 8; -fx-padding: 6 12 6 12; -fx-border-color: #8A9E7F; -fx-border-radius: 8; -fx-cursor: hand;"/>
+                    <Button fx:id="btnReopen" text="Reopen for audit"
+                            style="-fx-background-color: transparent; -fx-text-fill: #8A9E7F; -fx-font-size: 12px; -fx-background-radius: 8; -fx-padding: 6 12 6 12; -fx-border-color: #8A9E7F; -fx-border-radius: 8; -fx-cursor: hand;"/>
                     <Button fx:id="btnClose" text="Close thread"
                             style="-fx-background-color: #C4714A; -fx-text-fill: white; -fx-font-size: 12px; -fx-background-radius: 8; -fx-padding: 6 12 6 12; -fx-cursor: hand;"/>
                 </HBox>

@@ -2,7 +2,9 @@ package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -31,7 +33,34 @@ public class ApiClient {
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
         this.mapper = new ObjectMapper();
-        this.baseUrl = DEPLOYED_API_BASE_URL.replaceAll("/+$", "");
+        this.baseUrl = resolveBaseUrl().replaceAll("/+$", "");
+        System.out.println("[DEBUG_LOG] ApiClient base URL: " + this.baseUrl);
+    }
+
+    /**
+     * Resolve API base URL. Priority:
+     * 1. API_URL from .env.local (project root)
+     * 2. API_URL system property / environment variable
+     * 3. DEPLOYED_API_BASE_URL fallback
+     */
+    private static String resolveBaseUrl() {
+        String envPath = System.getProperty("user.dir") + "/.env.local";
+        try (BufferedReader reader = new BufferedReader(new FileReader(envPath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) continue;
+                String[] parts = line.split("=", 2);
+                if (parts.length == 2 && "API_URL".equals(parts[0].trim())) {
+                    String value = parts[1].trim();
+                    if (!value.isEmpty()) return value;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        String sys = System.getProperty("API_URL", System.getenv("API_URL"));
+        if (sys != null && !sys.isEmpty()) return sys;
+        return DEPLOYED_API_BASE_URL;
     }
 
     public static ApiClient getInstance() {

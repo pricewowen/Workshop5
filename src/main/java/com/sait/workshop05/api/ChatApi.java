@@ -22,6 +22,7 @@ public final class ChatApi {
         public String customerDisplayName;
         public String customerUsername;
         public String customerEmail;
+        public String customerProfilePhotoPath;
         public String employeeUserId;
         public String status;
         public String category;
@@ -38,6 +39,8 @@ public final class ChatApi {
         public String text;
         public String sentAt;
         public boolean read;
+        public boolean isSystem;
+        public boolean staffOnly;
     }
 
     public static List<ThreadJson> openThreads(String category) throws Exception {
@@ -110,5 +113,48 @@ public final class ChatApi {
         if (res.statusCode() >= 400 && res.statusCode() != 204) {
             throw new RuntimeException("POST read failed: " + res.statusCode() + " " + res.body());
         }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class StaffJson {
+        public String userId;
+        public String username;
+        public String role;
+
+        @Override
+        public String toString() {
+            String roleLabel = role != null && !role.isBlank()
+                    ? " (" + role.toLowerCase() + ")"
+                    : "";
+            return (username != null ? username : "unknown") + roleLabel;
+        }
+    }
+
+    public static List<StaffJson> staffRecipients() throws Exception {
+        HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/messages/recipients");
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("GET staff recipients failed: " + res.statusCode() + " " + res.body());
+        }
+        return ApiClient.getInstance().getMapper().readValue(res.body(), new TypeReference<List<StaffJson>>() {});
+    }
+
+    public static ThreadJson transfer(int threadId, String employeeUserId) throws Exception {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("employeeUserId", employeeUserId);
+        HttpResponse<String> res = ApiClient.getInstance().postAuthenticated(
+                "/api/v1/chat/threads/" + threadId + "/transfer", body);
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("POST transfer failed: " + res.statusCode() + " " + res.body());
+        }
+        return ApiClient.getInstance().getMapper().readValue(res.body(), ThreadJson.class);
+    }
+
+    public static ThreadJson reopen(int threadId) throws Exception {
+        HttpResponse<String> res = ApiClient.getInstance().postAuthenticated(
+                "/api/v1/chat/threads/" + threadId + "/reopen", Collections.emptyMap());
+        if (res.statusCode() >= 400) {
+            throw new RuntimeException("POST reopen failed: " + res.statusCode() + " " + res.body());
+        }
+        return ApiClient.getInstance().getMapper().readValue(res.body(), ThreadJson.class);
     }
 }

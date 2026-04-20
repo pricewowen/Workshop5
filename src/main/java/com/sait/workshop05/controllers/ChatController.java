@@ -15,8 +15,13 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
 import java.time.OffsetDateTime;
@@ -38,9 +43,16 @@ public class ChatController {
     @FXML private Button btnRefreshThreads;
 
     @FXML private Label lblHeaderName;
+    @FXML private Label lblHeaderUsername;
     @FXML private Label lblHeaderCategory;
     @FXML private Label lblHeaderStatus;
+    @FXML private StackPane paneHeaderAvatar;
+    @FXML private Circle circleHeaderAvatarBg;
+    @FXML private Label lblHeaderAvatarInitials;
+    @FXML private ImageView imgHeaderAvatar;
     @FXML private Button btnAssign;
+    @FXML private Button btnTransfer;
+    @FXML private Button btnReopen;
     @FXML private Button btnClose;
     @FXML private Label lblActionError;
 
@@ -119,16 +131,34 @@ public class ChatController {
     private void setupThreadList() {
         lstThreads.setItems(threads);
         lstThreads.setCellFactory(lv -> new ListCell<>() {
+            private final Circle avatarBg = new Circle(18, javafx.scene.paint.Color.web("#8A9E7F"));
+            private final Label avatarInitials = new Label();
+            private final ImageView avatarImage = new ImageView();
+            private final StackPane avatar = new StackPane(avatarBg, avatarInitials, avatarImage);
             private final Label nameLabel = new Label();
+            private final Label usernameLabel = new Label();
             private final Label categoryLabel = new Label();
-            private final Label timeLabel = new Label();
-            private final VBox box = new VBox(2, nameLabel, categoryLabel, timeLabel);
+            private final VBox textBox = new VBox(1, nameLabel, usernameLabel, categoryLabel);
+            private final HBox row = new HBox(10, avatar, textBox);
 
             {
-                box.setPadding(new Insets(8, 10, 8, 10));
+                row.setAlignment(Pos.CENTER_LEFT);
+                row.setPadding(new Insets(8, 10, 8, 10));
+                avatar.setPrefSize(36, 36);
+                avatar.setMinSize(36, 36);
+                avatarInitials.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: white;");
+                avatarImage.setFitWidth(36);
+                avatarImage.setFitHeight(36);
+                avatarImage.setPreserveRatio(true);
+                Rectangle clip = new Rectangle(36, 36);
+                clip.setArcWidth(36);
+                clip.setArcHeight(36);
+                avatarImage.setClip(clip);
+                avatarImage.setVisible(false);
+                avatarImage.setManaged(false);
                 nameLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2C1A0E;");
-                categoryLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #8A8178;");
-                timeLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #8A8178;");
+                usernameLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #8A8178;");
+                categoryLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #8A8178;");
             }
 
             @Override
@@ -143,9 +173,11 @@ public class ChatController {
                         ? t.customerDisplayName
                         : (t.customerUsername != null ? t.customerUsername : "Customer");
                 nameLabel.setText(displayName);
-                categoryLabel.setText(prettifyCategory(t.category));
-                timeLabel.setText(formatTimestamp(t.updatedAt));
-                setGraphic(box);
+                usernameLabel.setText(t.customerUsername != null ? "@" + t.customerUsername : "");
+                categoryLabel.setText(prettifyCategory(t.category) + " · " + formatTimestamp(t.updatedAt));
+                avatarInitials.setText(initialsFor(displayName));
+                loadAvatarInto(avatarImage, avatarInitials, t.customerProfilePhotoPath);
+                setGraphic(row);
                 setStyle(isSelected() ? "-fx-background-color: #F0E6DC;" : "");
             }
         });
@@ -160,6 +192,8 @@ public class ChatController {
     private void setupComposer() {
         btnSend.setOnAction(e -> sendMessage());
         btnAssign.setOnAction(e -> assignToMe());
+        btnTransfer.setOnAction(e -> openTransferPicker());
+        btnReopen.setOnAction(e -> reopenThread());
         btnClose.setOnAction(e -> closeThread());
         btnRefreshThreads.setOnAction(e -> refreshThreadsAsync());
 
@@ -243,14 +277,24 @@ public class ChatController {
                 ? t.customerDisplayName
                 : (t.customerUsername != null ? t.customerUsername : "Customer");
         lblHeaderName.setText(displayName);
+        lblHeaderUsername.setText(t.customerUsername != null ? "@" + t.customerUsername : "");
         lblHeaderCategory.setText(prettifyCategory(t.category));
+        applyHeaderAvatar(displayName, t.customerProfilePhotoPath);
         boolean closed = "closed".equalsIgnoreCase(t.status);
         lblHeaderStatus.setText(closed ? "Closed" : (t.employeeUserId == null ? "Unassigned" : "Assigned"));
 
+        boolean mine = currentUserId != null
+                && t.employeeUserId != null
+                && currentUserId.equalsIgnoreCase(t.employeeUserId);
+        boolean isAdmin = UserSession.getInstance().isAdmin();
         btnAssign.setVisible(!closed && t.employeeUserId == null);
         btnAssign.setManaged(!closed && t.employeeUserId == null);
-        btnClose.setVisible(!closed);
-        btnClose.setManaged(!closed);
+        btnTransfer.setVisible(!closed && mine);
+        btnTransfer.setManaged(!closed && mine);
+        btnReopen.setVisible(closed && isAdmin);
+        btnReopen.setManaged(closed && isAdmin);
+        btnClose.setVisible(!closed && mine);
+        btnClose.setManaged(!closed && mine);
 
         boolean showBanner = closed;
         lblClosedBanner.setVisible(showBanner);
@@ -290,6 +334,22 @@ public class ChatController {
     }
 
     private HBox buildBubble(ChatApi.MessageJson m) {
+        boolean system = m.isSystem || m.staffOnly;
+        if (system) {
+            String prefix = m.staffOnly ? "AUDIT · " : "";
+            Label pill = new Label(prefix + (m.text == null ? "" : m.text) + "  ·  " + formatTimestamp(m.sentAt));
+            pill.setWrapText(true);
+            pill.setMaxWidth(520);
+            pill.setPadding(new Insets(6, 12, 6, 12));
+            pill.setStyle(m.staffOnly
+                    ? "-fx-background-color: rgba(138,158,127,0.08); -fx-text-fill: #6B8268; -fx-background-radius: 12; -fx-border-color: rgba(138,158,127,0.45); -fx-border-radius: 12; -fx-border-style: dashed; -fx-font-size: 11px;"
+                    : "-fx-background-color: rgba(44,26,14,0.05); -fx-text-fill: #5C4A3E; -fx-background-radius: 12; -fx-font-size: 11px;");
+            HBox row = new HBox(pill);
+            row.setAlignment(Pos.CENTER);
+            row.setPadding(new Insets(2, 12, 2, 12));
+            return row;
+        }
+
         boolean mine = currentUserId != null && currentUserId.equalsIgnoreCase(m.senderUserId);
 
         Label text = new Label(m.text == null ? "" : m.text);
@@ -404,6 +464,88 @@ public class ChatController {
         th.start();
     }
 
+    private void openTransferPicker() {
+        if (selectedThread == null) return;
+        final int threadId = selectedThread.id;
+
+        Task<List<ChatApi.StaffJson>> loadTask = new Task<>() {
+            @Override
+            protected List<ChatApi.StaffJson> call() throws Exception {
+                return ChatApi.staffRecipients();
+            }
+        };
+        loadTask.setOnSucceeded(ev -> {
+            List<ChatApi.StaffJson> staff = loadTask.getValue();
+            if (staff.isEmpty()) {
+                lblActionError.setText("No other staff available.");
+                return;
+            }
+            ChoiceDialog<ChatApi.StaffJson> dialog = new ChoiceDialog<>(staff.get(0), staff);
+            dialog.setTitle("Transfer conversation");
+            dialog.setHeaderText("Transfer to which staff member?");
+            dialog.setContentText("Staff:");
+            dialog.setGraphic(null);
+            // Render username (role)
+            dialog.getItems().setAll(staff);
+            Platform.runLater(() -> {
+                // Custom converter via a ComboBox<StaffJson> in content — simplest: rely on toString
+            });
+            dialog.showAndWait().ifPresent(target -> doTransfer(threadId, target));
+        });
+        loadTask.setOnFailed(ev -> {
+            lblActionError.setText("Could not load staff list.");
+            LogData.handleException("CHAT_TRANSFER_LIST", new Exception(loadTask.getException()));
+        });
+        Thread th = new Thread(loadTask, "chat-staff-list");
+        th.setDaemon(true);
+        th.start();
+    }
+
+    private void doTransfer(int threadId, ChatApi.StaffJson target) {
+        Task<ChatApi.ThreadJson> task = new Task<>() {
+            @Override
+            protected ChatApi.ThreadJson call() throws Exception {
+                return ChatApi.transfer(threadId, target.userId);
+            }
+        };
+        task.setOnSucceeded(ev -> {
+            selectedThread = null;
+            showEmptyState();
+            refreshThreadsAsync();
+        });
+        task.setOnFailed(ev -> {
+            lblActionError.setText("Failed to transfer.");
+            LogData.handleException("CHAT_TRANSFER", new Exception(task.getException()));
+        });
+        Thread th = new Thread(task, "chat-transfer");
+        th.setDaemon(true);
+        th.start();
+    }
+
+    private void reopenThread() {
+        if (selectedThread == null) return;
+        final int threadId = selectedThread.id;
+        Task<ChatApi.ThreadJson> task = new Task<>() {
+            @Override
+            protected ChatApi.ThreadJson call() throws Exception {
+                return ChatApi.reopen(threadId);
+            }
+        };
+        task.setOnSucceeded(ev -> {
+            selectedThread = task.getValue();
+            updateHeader(selectedThread);
+            loadMessagesAsync(threadId, true);
+            refreshThreadsAsync();
+        });
+        task.setOnFailed(ev -> {
+            lblActionError.setText("Failed to reopen.");
+            LogData.handleException("CHAT_REOPEN", new Exception(task.getException()));
+        });
+        Thread th = new Thread(task, "chat-reopen");
+        th.setDaemon(true);
+        th.start();
+    }
+
     private void markReadAsync(int threadId) {
         Task<Void> task = new Task<>() {
             @Override
@@ -423,11 +565,17 @@ public class ChatController {
         vboxMessages.getChildren().clear();
         loadedMessageIds.clear();
         lblHeaderName.setText("Select a conversation");
+        if (lblHeaderUsername != null) lblHeaderUsername.setText("");
+        applyHeaderAvatar(null, null);
         lblHeaderCategory.setText("");
         lblHeaderStatus.setText("");
         lblActionError.setText("");
         btnAssign.setVisible(false);
         btnAssign.setManaged(false);
+        btnTransfer.setVisible(false);
+        btnTransfer.setManaged(false);
+        btnReopen.setVisible(false);
+        btnReopen.setManaged(false);
         btnClose.setVisible(false);
         btnClose.setManaged(false);
         lblClosedBanner.setVisible(false);
@@ -446,6 +594,59 @@ public class ChatController {
             sb.append(Character.toUpperCase(p.charAt(0))).append(p.substring(1));
         }
         return sb.toString();
+    }
+
+    private void applyHeaderAvatar(String displayName, String photoPath) {
+        if (lblHeaderAvatarInitials == null || imgHeaderAvatar == null) return;
+        lblHeaderAvatarInitials.setText(initialsFor(displayName));
+        if (imgHeaderAvatar.getClip() == null) {
+            Rectangle clip = new Rectangle(44, 44);
+            clip.setArcWidth(44);
+            clip.setArcHeight(44);
+            imgHeaderAvatar.setClip(clip);
+        }
+        loadAvatarInto(imgHeaderAvatar, lblHeaderAvatarInitials, photoPath);
+    }
+
+    private void loadAvatarInto(ImageView target, Label initialsLabel, String photoPath) {
+        target.setImage(null);
+        target.setVisible(false);
+        target.setManaged(false);
+        if (initialsLabel != null) {
+            initialsLabel.setVisible(true);
+            initialsLabel.setManaged(true);
+        }
+        if (photoPath == null || photoPath.isBlank()) return;
+        Image image = new Image(photoPath.trim(), 88, 88, true, true, true);
+        Runnable apply = () -> {
+            if (image.isError()) return;
+            target.setImage(image);
+            target.setVisible(true);
+            target.setManaged(true);
+            if (initialsLabel != null) {
+                initialsLabel.setVisible(false);
+                initialsLabel.setManaged(false);
+            }
+        };
+        if (image.getProgress() >= 1.0) {
+            Platform.runLater(apply);
+        } else {
+            image.progressProperty().addListener((obs, o, n) -> {
+                if (n != null && n.doubleValue() >= 1.0) Platform.runLater(apply);
+            });
+        }
+    }
+
+    private String initialsFor(String name) {
+        if (name == null || name.isBlank()) return "?";
+        String[] parts = name.trim().split("\\s+");
+        if (parts.length == 1) {
+            String p = parts[0];
+            return p.length() >= 2 ? p.substring(0, 2).toUpperCase() : p.toUpperCase();
+        }
+        String first = parts[0];
+        String last = parts[parts.length - 1];
+        return ("" + first.charAt(0) + last.charAt(0)).toUpperCase();
     }
 
     private String formatTimestamp(String iso) {
