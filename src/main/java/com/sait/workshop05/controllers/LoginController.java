@@ -160,11 +160,6 @@ public class LoginController {
                         session.setEmployeeAnalyticsAccess(null, Collections.emptyList());
                     }
 
-                    if (session.canAccessAnalytics()) {
-                        LogData.logAction("LOGIN", "Employee login: " + user.getUsername() + " (Analytics ENABLED)");
-                    } else {
-                        LogData.logAction("LOGIN", "Employee login: " + user.getUsername() + " (Analytics DISABLED)");
-                    }
                 } else {
                     LogData.logAction("LOGIN", role + " login via API: " + user.getUsername());
                 }

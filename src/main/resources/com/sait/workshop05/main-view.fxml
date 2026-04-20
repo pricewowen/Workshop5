@@ -147,12 +147,6 @@
                      </VBox.margin>
                   </Button>
 
-<!--                  <Button fx:id="btnAnalytics" mnemonicParsing="false" onAction="#onAnalyticsClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Analytics">-->
-<!--                     <VBox.margin>-->
-<!--                        <Insets bottom="10.0" />-->
-<!--                     </VBox.margin>-->
-<!--                  </Button>-->
-
                   <Button fx:id="btnActivityLog" mnemonicParsing="false" onAction="#onActivityLogClick" prefHeight="25.0" prefWidth="204.0" styleClass="sidebar_button" text="Activity Log">
                      <VBox.margin>
                         <Insets bottom="10.0" />

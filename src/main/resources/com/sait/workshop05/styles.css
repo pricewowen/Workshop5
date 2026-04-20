@@ -732,21 +732,6 @@
     -fx-letter-spacing: 0.08em;
 }
 
-.analytics-card .kpi-value {
-    -fx-font-size: 28px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #C48A1A;
-}
-
-.analytics-chart-container {
-    -fx-background-color: #FFFFFF;
-    -fx-padding: 16;
-    -fx-background-radius: 16;
-    -fx-border-color: #E8E2DA;
-    -fx-border-width: 1;
-    -fx-effect: dropshadow(gaussian, rgba(78, 52, 46, 0.05), 8, 0, 0, 1);
-}
-
 /* ── List / split chrome ─────────────────────────────────── */
 .list-view {
     -fx-background-color: #FFFFFF;

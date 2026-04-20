@@ -42,9 +42,6 @@ public class MainController {
     private Button btnActivityLog;
 
     @FXML
-    private Button btnAnalytics;
-
-    @FXML
     private Button btnCustomers;
 
     @FXML
@@ -110,7 +107,6 @@ public class MainController {
         PAGE_TITLES.put(btnRewards,     "Rewards");
         PAGE_TITLES.put(btnRewardTier,  "Reward Tiers");
         PAGE_TITLES.put(btnMessages,    "Support Chat");
-        PAGE_TITLES.put(btnAnalytics,   "Analytics");
         PAGE_TITLES.put(btnActivityLog, "Activity Log");
         PAGE_TITLES.put(btnUsers,       "Users");
 
@@ -249,11 +245,6 @@ public class MainController {
             hideButton(btnEmployees);
             hideButton(btnLocations);
             hideButton(btnUsers);
-
-            // Only hide analytics if the employee is NOT eligible.
-            if (!session.canAccessAnalytics()) {
-                hideButton(btnAnalytics);
-            }
         }
         // Admin sees everything — no hiding needed
         if (btnUsers != null && btnUsers.isVisible()) {
@@ -276,23 +267,6 @@ public class MainController {
     void onActivityLogClick(ActionEvent event) {
         setActiveButton(btnActivityLog);
         loadPage("activity-log-view.fxml");
-    }
-
-    @FXML
-    private void onAnalyticsClick() {
-        // Extra safety: even if button is visible somehow, enforce access.
-        UserSession session = UserSession.getInstance();
-        if (!session.canAccessAnalytics()) {
-            ErrorHandler.showErrorDialog(
-                    "Access Denied",
-                    "Analytics not available",
-                    "This account is not linked to an employee with analytics access."
-            );
-            return;
-        }
-
-        setActiveButton(btnAnalytics);
-        loadPage("analytics-view.fxml");
     }
 
     @FXML

@@ -156,15 +156,4 @@ public class UserSession {
         return Collections.unmodifiableList(accessibleBakeryIds);
     }
 
-    /**
-     * Policy:
-     * - Admin: always true
-     * - Employee: only true if linked to an Employee row AND has bakery scope
-     */
-    public boolean canAccessAnalytics() {
-        if (isAdmin()) return true;
-        if (!isEmployee()) return false;
-
-        return employeeProfileId != null && !accessibleBakeryIds.isEmpty();
-    }
 }
