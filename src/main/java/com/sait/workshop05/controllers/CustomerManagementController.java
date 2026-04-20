@@ -554,7 +554,7 @@ public class CustomerManagementController {
 
         try {
             List<Order> orders = OrderApi.listOrdersForCustomer(selected.getCustomerId());
-            LogData.logAction("VIEW_ORDER_HISTORY", "Customer " + selected.getCustomerId());
+            LogData.logAction("VIEW_ORDER_HISTORY", "Customer " + selected.getFirstName() + " " + selected.getLastName());
             showOrderHistoryDialog(selected, orders);
         } catch (Exception e) {
             LogData.handleException("VIEW_ORDER_HISTORY", e);
@@ -724,7 +724,7 @@ public class CustomerManagementController {
                     patchBody.put("rewardTierId", newTierId);
                 }
                 CustomerApi.patch(selected.getCustomerId(), patchBody);
-                LogData.logAction("ADJUST_POINTS", "Customer " + selected.getCustomerId()
+                LogData.logAction("ADJUST_POINTS", "Customer " + selected.getFirstName() + " " + selected.getLastName()
                         + " adjusted by " + adjustment + " -> " + newBalance);
                 String cid = selected.getCustomerId();
                 String firstName = selected.getFirstName();
