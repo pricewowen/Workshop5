@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Support chat inbox with thread list composer and server actions for Workshop 7.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.ChatApi;
@@ -33,6 +36,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Staff customer chat inbox with category filters polling and compose actions toward the web app.
+ */
 public class ChatController {
 
     @FXML private ToggleButton tabAll;
@@ -223,7 +229,7 @@ public class ChatController {
         }
     }
 
-    // ─── Thread list ──────────────────────────────────────────
+    // Reloads thread list and keeps the active category filter.
 
     private void refreshThreadsAsync() {
         final String cat = activeCategory;
@@ -261,7 +267,7 @@ public class ChatController {
         }
     }
 
-    // ─── Selection / messages ─────────────────────────────────
+    // Selecting a thread loads messages and marks open threads as read.
 
     private void selectThread(ChatApi.ThreadJson t) {
         selectedThread = t;
@@ -376,7 +382,7 @@ public class ChatController {
         return row;
     }
 
-    // ─── Actions ──────────────────────────────────────────────
+    // Send assign transfer close and reopen actions call ChatApi on worker threads.
 
     private void sendMessage() {
         if (selectedThread == null) return;
@@ -489,10 +495,9 @@ public class ChatController {
             dialog.setHeaderText("Transfer to which staff member?");
             dialog.setContentText("Staff:");
             dialog.setGraphic(null);
-            // Render username (role)
             dialog.getItems().setAll(staff);
             Platform.runLater(() -> {
-                // Custom converter via a ComboBox<StaffJson> in content — simplest: rely on toString
+                // Staff list labels use StaffJson toString until display fields are added.
             });
             dialog.showAndWait().ifPresent(target -> doTransfer(threadId, target));
         });
@@ -563,7 +568,7 @@ public class ChatController {
         th.start();
     }
 
-    // ─── Helpers ──────────────────────────────────────────────
+    // Avatar cache and empty state reset here to avoid flicker during reloads.
 
     private void showEmptyState() {
         vboxMessages.getChildren().clear();

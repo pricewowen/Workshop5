@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<!--
+  Contributor(s): Robbie, Samantha
+  Main: Robbie - Main window shell and navigation layout.
+  Assistance: Samantha - Stage sizing icons and avatar display.
+-->
+
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>

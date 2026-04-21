@@ -1,14 +1,20 @@
+// Contributor(s): Robbie
+// Main: Robbie - Initials derivation for avatars and labels.
+
 package com.sait.workshop05.util;
 
 import java.util.Locale;
 
 /**
- * Builds a short initials string for avatars (e.g. {@code JD} for John Doe, {@code NM} for Noah Martin).
+ * Builds two letter style initials for avatars for example JD for John Doe or NM for Noah Martin.
  */
 public final class UserInitialsHelper {
 
     private UserInitialsHelper() {}
 
+    /**
+     * Builds avatar initials from name fields and falls back to username.
+     */
     public static String compute(String firstName, String lastName, String username) {
         String f = firstName != null ? firstName.trim() : "";
         String l = lastName != null ? lastName.trim() : "";

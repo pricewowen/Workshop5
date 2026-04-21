@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Privacy-safe labels for orders and customer display.
+
 package com.sait.workshop05.util;
 
 import java.util.regex.Pattern;
@@ -16,7 +19,7 @@ public final class UiPrivacy {
         return s != null && UUID_PATTERN.matcher(s.trim()).matches();
     }
 
-    /** Non-UUID strings pass through; UUID or null/blank become an em dash placeholder. */
+    /** Non-UUID strings pass through. UUID or blank input becomes a dash placeholder character. */
     public static String maskUuid(String s) {
         if (s == null || s.isBlank()) {
             return "—";
@@ -40,8 +43,7 @@ public final class UiPrivacy {
     }
 
     /**
-     * When an order has no {@code customerName} from the API: no customer id → {@code Guest};
-     * otherwise a generic {@code Customer} label (never a raw UUID).
+     * Fallback customer label when the API did not send a display name. Blank id maps to Guest. Otherwise use Customer. Never show a raw UUID.
      */
     public static String customerDisplayFallback(String customerId) {
         if (customerId == null || customerId.isBlank()) {
@@ -51,8 +53,7 @@ public final class UiPrivacy {
     }
 
     /**
-     * Human-facing order label: prefer API {@code orderNumber}; if missing and {@code internalId}
-     * is a UUID, synthesize an ORD-XXXXXXXX style ref (no full UUID in the UI).
+     * Human-facing order label. Prefers API orderNumber when present. For UUID internal ids builds ORD- plus eight hex chars.
      */
     public static String friendlyOrderNumber(String apiOrderNumber, String internalId) {
         if (apiOrderNumber != null) {

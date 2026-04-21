@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - In-memory JWT role and profile hints for one signed-in staff user.
+
 package com.sait.workshop05.session;
 
 import com.sait.workshop05.models.Log;
@@ -9,8 +12,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Singleton class to manage user session throughout the application.
- * Supports Admin and Employee roles only.
+ * In-memory session for the signed-in staff user JWT and profile hints.
+ * One global instance matches a single desktop stage. Clear on logout before reuse.
  */
 public class UserSession {
     private static UserSession instance;
@@ -21,14 +24,14 @@ public class UserSession {
     private LocalDateTime loginTime;
     private String jwtToken;
 
-    /** Logged-in user's UUID from {@code AuthResponse.userId} (API principal). */
+    // Principal id string from login. Chat and REST filters use it as the user id.
     private String apiUserId;
 
-    // Analytics gating for EMPLOYEE (employee profile id from API; bakery scope for charts)
+    // Employee dashboard uses profile id plus bakery ids from me and me or bakeries calls.
     private String employeeProfileId;
-    private List<Integer> accessibleBakeryIds;  // empty means no scope
+    private List<Integer> accessibleBakeryIds;  // Empty list blocks bakery-scoped dashboard charts.
 
-    /** From login {@code AuthResponse} — for sidebar avatar / initials. */
+    // Optional display fields for the sidebar avatar and initials.
     private String profilePhotoUrl;
     private String profileFirstName;
     private String profileLastName;
@@ -38,6 +41,9 @@ public class UserSession {
         this.accessibleBakeryIds = new ArrayList<>();
     }
 
+    /**
+     * Returns singleton desktop session instance.
+     */
     public static UserSession getInstance() {
         if (instance == null) {
             instance = new UserSession();
@@ -45,6 +51,9 @@ public class UserSession {
         return instance;
     }
 
+    /**
+     * Starts a session from authenticated user and JWT token values.
+     */
     public void createSession(User user, String jwtToken) {
         this.currentUser = user;
         this.jwtToken = jwtToken;
@@ -54,13 +63,13 @@ public class UserSession {
         this.loginTime = LocalDateTime.now();
         this.apiUserId = null;
 
-        // Reset employee analytics info on new login
         this.employeeProfileId = null;
         this.accessibleBakeryIds = new ArrayList<>();
     }
 
+    // Trims empty strings so the UI can fall back to username-based initials.
     /**
-     * Stores display hints for the main UI (photo URL from object storage, employee names when present).
+     * Sets optional profile display hints used by sidebar avatar UI.
      */
     public void setProfileDisplayHints(String firstName, String lastName, String profilePhotoPath) {
         this.profileFirstName = firstName != null ? firstName.trim() : null;
@@ -76,18 +85,30 @@ public class UserSession {
                 : null;
     }
 
+    /**
+     * Returns profile photo URL when available.
+     */
     public String getProfilePhotoUrl() {
         return profilePhotoUrl;
     }
 
+    /**
+     * Returns profile first name hint.
+     */
     public String getProfileFirstName() {
         return profileFirstName;
     }
 
+    /**
+     * Returns profile last name hint.
+     */
     public String getProfileLastName() {
         return profileLastName;
     }
 
+    /**
+     * Clears all session values during logout.
+     */
     public void clearSession() {
         this.currentUser = null;
         this.jwtToken = null;
@@ -103,55 +124,88 @@ public class UserSession {
         this.profileLastName = null;
     }
 
+    /**
+     * Returns current JWT token.
+     */
     public String getJwtToken() {
         return jwtToken;
     }
 
+    /**
+     * Sets API principal id used for chat and scoped API calls.
+     */
     public void setApiUserId(String apiUserId) {
         this.apiUserId = apiUserId;
     }
 
+    /**
+     * Returns API principal id.
+     */
     public String getApiUserId() {
         return apiUserId;
     }
 
+    /**
+     * Returns whether a user is currently authenticated.
+     */
     public boolean isAuthenticated() {
         return isAuthenticated;
     }
 
+    /**
+     * Returns current signed-in user model.
+     */
     public User getCurrentUser() {
         return currentUser;
     }
 
+    /**
+     * Returns current user role label.
+     */
     public String getUserRole() {
         return userRole;
     }
 
+    /**
+     * Returns login timestamp for the active session.
+     */
     public LocalDateTime getLoginTime() {
         return loginTime;
     }
 
+    /**
+     * Returns true when active session role is ADMIN.
+     */
     public boolean isAdmin() {
         return isAuthenticated && userRole != null && userRole.equalsIgnoreCase("ADMIN");
     }
 
+    /**
+     * Returns true when active session role is EMPLOYEE.
+     */
     public boolean isEmployee() {
         return isAuthenticated && userRole != null && userRole.equalsIgnoreCase("EMPLOYEE");
     }
 
+    // When bakeryIds is empty the dashboard should not assume any bakery scope.
     /**
-     * Called at login for EMPLOYEE accounts.
-     * If employeeProfileId is null or bakeryIds is empty, analytics should be disabled.
+     * Sets employee analytics scope values for bakery-filtered dashboards.
      */
     public void setEmployeeAnalyticsAccess(String employeeProfileId, List<Integer> bakeryIds) {
         this.employeeProfileId = employeeProfileId;
         this.accessibleBakeryIds = (bakeryIds == null) ? new ArrayList<>() : new ArrayList<>(bakeryIds);
     }
 
+    /**
+     * Returns employee profile id used for analytics scoping.
+     */
     public String getEmployeeProfileId() {
         return employeeProfileId;
     }
 
+    /**
+     * Returns read-only bakery id scope for analytics views.
+     */
     public List<Integer> getAccessibleBakeryIds() {
         return Collections.unmodifiableList(accessibleBakeryIds);
     }

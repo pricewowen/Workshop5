@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Admin customer directory and profile edits.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.CustomerApi;
@@ -39,9 +42,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Staff customer directory with profile edits and order history and reward tier assignment.
+ */
 public class CustomerManagementController {
 
-    // ── Table ──────────────────────────────────────────────────
+    // Customer table controls.
     @FXML private TableView<Customer> tblCustomers;
     @FXML private TableColumn<Customer, String> colFirstName;
     @FXML private TableColumn<Customer, String> colLastName;
@@ -52,7 +58,7 @@ public class CustomerManagementController {
     @FXML private TableColumn<Customer, String> colAddress;
     @FXML private TableColumn<Customer, Void> colActions;
 
-    // ── Toolbar ────────────────────────────────────────────────
+    // Toolbar controls.
     @FXML private TextField txtSearch;
     @FXML private Label lblStatus;
     @FXML private Button btnRefresh;
@@ -64,16 +70,14 @@ public class CustomerManagementController {
     private FilteredList<Customer> filtered;
     private List<RewardTierApi.RewardTierJson> tierData = new ArrayList<>();
 
-    // Cached options for dialogs
+    // Cached options for dialogs.
     private List<RewardTierOption> tierOptions = new ArrayList<>();
     private List<AddressOption> addressOptions = new ArrayList<>();
     private boolean isLoading = false;
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    // ────────────────────────────────────────────────────────────
-    // Initialization
-    // ────────────────────────────────────────────────────────────
+    // Initialization.
 
     @FXML
     void initialize() {
@@ -169,9 +173,7 @@ public class CustomerManagementController {
         }
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Async data loading
-    // ────────────────────────────────────────────────────────────
+    // Async data loading.
 
     /**
      * Fetches all reference data and customer rows in a single background task.
@@ -302,9 +304,7 @@ public class CustomerManagementController {
         loadAllAsync();
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Create / Edit Dialog
-    // ────────────────────────────────────────────────────────────
+    // Create and edit dialog.
 
     @FXML
     private void onNewCustomer() {
@@ -543,9 +543,7 @@ public class CustomerManagementController {
         });
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Order History Dialog
-    // ────────────────────────────────────────────────────────────
+    // Order history dialog.
 
     @FXML
     private void onViewOrderHistory() {
@@ -664,9 +662,7 @@ public class CustomerManagementController {
         dialog.showAndWait();
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Adjust Points Dialog
-    // ────────────────────────────────────────────────────────────
+    // Adjust points dialog.
 
     @FXML
     private void onAdjustPoints() {
@@ -741,9 +737,7 @@ public class CustomerManagementController {
         });
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Helpers
-    // ────────────────────────────────────────────────────────────
+    // Helpers.
 
     private GridPane buildFormGrid() {
         GridPane grid = new GridPane();
@@ -814,9 +808,7 @@ public class CustomerManagementController {
         return "";
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Inner types
-    // ────────────────────────────────────────────────────────────
+    // Inner types.
 
     private static final class CombinedData {
         final List<RewardTierApi.RewardTierJson> tiers;

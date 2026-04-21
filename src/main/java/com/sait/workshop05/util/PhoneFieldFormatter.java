@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Phone input formatting for Canadian numbers.
+
 package com.sait.workshop05.util;
 
 import javafx.scene.control.TextField;
@@ -6,9 +9,7 @@ import javafx.scene.control.TextFormatter;
 import java.util.function.UnaryOperator;
 
 /**
- * Attaches a {@link TextFormatter} to a {@link TextField} that accepts only
- * digits and auto-formats them as {@code (123)-456-7890}. Input is capped at
- * 10 digits; non-digit characters typed by the user are silently ignored.
+ * Attaches a TextFormatter that accepts digits and formats Canadian ten digit numbers as (123)-456-7890. Non digits are ignored.
  *
  * <pre>PhoneFieldFormatter.apply(tfPhone);</pre>
  */

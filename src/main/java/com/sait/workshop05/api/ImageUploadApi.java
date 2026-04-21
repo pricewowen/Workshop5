@@ -1,26 +1,25 @@
+// Contributor(s): Samantha
+// Main: Samantha - Multipart image upload for product and bakery photos via the API.
+
 package com.sait.workshop05.api;
 
 import java.io.File;
 import java.net.http.HttpResponse;
 
 /**
- * Uploads product images to DigitalOcean Spaces via the admin API.
- * Images land in the {@code products/} folder and are publicly accessible at
- * {@code https://peelin-good-storage.tor1.digitaloceanspaces.com}.
- * The API URL is read from {@code .env.local} by {@link ApiClient}.
+ * Uploads images through admin routes. The server stores files in object storage and saves public URLs.
+ * Base URL for API calls still comes from ApiClient env resolution.
  */
 public final class ImageUploadApi {
 
     private ImageUploadApi() {}
 
     /**
-     * Uploads an image for a product to the {@code products/} folder.
-     * The backend validates the file, stores it in DigitalOcean Spaces, and
-     * persists the resulting public URL on the product record.
+     * POST multipart image for one product. Server validates size and type then updates the product row.
      *
-     * @param productId numeric product ID
-     * @param image     JPG or PNG file (max 5 MB)
-     * @throws Exception if the upload fails or the server returns an error status
+     * @param productId product primary key
+     * @param image JPG or PNG file within server limits
+     * @throws Exception when HTTP status is an error
      */
     public static void uploadProductImage(int productId, File image) throws Exception {
         HttpResponse<String> res = ApiClient.getInstance()
@@ -30,6 +29,9 @@ public final class ImageUploadApi {
         }
     }
 
+    /**
+     * Uploads one bakery image through the admin bakery image route.
+     */
     public static void uploadBakeryImage(int bakeryId, File image) throws Exception {
         HttpResponse<String> res = ApiClient.getInstance()
                 .postMultipart("/api/v1/bakeries/" + bakeryId + "/image", "image", image);

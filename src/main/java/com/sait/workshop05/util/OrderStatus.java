@@ -1,9 +1,12 @@
+// Contributor(s): Robbie
+// Main: Robbie - Order status constants aligned with Workshop 7 values.
+
 package com.sait.workshop05.util;
 
 import java.util.List;
 
 /**
- * Standardised order status constants used across the application.
+ * Shared status constants keep desktop labels aligned with API values.
  */
 public final class OrderStatus {
     public static final String PENDING = "Pending";
@@ -14,23 +17,23 @@ public final class OrderStatus {
     public static final String DELIVERED = "Delivered";
     public static final String CANCELLED = "Cancelled";
 
-    /** All statuses for ComboBox dropdowns (does not include "All"). */
+    /** Full status list for editable dropdowns without the filter-only All option. */
     public static final List<String> ALL_STATUSES = List.of(
             PENDING, PROCESSING, READY, OUT_FOR_DELIVERY, DELIVERED, COMPLETED, CANCELLED
     );
 
     /**
-     * Status values staff may set via PATCH (matches mobile admin: no direct {@link #COMPLETED}).
-     * Terminal completion is via customer acceptance or automatic flows on the API.
+     * Status values staff may PATCH directly.
+     * Completed remains server-driven through customer confirmation or automatic flows.
      */
     public static final List<String> STAFF_ASSIGNABLE_STATUSES = List.of(
             PENDING, PROCESSING, READY, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
     );
 
-    /** Statuses for filter dropdowns (includes "All" option). */
+    /** Statuses for filter dropdowns including the All option. */
     public static final List<String> FILTER_STATUSES = List.of(
             "All", PENDING, PROCESSING, READY, OUT_FOR_DELIVERY, DELIVERED, COMPLETED, CANCELLED
     );
 
-    private OrderStatus() {} // utility class
+    private OrderStatus() {} // Prevent instantiation of constants holder.
 }

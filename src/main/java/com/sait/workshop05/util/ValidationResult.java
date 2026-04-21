@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Validation result value type for form checks.
+
 package com.sait.workshop05.util;
 
 /**

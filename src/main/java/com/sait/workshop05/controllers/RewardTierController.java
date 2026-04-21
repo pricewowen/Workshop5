@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Reward tier CRUD for loyalty bands.
+
 package com.sait.workshop05;
 
 import com.sait.workshop05.api.RewardTierApi;
@@ -15,6 +18,9 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import java.math.BigDecimal;
 import java.util.Optional;
 
+/**
+ * Reward tier band CRUD for loyalty point ranges and discount rates.
+ */
 public class RewardTierController {
 
     private static final String LOG_USER = "REWARD_TIER_VIEW";
@@ -72,7 +78,7 @@ public class RewardTierController {
         colMaxPoints.setCellValueFactory(new PropertyValueFactory<>("rewardTierMaxPoints"));
         colDiscountRate.setCellValueFactory(new PropertyValueFactory<>("rewardTierDiscountRate"));
 
-        // Format discount rate col
+        // Render discount as percent text to match admin form input.
         colDiscountRate.setCellFactory(column -> new TableCell<RewardTier, BigDecimal>() {
             @Override
             protected void updateItem(BigDecimal item, boolean empty) {
@@ -85,7 +91,7 @@ public class RewardTierController {
             }
         });
 
-        // Format max points col
+        // Show zero or null max as Unlimited for staff clarity.
         colMaxPoints.setCellFactory(column -> new TableCell<RewardTier, Integer>() {
             @Override
             protected void updateItem(Integer item, boolean empty) {
@@ -100,7 +106,7 @@ public class RewardTierController {
             }
         });
 
-        // Format min points col
+        // Add grouping separators so large thresholds scan quickly.
         colMinPoints.setCellFactory(column -> new TableCell<RewardTier, Integer>() {
             @Override
             protected void updateItem(Integer item, boolean empty) {
@@ -128,7 +134,7 @@ public class RewardTierController {
             txtTierName.setText(selected.getRewardTierName());
             txtMinPoints.setText(String.valueOf(selected.getRewardTierMinPoints()));
 
-            // Handle max points
+            // Unlimited tiers store max points as blank in the form.
             if (selected.getRewardTierMaxPoints() == 0) {
                 txtMaxPoints.clear();
                 chkUnlimited.setSelected(true);
@@ -139,7 +145,7 @@ public class RewardTierController {
                 txtMaxPoints.setDisable(false);
             }
 
-            // Handle discount rate
+            // Preserve exact discount value from the selected row.
             if (selected.getRewardTierDiscountRate() != null) {
                 txtDiscountRate.setText(selected.getRewardTierDiscountRate().toString());
             } else {
@@ -195,7 +201,7 @@ public class RewardTierController {
             }
         });
 
-        // Add input validation
+        // Keep numeric inputs clean before submit validation runs.
         txtMinPoints.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*")) {
                 txtMinPoints.setText(newVal.replaceAll("[^\\d]", ""));
@@ -373,14 +379,14 @@ public class RewardTierController {
         tier.setRewardTierName(txtTierName.getText().trim());
         tier.setRewardTierMinPoints(Integer.parseInt(txtMinPoints.getText().trim()));
 
-        // Handle max points
+        // Convert blank or unlimited max into the open ended tier value.
         if (chkUnlimited.isSelected() || txtMaxPoints.getText().trim().isEmpty()) {
             tier.setRewardTierMaxPoints(null);
         } else {
             tier.setRewardTierMaxPoints(Integer.parseInt(txtMaxPoints.getText().trim()));
         }
 
-        // Handle discount rate
+        // Leave discount nullable so tiers can represent no percentage change.
         String discountStr = txtDiscountRate.getText().trim();
         if (!discountStr.isEmpty()) {
             tier.setRewardTierDiscountRate(new BigDecimal(discountStr));
@@ -416,7 +422,7 @@ public class RewardTierController {
             return ValidationResult.fail("Minimum points must be a valid integer.");
         }
 
-        // Validate max points if provided
+        // Max points must be greater than min when a cap is provided.
         if (!chkUnlimited.isSelected() && !txtMaxPoints.getText().trim().isEmpty()) {
             try {
                 int maxPointsValue = Integer.parseInt(txtMaxPoints.getText().trim());
@@ -429,7 +435,7 @@ public class RewardTierController {
             }
         }
 
-        // Validate discount rate if provided
+        // Discount remains within the same server side range checks.
         String discountStr = safe(txtDiscountRate.getText());
         if (!discountStr.isEmpty()) {
             try {

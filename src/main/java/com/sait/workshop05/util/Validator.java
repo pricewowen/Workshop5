@@ -1,8 +1,11 @@
+// Contributor(s): Owen
+// Main: Owen - Shared validation helpers for forms and API payloads.
+
 package com.sait.workshop05.util;
 
 public class Validator {
     /**
-     * Valides for valid email address
+     * Validates email structure before API calls and form submission.
      * @param email String value of the email to validate
      * @return String with an error message if invalid. Null if valid
      */
@@ -21,7 +24,7 @@ public class Validator {
     }
 
     /**
-     * Validates for valid phone number
+     * Validates phone input using the desktop ten digit rule.
      * @param phoneNum String value of the number to validate
      * @return String with an error message if invalid. Null if valid
      */
@@ -31,7 +34,7 @@ public class Validator {
             return "Phone number is required";
         }
 
-        // make sure there are not less than 10 numbers
+        // Require exactly ten digits so all screens enforce one format.
         String digits = phoneNum.replaceAll("\\D", "");
         if (digits.length() != 10) {
             return ("Phone number must be 10 digits");
@@ -44,7 +47,7 @@ public class Validator {
     }
 
     /**
-     * Validates name with minimal special characters and spaces
+     * Validates person name fields with limited punctuation support.
      * @param name String value to validate
      * @param input String value of the input field name
      * @return error message if invalid. Null if valid
@@ -63,7 +66,7 @@ public class Validator {
     }
 
     /**
-     * Validates addresses
+     * Validates address lines with looser punctuation than names.
      * @param address String value of the address to validate
      * @param num int value for if it's first address line or second
      * @return an error message if invalid. Null if valid
@@ -86,7 +89,7 @@ public class Validator {
     }
 
     /**
-     * Validates the province code
+     * Validates province as a two letter uppercase code.
      * @param province String value of the province code
      * @return error message if invalid. Null if valid
      */
@@ -104,7 +107,7 @@ public class Validator {
     }
 
     /**
-     * Validates the postal code
+     * Validates postal code using the canonical Canadian format.
      * @param postal String value of the postal code
      * @return error message if invalid. Null if valid
      */

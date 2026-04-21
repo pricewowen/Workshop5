@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Reward ledger listing with order and customer display enrichment.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -16,6 +19,9 @@ import com.sait.workshop05.models.Order;
 import com.sait.workshop05.models.Reward;
 import com.sait.workshop05.util.UiPrivacy;
 
+/**
+ * Reads /api/v1/rewards and joins optional order rows for readable columns in the UI.
+ */
 public final class RewardApi {
 
     private RewardApi() {}
@@ -29,6 +35,9 @@ public final class RewardApi {
         public String transactionDate;
     }
 
+    /**
+     * Returns reward ledger rows with optional order and customer display enrichment.
+     */
     public static List<Reward> listAll() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/rewards");
         if (res.statusCode() >= 400) {
@@ -45,7 +54,7 @@ public final class RewardApi {
                 }
             }
         } catch (Exception ignored) {
-            // Fall back to masked ids below
+            // Keep ledger usable even when related order lookup fails.
         }
 
         List<Reward> out = new ArrayList<>();

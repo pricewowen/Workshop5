@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Admin customer directory PATCH create and field helpers.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -9,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Admin customer operations ({@code /api/v1/admin/customers}).
+ * Admin customer operations under /api/v1/admin/customers.
  */
 public final class CustomerApi {
 
@@ -19,7 +22,7 @@ public final class CustomerApi {
     public static class CustomerRow {
         public String id;
         public String userId;
-        /** Login username for the linked account, when present. */
+        /** Login username when the row links to an account. */
         public String username;
         public Integer rewardTierId;
         public String firstName;
@@ -31,6 +34,9 @@ public final class CustomerApi {
         public Integer addressId;
     }
 
+    /**
+     * Returns all customers visible to admin customer management screens.
+     */
     public static List<CustomerRow> list() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/admin/customers");
         if (res.statusCode() >= 400) {
@@ -39,6 +45,9 @@ public final class CustomerApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), new TypeReference<List<CustomerRow>>() {});
     }
 
+    /**
+     * Applies a partial update to one customer profile.
+     */
     public static void patch(String customerId, Map<String, Object> body) throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().patch("/api/v1/admin/customers/" + customerId, body);
         if (res.statusCode() >= 400) {
@@ -46,7 +55,9 @@ public final class CustomerApi {
         }
     }
 
-    /** Admin-only: create a linked or guest customer; response body is parsed as {@link CustomerRow}. */
+    /**
+     * Admin-only create for linked or guest customers. Parses the response as CustomerRow.
+     */
     public static CustomerRow create(Map<String, Object> body) throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().postAuthenticated("/api/v1/admin/customers", body);
         if (res.statusCode() >= 400) {
@@ -55,6 +66,9 @@ public final class CustomerApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), CustomerRow.class);
     }
 
+    /**
+     * Builds a profile patch payload with the customer fields used by desktop forms.
+     */
     public static Map<String, Object> patchBodyForProfile(
             String firstName,
             String middleInitial,
@@ -77,6 +91,9 @@ public final class CustomerApi {
         return m;
     }
 
+    /**
+     * Builds a patch payload for reward balance adjustment only.
+     */
     public static Map<String, Object> patchRewardBalance(int newBalance) {
         return Map.of("rewardBalance", newBalance);
     }

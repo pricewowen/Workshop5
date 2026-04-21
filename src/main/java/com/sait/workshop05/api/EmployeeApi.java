@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Employee staff list and admin employee create update delete.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -9,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Employee list {@code /api/v1/employee/staff} and admin upsert {@code /api/v1/admin/employees}.
+ * Staff list from /api/v1/employee/staff and admin writes under /api/v1/admin/employees.
  */
 public final class EmployeeApi {
 
@@ -29,6 +32,9 @@ public final class EmployeeApi {
         public Integer addressId;
     }
 
+    /**
+     * Returns staff rows used by employee management tables.
+     */
     public static List<EmployeeRow> listStaff() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/employee/staff");
         if (res.statusCode() >= 400) {
@@ -37,6 +43,9 @@ public final class EmployeeApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), new TypeReference<List<EmployeeRow>>() {});
     }
 
+    /**
+     * Creates one employee profile linked to an existing user account.
+     */
     public static void create(
             String userId,
             int bakeryId,
@@ -66,6 +75,9 @@ public final class EmployeeApi {
         }
     }
 
+    /**
+     * Updates one employee profile by employee id.
+     */
     public static void update(
             String employeeId,
             String userId,
@@ -96,6 +108,9 @@ public final class EmployeeApi {
         }
     }
 
+    /**
+     * Deletes one employee profile by id.
+     */
     public static void delete(String employeeId) throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().delete("/api/v1/admin/employees/" + employeeId);
         if (res.statusCode() >= 400) {

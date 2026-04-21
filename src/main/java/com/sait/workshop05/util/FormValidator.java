@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Form field validation rules for admin screens.
+
 package com.sait.workshop05.util;
 
 import javafx.beans.value.ChangeListener;
@@ -13,10 +16,8 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Collects rules per control, renders inline error labels, and reveals errors
- * on blur / after the first submit. Each {@code wrap()} returns a VBox holding
- * the original control plus its error label — add that to your layout instead
- * of the bare control.
+ * Collects rules per control and shows inline error labels on blur or after the first submit. Each wrap call
+ * returns a VBox that contains the control and its error label so you add that VBox to the layout instead of the bare control.
  *
  * <pre>
  * FormValidator form = new FormValidator();
@@ -27,7 +28,6 @@ import java.util.function.Function;
  * VBox pwField = form.field(pfPassword).required("Password is required").min(6, "Min 6 characters").wrap();
  * VBox confirmField = form.field(pfConfirm).required("Please confirm password").wrap();
  * form.match(pfPassword, pfConfirm, "Passwords do not match");
- * // ...in save handler:
  * if (!form.validateAll()) event.consume();
  * </pre>
  */
@@ -52,8 +52,7 @@ public final class FormValidator {
     }
 
     /**
-     * Adds a cross-field rule: {@code b}'s value must equal {@code a}'s value.
-     * Both fields re-check this rule whenever either changes.
+     * Adds a cross-field rule so the confirm field must match the first field. Both fields revalidate when either changes.
      */
     public FormValidator match(TextInputControl a, TextInputControl b, String message) {
         FieldEntry entryB = findEntry(b);
@@ -80,7 +79,7 @@ public final class FormValidator {
         return null;
     }
 
-    // ─────────────────────────── Builders ───────────────────────────
+    // Builder helpers.
 
     public static final class FieldBuilder {
         private final FieldEntry entry;
@@ -107,7 +106,7 @@ public final class FormValidator {
             return this;
         }
 
-        /** Custom rule: return null if valid, otherwise the error message. */
+        /** Custom rule returns null when valid or an error message when invalid. */
         public FieldBuilder rule(Function<String, String> check) {
             entry.rules.add(check::apply);
             return this;
@@ -129,7 +128,7 @@ public final class FormValidator {
         public Node wrap() { return entry.wrap(); }
     }
 
-    // ─────────────────────────── Internal ───────────────────────────
+    // Internal types.
 
     private interface Rule { String check(String value); }
 

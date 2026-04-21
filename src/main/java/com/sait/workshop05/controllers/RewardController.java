@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Rewards ledger view for staff.
+
 package com.sait.workshop05.controllers;
 
 import java.time.LocalDateTime;
@@ -23,7 +26,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 /**
- * Controller for the reward view
+ * Read-only loyalty ledger for staff with search and privacy masking on customer fields.
  */
 public class RewardController {
 
@@ -61,7 +64,7 @@ public class RewardController {
         colPoints.setCellValueFactory(new PropertyValueFactory<>("rewardPointsEarned"));
         colTransactionDate.setCellValueFactory(new PropertyValueFactory<>("rewardTransactionDate"));
 
-        // Format date column
+        // Keep timestamps readable in the table without locale conversion drift.
         colTransactionDate.setCellFactory(column -> new TableCell<Reward, LocalDateTime>() {
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {

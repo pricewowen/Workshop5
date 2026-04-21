@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Staff login to Workshop 7 JWT session and main view load.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.ApiClient;
@@ -26,6 +29,9 @@ import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Staff login obtains JWT session state then loads the main shell scene.
+ */
 public class LoginController {
 
     @FXML private TextField loginIdField;
@@ -102,7 +108,7 @@ public class LoginController {
             if (response.statusCode() == 200) {
                 AuthResponseDto auth = api.getMapper().readValue(response.body(), AuthResponseDto.class);
 
-                // Only ADMIN and EMPLOYEE accounts may access the management system
+                // Customer accounts must not open this desktop shell.
                 String role = auth.getRole();
                 if (!role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("EMPLOYEE")) {
                     showError("This account does not have management access");
@@ -118,7 +124,6 @@ public class LoginController {
 
                 api.setToken(auth.getToken());
 
-                // Create a User object from response to maintain compatibility with existing session
                 User user = new User();
                 user.setUsername(auth.getUsername());
                 String sessionEmail = auth.getEmail();
@@ -128,7 +133,6 @@ public class LoginController {
                 user.setEmail(sessionEmail);
                 user.setRole(auth.getRole());
 
-                // Store session
                 UserSession session = UserSession.getInstance();
                 session.createSession(user, auth.getToken());
                 session.setProfileDisplayHints(auth.getFirstName(), auth.getLastName(), auth.getProfilePhotoPath());
@@ -136,14 +140,13 @@ public class LoginController {
                     session.setApiUserId(auth.getUserId());
                 }
 
-                // Attach user identity to Sentry for all subsequent events
                 io.sentry.protocol.User sentryUser = new io.sentry.protocol.User();
                 sentryUser.setUsername(auth.getUsername());
                 sentryUser.setEmail(sessionEmail != null && !sessionEmail.isBlank() ? sessionEmail : null);
                 Sentry.setUser(sentryUser);
                 Sentry.setTag("role", auth.getRole().toLowerCase());
 
-                // Compute analytics eligibility for EMPLOYEE (API: profile + bakery scope)
+                // Employee dashboard charts need a profile id and at least one bakery id from the API.
                 if (session.isEmployee()) {
                     try {
                         HttpResponse<String> meRes = api.get("/api/v1/employee/me");

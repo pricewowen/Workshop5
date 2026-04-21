@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Admin CRUD for reward tiers under /api/v1/reward-tiers.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -10,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Admin CRUD for {@code /api/v1/reward-tiers}.
+ * Admin CRUD for reward tier rows at /api/v1/reward-tiers.
  */
 public final class RewardTierApi {
 
@@ -25,6 +28,9 @@ public final class RewardTierApi {
         public BigDecimal discountRatePercent;
     }
 
+    /**
+     * Returns reward tier rows used by loyalty administration screens.
+     */
     public static List<RewardTierJson> list() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/reward-tiers");
         if (res.statusCode() >= 400) {
@@ -33,6 +39,9 @@ public final class RewardTierApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), new TypeReference<List<RewardTierJson>>() {});
     }
 
+    /**
+     * Creates one reward tier and returns the stored row.
+     */
     public static RewardTierJson create(String name, int minPoints, Integer maxPoints, BigDecimal discountPct) throws Exception {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("name", name);
@@ -46,6 +55,9 @@ public final class RewardTierApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), RewardTierJson.class);
     }
 
+    /**
+     * Replaces one reward tier by id and returns the updated row.
+     */
     public static RewardTierJson update(int id, String name, int minPoints, Integer maxPoints, BigDecimal discountPct) throws Exception {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("name", name);
@@ -59,6 +71,9 @@ public final class RewardTierApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), RewardTierJson.class);
     }
 
+    /**
+     * Deletes one reward tier by id.
+     */
     public static void delete(int id) throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().delete("/api/v1/reward-tiers/" + id);
         if (res.statusCode() >= 400) {

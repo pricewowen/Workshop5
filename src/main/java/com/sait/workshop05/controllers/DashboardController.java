@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Dashboard summary cards and recent orders view.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.DashboardApi;
@@ -22,8 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Controller for the Dashboard view (Phase 11).
- * Wires summary cards and recent orders table to live DB data.
+ * Dashboard summary cards and recent orders backed by the dashboard and order APIs.
  */
 public class DashboardController {
 
@@ -58,9 +60,7 @@ public class DashboardController {
         btnNewOrder.setOnAction(e -> onNewOrder());
     }
 
-    // ───────────────────────────────────────────────
-    // Column setup
-    // ───────────────────────────────────────────────
+    // Column setup.
 
     private void setupColumns() {
         colOrderId.setCellValueFactory(new PropertyValueFactory<>("orderNumber"));
@@ -68,7 +68,7 @@ public class DashboardController {
         colTotal.setCellValueFactory(new PropertyValueFactory<>("orderTotal"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("orderStatus"));
 
-        // Format total as currency
+        // Keep totals in currency format for quick card to table comparison.
         colTotal.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(Double item, boolean empty) {
@@ -77,7 +77,7 @@ public class DashboardController {
             }
         });
 
-        // Date column with formatter
+        // Use one date format so recent rows match the rest of the dashboard.
         colDate.setCellValueFactory(new PropertyValueFactory<>("orderPlacedDateTime"));
         colDate.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -87,7 +87,7 @@ public class DashboardController {
             }
         });
 
-        // Status column with colour coding
+        // Status column with color coding.
         colStatus.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -99,7 +99,7 @@ public class DashboardController {
                     setText(item);
                     switch (item) {
 
-                        // 🟡 IN PROGRESS GROUP (same as Pending)
+                        // In progress statuses share the pending chip style.
                         case OrderStatus.PENDING,
                              OrderStatus.PROCESSING,
                              OrderStatus.READY,
@@ -108,12 +108,12 @@ public class DashboardController {
                              "Placed" ->
                                 setStyle("-fx-text-fill: #C48A1A; -fx-font-weight: bold;");
 
-                        // 🟢 RECOGNIZED GROUP (same as Completed)
+                        // Completed style also applies to fulfilled style statuses.
                         case OrderStatus.COMPLETED,
                              OrderStatus.DELIVERED ->
                                 setStyle("-fx-text-fill: #5A9E6F; -fx-font-weight: bold;");
 
-                        // 🔴 CANCELLED stays distinct
+                        // Cancelled keeps a distinct style for quick scan.
                         case OrderStatus.CANCELLED ->
                                 setStyle("-fx-text-fill: #C75B52; -fx-font-weight: bold;");
 
@@ -123,7 +123,7 @@ public class DashboardController {
             }
         });
 
-        // Products column — uses pre-loaded map (no per-row DB calls)
+        // Products column uses a preloaded map to avoid per-row API calls.
         colProducts.setCellValueFactory(new PropertyValueFactory<>("orderComment")); // placeholder binding
         colProducts.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -139,7 +139,7 @@ public class DashboardController {
             }
         });
 
-        // Actions column — View button
+        // Actions column uses a View button to open orders.
         colActions.setCellFactory(col -> new TableCell<>() {
             private final Button btnView = new Button("View");
 
@@ -162,9 +162,7 @@ public class DashboardController {
         tbvRecentOrders.setPlaceholder(new Label("Loading recent orders…"));
     }
 
-    // ───────────────────────────────────────────────
-    // Load data
-    // ───────────────────────────────────────────────
+    // Load data.
 
     private void loadDashboard() {
         lblStatus.setText("Loading dashboard…");
@@ -223,9 +221,7 @@ public class DashboardController {
         }
     }
 
-    // ───────────────────────────────────────────────
-    // Actions
-    // ───────────────────────────────────────────────
+    // Actions.
 
     @FXML
     private void onRefresh() {
@@ -233,8 +229,7 @@ public class DashboardController {
     }
 
     private void onNewOrder() {
-        // Delegate to the sidebar button so setActiveButton() and the top-bar title
-        // update exactly as they do when the user clicks "Orders" directly.
+        // Delegate to sidebar navigation so active button and page title stay in sync.
         Button btnOrders = (Button) btnNewOrder.getScene().lookup("#btnOrders");
         if (btnOrders != null) {
             btnOrders.fire();

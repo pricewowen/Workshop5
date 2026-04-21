@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Admin user accounts list create and active flag PATCH.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -10,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Desktop client for /api/v1/admin/users — list, create, and toggle active state.
+ * Desktop client for /api/v1/admin/users list create and PATCH active flag.
  */
 public final class UserManagementApi {
 
@@ -25,6 +28,9 @@ public final class UserManagementApi {
         public boolean active;
     }
 
+    /**
+     * Returns all admin-manageable users from the users endpoint.
+     */
     public static List<UserRow> listUsers() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/admin/users");
         if (res.statusCode() >= 400) {
@@ -34,6 +40,9 @@ public final class UserManagementApi {
                 .readValue(res.body(), new TypeReference<List<UserRow>>() {});
     }
 
+    /**
+     * Creates one user account and returns the created row from the API response.
+     */
     public static UserRow createUser(String username, String email, String password, String role) throws Exception {
         Map<String, String> body = new HashMap<>();
         body.put("username", username);
@@ -48,6 +57,9 @@ public final class UserManagementApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), UserRow.class);
     }
 
+    /**
+     * Toggles the active flag for one user id through the admin PATCH route.
+     */
     public static void setActive(String userId, boolean active) throws Exception {
         Map<String, Object> body = new HashMap<>();
         body.put("active", active);

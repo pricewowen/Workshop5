@@ -9,38 +9,42 @@
 ## Tech stack
 
 - JDK 23
-- JavaFX 17.0.6
+- JavaFX 25 (Maven BOM)
 - `java.net.http` + Jackson for REST calls
-- Maven
+- Maven (`javafx-maven-plugin`)
 
 ## Prerequisites
 
 - JDK 23
-- **Workshop 7 backend** deployed and reachable at `https://peelin-good-kdeft.ondigitalocean.app`
+- A **Workshop 7 backend** reachable over HTTP (local `http://localhost:8080` or a deployed host)
 - IntelliJ IDEA (recommended) or any Java IDE
 
 ## Setup
 
 ### 1. Clone and open
 
-Clone the repo and open the `Workshop5` Maven module.
+Clone the repository and open the folder that contains this `README.md` and `pom.xml` as a **Maven** project. In the course monorepo layout, that path is typically `Workshop-5/Workshop5` (IntelliJ: *File → Open* and select the directory with `pom.xml`).
 
 ### 2. API base URL
 
-No local `.env.local` is required. Workshop 5 is configured to use the deployed API:
+`ApiClient` resolves the base URL in this order:
 
-`https://peelin-good-kdeft.ondigitalocean.app`
+1. **`API_URL`** in a `.env.local` file in the **current working directory** (same folder you run the app from), e.g. `API_URL=https://your-host/`
+2. JVM or OS environment variable **`API_URL`**
+3. Compile-time default: **`http://localhost:8080`**
+
+Trailing slashes are trimmed automatically. No `.env.local` is required if the backend runs locally on port 8080. To use a hosted API instead, set `API_URL` (for example to your Workshop 7 deployment base URL) in `.env.local` or in the environment before starting the app.
 
 ### 3. Run the application
 
-- **IDE:** run `com.sait.workshop05.MainApplication`
-- **Maven:** `mvn clean javafx:run`
+- **Maven (recommended):** from `Workshop5`, run `mvnw javafx:run` (Windows: `mvnw.cmd javafx:run`).
+- **IDE:** use a run configuration that applies the **module path** for JavaFX (e.g. run the `javafx:run` goal from the Maven tool window), or open the included IntelliJ module metadata so `MainApplication` runs with the correct module settings.
 
-On startup, the app checks that the API responds (`GET /api/v1/tags`). Ensure the backend is up first.
+On startup, the app checks that the API responds (`GET /api/v1/tags`). Start Workshop 7 before launching the desktop client.
 
 ## Test credentials
 
-Use accounts from your **Workshop 7** seed data (see Workshop 7 docs). Examples (adjust if your seed differs):
+Use accounts from your **Workshop 7** seed data (see Workshop 7 README). Examples (adjust if your seed differs):
 
 | Role       | Username   | Password   |
 | ---------- | ---------- | ---------- |
@@ -58,13 +62,13 @@ Log in with the **username** (or email if your login screen accepts it) and pass
 
 ### Login fails / connection errors
 
-- Confirm Workshop 7 is deployed and reachable at `https://peelin-good-kdeft.ondigitalocean.app`.
-- Check firewall and port (`8080` by default).
+- Confirm the Workshop 7 API is running and matches your configured base URL (local vs deployed).
+- If using HTTPS against a dev certificate, ensure trust settings match your environment.
 - Use the same credentials as in the API database (BCrypt hashes are on the server only).
 
 ### Module / JavaFX errors
 
-Ensure the project uses JDK 23 and that JavaFX run configuration matches `module-info` exports.
+Use JDK 23 and a run configuration that includes **JavaFX on the module path** (the `javafx:run` goal does this for you). Plain “run main class” without module path often fails with missing JavaFX packages.
 
 ## Legacy note
 

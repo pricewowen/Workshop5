@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Sentry setup and API reachability check before login.
+
 package com.sait.workshop05;
 
 import com.sait.workshop05.api.ApiClient;
@@ -10,6 +13,10 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+
+/**
+ * JavaFX entry point. Initializes Sentry and verifies the Workshop 7 API responds before loading the staff login scene.
+ */
 public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
@@ -40,7 +47,7 @@ public class MainApplication extends Application {
             System.exit(1);
         }
 
-        // Load login view (staff-only: Admin / Employee)
+        // Staff accounts only. There is no customer login in this app.
         FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         scene.getStylesheets().add(MainApplication.class.getResource("styles.css").toExternalForm());

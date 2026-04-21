@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Stage bounds presets for login and main shells.
+
 package com.sait.workshop05.util;
 
 import javafx.stage.Stage;
@@ -22,13 +25,15 @@ public final class StageSizing {
     public static final double LOGIN_MIN_HEIGHT = 540;
 
     /**
-     * Sets min size first, then outer size, then centers — same sequence for cold boot, login,
-     * and logout so the window geometry always matches.
+     * Sets min size then outer size then centers so cold boot and login and logout share the same geometry steps.
      */
     public static void applyMainShellBounds(Stage stage) {
         applyBounds(stage, MAIN_MIN_WIDTH, MAIN_MIN_HEIGHT, MAIN_WIDTH, MAIN_HEIGHT);
     }
 
+    /**
+     * Applies login shell dimensions used before authentication.
+     */
     public static void applyLoginShellBounds(Stage stage) {
         applyBounds(stage, LOGIN_MIN_WIDTH, LOGIN_MIN_HEIGHT, LOGIN_WIDTH, LOGIN_HEIGHT);
     }

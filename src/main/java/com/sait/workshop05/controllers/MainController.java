@@ -1,3 +1,7 @@
+// Contributor(s): Robbie, Samantha
+// Main: Robbie - Main window shell sidebar navigation and FXML swaps.
+// Assistance: Samantha - Stage sizing icons and avatar display.
+
 package com.sait.workshop05.controllers;
 
 import java.io.IOException;
@@ -31,6 +35,9 @@ import javafx.scene.shape.Circle;
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Stage;
 
+/**
+ * Root window with sidebar navigation lazy-loaded panes and avatar display hooks.
+ */
 public class MainController {
     private static final String SIDEBAR_AVATAR_URL_KEY = "sidebarAvatarUrl";
     private final Map<String, Image> sidebarAvatarCache = new ConcurrentHashMap<>();
@@ -120,9 +127,7 @@ public class MainController {
         showDashboard();
     }
 
-    /**
-     * Sets the username labels at the top of the main layout
-     */
+    // Refreshes header labels and avatar after session profile changes.
     private void setUserLabels() {
         UserSession session = UserSession.getInstance();
 
@@ -224,18 +229,7 @@ public class MainController {
         target.setViewport(new Rectangle2D(x, y, side, side));
     }
 
-    /**
-     * Hide sidebar buttons based on the current user's role.
-     *
-     * Admin: sees everything.
-     * Employee:
-     *  - no Customers (customer PII is admin-only)
-     *  - no Rewards (GET /api/v1/rewards requires ADMIN on the backend)
-     *  - no Employees
-     *  - no Locations
-     *  - no Users (login account management is admin-only)
-     *  - Analytics only if "real" employee (Employee row + bakery access)
-     */
+    // Employees lose admin-only modules. Rewards stay hidden because the API requires admin role.
     private void applyRoleBasedVisibility() {
         UserSession session = UserSession.getInstance();
 
@@ -246,16 +240,14 @@ public class MainController {
             hideButton(btnLocations);
             hideButton(btnUsers);
         }
-        // Admin sees everything — no hiding needed
+        // Admins keep all modules exposed by their role.
         if (btnUsers != null && btnUsers.isVisible()) {
             btnUsers.setTooltip(new Tooltip(
                     "User accounts: create Employee or Customer logins (admin only)."));
         }
     }
 
-    /**
-     * Hide a sidebar button and remove it from layout
-     */
+    // setManaged false removes hidden controls from layout spacing.
     private void hideButton(Button button) {
         if (button != null) {
             button.setVisible(false);
@@ -343,9 +335,7 @@ public class MainController {
         loadPage("user-management-view.fxml");
     }
 
-    /**
-     * Handle logout — clear session and return to login view
-     */
+    // Clears session state then reloads login on the same stage.
     @FXML
     void onLogoutClick(ActionEvent event) {
         UserSession session = UserSession.getInstance();

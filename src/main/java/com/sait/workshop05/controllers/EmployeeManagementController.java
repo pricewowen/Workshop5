@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Employee profile CRUD for staff accounts.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.EmployeeApi;
@@ -37,9 +40,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Staff employee directory create and edit with bakery and address linking.
+ */
 public class EmployeeManagementController {
 
-    // ── Table ──────────────────────────────────────────────────
+    // Employee table controls.
     @FXML private TableView<Employee> tblEmployees;
     @FXML private TableColumn<Employee, String> colFirstName;
     @FXML private TableColumn<Employee, String> colLastName;
@@ -50,7 +56,7 @@ public class EmployeeManagementController {
     @FXML private TableColumn<Employee, String> colAddress;
     @FXML private TableColumn<Employee, Void> colActions;
 
-    // ── Toolbar ────────────────────────────────────────────────
+    // Toolbar controls.
     @FXML private TextField txtSearch;
     @FXML private Label lblStatus;
     @FXML private Button btnRefresh;
@@ -65,9 +71,7 @@ public class EmployeeManagementController {
     private List<AddressOption> addressOptions = new ArrayList<>();
     private boolean isLoading = false;
 
-    // ────────────────────────────────────────────────────────────
-    // Initialization
-    // ────────────────────────────────────────────────────────────
+    // Initialization.
 
     @FXML
     void initialize() {
@@ -237,9 +241,7 @@ public class EmployeeManagementController {
         loadAllAsync();
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Create / Edit Dialog
-    // ────────────────────────────────────────────────────────────
+    // Create and edit dialog.
 
     @FXML
     private void onNewEmployee() {
@@ -449,9 +451,7 @@ public class EmployeeManagementController {
         });
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Delete
-    // ────────────────────────────────────────────────────────────
+    // Delete.
 
     private void handleDeleteEmployee(Employee emp) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
@@ -481,9 +481,7 @@ public class EmployeeManagementController {
         }
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Helpers
-    // ────────────────────────────────────────────────────────────
+    // Helpers.
 
     private GridPane buildFormGrid() {
         GridPane grid = new GridPane();

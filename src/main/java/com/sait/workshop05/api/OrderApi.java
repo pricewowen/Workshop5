@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Orders list status mapping staff checkout and customer display enrichment.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -23,13 +26,13 @@ import com.sait.workshop05.models.OrderItem;
 import com.sait.workshop05.util.UiPrivacy;
 
 /**
- * Orders API: list, items, status patch, checkout (staff).
+ * Orders list detail items status updates and staff checkout. Maps API enums to UI labels.
  */
 public final class OrderApi {
 
     private OrderApi() {}
 
-    /** Maps Workshop 5 UI status labels to API {@code order_status} values. */
+    /** Maps desktop status labels to API order_status strings. */
     public static String workshopStatusToApi(String w5) {
         if (w5 == null) return "placed";
         return switch (w5.trim()) {
@@ -86,8 +89,7 @@ public final class OrderApi {
     }
 
     /**
-     * Fills in customer names from the admin customer directory when the order list JSON omits
-     * {@code customerName} (or leaves it blank). No-op if every row already has a display name.
+     * Fills customer display from the admin directory when customerName is missing in order JSON.
      */
     static void enrichCustomerDisplays(List<Order> orders) {
         if (orders == null || orders.isEmpty()) {
@@ -128,8 +130,7 @@ public final class OrderApi {
     }
 
     /**
-     * {@code true} when the label is fit to show as-is (including {@code Guest} with no customer id).
-     * {@code false} when we should try the customer directory or keep a generic fallback.
+     * True when the row already shows a real label. False when enrichment or fallback should run.
      */
     private static boolean orderHasResolvedCustomerDisplay(Order o) {
         String d = o.getCustomerDisplay();
@@ -260,7 +261,7 @@ public final class OrderApi {
     }
 
     /**
-     * Staff checkout (admin/employee) — {@code POST /api/v1/orders} with {@code customerId} set.
+     * Staff POST /api/v1/orders with customerId bakery lines and discount. Cash payment marker.
      */
     public static String placeStaffOrder(
             String customerId,
@@ -313,7 +314,7 @@ public final class OrderApi {
         return checkoutResultLabel(created);
     }
 
-    /** Visible order ref for success messages — never returns a raw UUID. */
+    /** Friendly order label for success text. Never shows a raw UUID alone. */
     private static String checkoutResultLabel(OrderJson created) {
         return UiPrivacy.friendlyOrderNumber(created.orderNumber, created.id);
     }

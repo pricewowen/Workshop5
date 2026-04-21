@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Bakery location CRUD UI and hours management.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.BakeryApi;
@@ -33,9 +36,12 @@ import javafx.util.StringConverter;
 import java.io.File;
 import java.util.Optional;
 
+/**
+ * Staff CRUD for bakery branches and addresses and operating hours with optional image upload.
+ */
 public class BakeryLocationsController {
 
-    // ── Table ──────────────────────────────────────────────────
+    // Bakery table controls.
     @FXML private TableView<Bakery> tblBakeryLocations;
     @FXML private TableColumn<Bakery, Integer> colBakeryId;
     @FXML private TableColumn<Bakery, String> colBakeryName;
@@ -46,7 +52,7 @@ public class BakeryLocationsController {
     @FXML private TableColumn<Bakery, String> colBakeryProvince;
     @FXML private TableColumn<Bakery, Void> colActions;
 
-    // ── Toolbar ────────────────────────────────────────────────
+    // Toolbar controls.
     @FXML private TextField txtSearch;
     @FXML private Label lblStatus;
     @FXML private Button btnRefresh;
@@ -71,9 +77,7 @@ public class BakeryLocationsController {
             new Province("YT", "Yukon")
     );
 
-    // ────────────────────────────────────────────────────────────
-    // Initialization
-    // ────────────────────────────────────────────────────────────
+    // Initialization.
 
     @FXML
     void initialize() {
@@ -157,9 +161,7 @@ public class BakeryLocationsController {
         tblBakeryLocations.setItems(sorted);
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Refresh
-    // ────────────────────────────────────────────────────────────
+    // Refresh.
 
     private void refreshTable() {
         try {
@@ -178,9 +180,7 @@ public class BakeryLocationsController {
         refreshTable();
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Create / Edit Dialog
-    // ────────────────────────────────────────────────────────────
+    // Create and edit dialog.
 
     @FXML
     private void onNewBakery() {
@@ -215,7 +215,7 @@ public class BakeryLocationsController {
         applyCapFirstLetter(tfCity);
         applyPostalFormatter(tfPostal);
 
-        // Image picker
+        // Image picker.
         File[] selectedImageFile = {null};
         Label lblImage = new Label("No file selected");
         Button btnBrowse = new Button("Browse Image...");
@@ -255,7 +255,7 @@ public class BakeryLocationsController {
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
 
-        // Wire browse button — obtain the window at click time so timing is never an issue
+        // Wire browse button  -  obtain the window at click time so timing is never an issue
         btnBrowse.setOnAction(e -> {
             javafx.stage.Window owner = btnBrowse.getScene() != null
                     ? btnBrowse.getScene().getWindow()
@@ -358,9 +358,7 @@ public class BakeryLocationsController {
         return null;
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Delete
-    // ────────────────────────────────────────────────────────────
+    // Delete.
 
     private void handleDeleteBakery(Bakery b) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
@@ -390,9 +388,7 @@ public class BakeryLocationsController {
         }
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Helpers
-    // ────────────────────────────────────────────────────────────
+    // Helpers.
 
     private GridPane buildFormGrid() {
         GridPane grid = new GridPane();

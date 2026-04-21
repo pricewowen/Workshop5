@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - String helpers for parsing and display.
+
 package com.sait.workshop05.util;
 
 import java.util.regex.Pattern;
@@ -7,28 +10,30 @@ import java.util.regex.Pattern;
  */
 public final class StringUtil {
 
+    /** Shared email validation pattern for form checks. */
     public static final Pattern EMAIL_RX = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    /** Shared phone validation pattern for permissive input matching. */
     public static final Pattern PHONE_RX = Pattern.compile("^[0-9+()\\-\\s]{7,20}$");
 
-    private StringUtil() {} // utility class
+    private StringUtil() {} // Prevent instantiation of static helpers.
 
-    /** Returns true if field (case-insensitive) contains the query string. */
+    /** Case-insensitive contains helper for table filter predicates. */
     public static boolean containsIgnoreCase(String field, String q) {
         if (field == null) return false;
         return field.toLowerCase().contains(q);
     }
 
-    /** Null to empty string. */
+    /** Returns empty string when value is null. */
     public static String nz(String s) {
         return s == null ? "" : s;
     }
 
-    /** Null to empty trimmed string. */
+    /** Trims and normalizes null to empty for safe text input checks. */
     public static String safe(String s) {
         return s == null ? "" : s.trim();
     }
 
-    /** Trim string, return null if empty. */
+    /** Trims value and returns null when no visible characters remain. */
     public static String trimToNull(String s) {
         if (s == null) return null;
         String t = s.trim();

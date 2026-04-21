@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Application window icon loading for JavaFX stages.
+
 package com.sait.workshop05.util;
 
 import javafx.scene.image.Image;
@@ -7,10 +10,8 @@ import java.io.InputStream;
 import java.util.Objects;
 
 /**
- * Window title-bar and (on most platforms) taskbar icon.
- * <p>
- * Loads synchronously from the module path. Tries {@code icon.png} first, then {@code bakery_logo.png}.
- * Ensure those files live under {@code src/main/resources/com/sait/workshop05/} so they are on the runtime module path.
+ * Window title bar and taskbar icon on most platforms. Loads synchronously from icon.png then bakery_logo.png on
+ * the module path under com.sait.workshop05 in resources.
  */
 public final class StageIconHelper {
 
@@ -29,17 +30,17 @@ public final class StageIconHelper {
             Image image = loadImageSync(path);
             if (image != null && !image.isError()) {
                 stage.getIcons().add(image);
-                // Windows shells often pick the first usable size; one image is enough.
+                // Windows shells often pick the first usable size, one image is enough.
                 return;
             }
         }
     }
 
     /**
-     * Synchronous load — required for stage icons on Windows (async URL load often never applies in time).
+     * Synchronous load so icons apply on Windows where async loads often miss the first paint.
      */
     private static Image loadImageSync(String absolutePath) {
-        // Prefer module resource lookup (correct for {@code java --module com.sait.workshop05/...}).
+        // Prefer module resource lookup for java --module launches.
         Module mod = StageIconHelper.class.getModule();
         String modulePath = absolutePath.startsWith("/") ? absolutePath.substring(1) : absolutePath;
         try (InputStream in = mod.getResourceAsStream(modulePath)) {
@@ -47,7 +48,7 @@ public final class StageIconHelper {
                 return new Image(in);
             }
         } catch (Exception ignored) {
-            // fall through
+            // Try classpath lookup next so modular and non-modular launches both work.
         }
 
         try (InputStream in = StageIconHelper.class.getResourceAsStream(absolutePath)) {
@@ -55,7 +56,7 @@ public final class StageIconHelper {
                 return new Image(in);
             }
         } catch (Exception ignored) {
-            // fall through
+            // Return null so caller can try the next icon candidate.
         }
 
         return null;

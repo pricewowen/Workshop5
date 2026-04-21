@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Product catalog CRUD and image upload.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.ApiClient;
@@ -38,9 +41,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Staff product catalog CRUD with optional image upload to blob storage.
+ */
 public class ProductManagementController {
 
-    // ── Table ──────────────────────────────────────────────────
+    // Product table controls.
     @FXML private TableView<Product> tblProducts;
     @FXML private TableColumn<Product, Integer> colProductId;
     @FXML private TableColumn<Product, String> colProductName;
@@ -50,7 +56,7 @@ public class ProductManagementController {
     @FXML private TableColumn<Product, String> colImage;
     @FXML private TableColumn<Product, Void> colActions;
 
-    // ── Toolbar ────────────────────────────────────────────────
+    // Toolbar controls.
     @FXML private TextField txtSearch;
     @FXML private Label lblStatus;
     @FXML private Button btnRefresh;
@@ -59,13 +65,11 @@ public class ProductManagementController {
     private final ObservableList<Product> master = FXCollections.observableArrayList();
     private FilteredList<Product> filtered;
 
-    // Cached tag name→id map for dialogs
+    // Cached tag name to id map for dialogs.
     private Map<String, Integer> tagNameToId = Map.of();
     private List<String> allTagNames = new ArrayList<>();
 
-    // ────────────────────────────────────────────────────────────
-    // Initialization
-    // ────────────────────────────────────────────────────────────
+    // Initialization.
 
     @FXML
     void initialize() {
@@ -207,9 +211,7 @@ public class ProductManagementController {
         tblProducts.setItems(sorted);
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Async data loading
-    // ────────────────────────────────────────────────────────────
+    // Async data loading.
 
     /**
      * Fetches tags and products together in one background task.
@@ -298,9 +300,7 @@ public class ProductManagementController {
         loadAllAsync();
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Create / Edit Dialog
-    // ────────────────────────────────────────────────────────────
+    // Create and edit dialog.
 
     @FXML
     private void onNewProduct() {
@@ -310,7 +310,7 @@ public class ProductManagementController {
     private void showProductDialog(Product existing) {
         boolean isNew = existing == null;
 
-        // Load existing tags for edit
+        // Load existing tags when editing.
         ObservableList<String> assignedTags = FXCollections.observableArrayList();
         if (!isNew) {
             try {
@@ -325,14 +325,14 @@ public class ProductManagementController {
             }
         }
 
-        // Form fields
+        // Form fields.
         TextField tfName = new TextField(isNew ? "" : StringUtil.nz(existing.getProductName()));
         TextArea taDescription = new TextArea(isNew ? "" : StringUtil.nz(existing.getProductDescription()));
         taDescription.setPrefRowCount(3);
         taDescription.setWrapText(true);
         TextField tfPrice = new TextField(isNew ? "" : String.format("%.2f", existing.getProductBasePrice()));
 
-        // Tag management
+        // Tag management.
         ComboBox<String> cbTag = new ComboBox<>(FXCollections.observableArrayList(allTagNames));
         cbTag.setMaxWidth(Double.MAX_VALUE);
         ListView<String> lstTags = new ListView<>(assignedTags);
@@ -355,7 +355,7 @@ public class ProductManagementController {
         HBox tagControls = new HBox(6, cbTag, btnAdd, btnRemove);
         HBox.setHgrow(cbTag, Priority.ALWAYS);
 
-        // Image picker
+        // Image picker.
         File[] selectedImageFile = {null};
         boolean existingHasImage = !isNew && existing.hasImage();
         String currentImageText = existingHasImage
@@ -409,7 +409,7 @@ public class ProductManagementController {
         lblError.setVisible(false);
         lblError.setManaged(false);
 
-        // Build layout
+        // Build layout.
         GridPane grid = buildFormGrid();
         int row = 0;
         addRow(grid, row++, "Product Name *", tfName);
@@ -439,7 +439,7 @@ public class ProductManagementController {
                 getClass().getResource("/com/sait/workshop05/styles.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("modal-dialog-pane");
 
-        // Wire image browse — obtain the window at click time so timing is never an issue
+        // Resolve the window at click time so browse works before dialog scene attach completes.
         btnBrowse.setOnAction(e -> {
             javafx.stage.Window owner = btnBrowse.getScene() != null
                     ? btnBrowse.getScene().getWindow()
@@ -569,9 +569,7 @@ public class ProductManagementController {
         return null;
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Delete
-    // ────────────────────────────────────────────────────────────
+    // Delete.
 
     private void handleDeleteProduct(Product p) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
@@ -600,9 +598,7 @@ public class ProductManagementController {
         }
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Helpers
-    // ────────────────────────────────────────────────────────────
+    // Helpers.
 
     private GridPane buildFormGrid() {
         GridPane grid = new GridPane();
@@ -660,9 +656,7 @@ public class ProductManagementController {
         return name.length() > 40 ? name.substring(0, 40) + "…" : name;
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Inner types
-    // ────────────────────────────────────────────────────────────
+    // Inner types.
 
     private static final class ProductLoadData {
         final List<CatalogApi.TagResponse> tags;

@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Dashboard summary endpoint with fallback aggregation.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -13,8 +16,8 @@ import com.sait.workshop05.models.Order;
 import com.sait.workshop05.models.OrderItem;
 
 /**
- * Dashboard summary from {@code GET /api/v1/admin/dashboard/summary}.
- * Falls back to individual API calls if the summary endpoint returns 5xx.
+ * Dashboard summary from GET /api/v1/admin/dashboard/summary.
+ * On non-success status builds totals from orders customers and products calls instead.
  */
 public final class DashboardApi {
 
@@ -29,12 +32,15 @@ public final class DashboardApi {
         public List<OrderApi.OrderJson> recentOrders;
     }
 
+    /**
+     * Loads dashboard summary metrics and falls back to local aggregation on failure.
+     */
     public static SummaryResponse fetchSummary() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/admin/dashboard/summary");
         if (res.statusCode() == 200) {
             return ApiClient.getInstance().getMapper().readValue(res.body(), SummaryResponse.class);
         }
-        // 5xx or unexpected status — build summary from individual endpoints
+        // Fallback keeps dashboard cards populated when summary aggregation is unavailable.
         System.err.println("[DashboardApi] summary endpoint returned " + res.statusCode() + ", using fallback");
         return buildFallbackSummary();
     }
@@ -42,18 +48,15 @@ public final class DashboardApi {
     private static SummaryResponse buildFallbackSummary() throws Exception {
         SummaryResponse s = new SummaryResponse();
 
-        // Orders — list endpoint
         List<OrderApi.OrderJson> allOrderJson = fetchAllOrderJson();
         s.totalOrders = allOrderJson.size();
 
-        // Recent orders — last 10 by placedAt descending
         s.recentOrders = allOrderJson.stream()
                 .filter(j -> j.placedAt != null)
                 .sorted(Comparator.comparing((OrderApi.OrderJson j) -> j.placedAt).reversed())
                 .limit(10)
                 .collect(java.util.stream.Collectors.toList());
 
-        // Total revenue — sum completed order totals from the already-fetched order list
         s.totalRevenue = allOrderJson.stream()
                 .map(j -> {
                     BigDecimal total = j.orderTotal != null ? j.orderTotal : BigDecimal.ZERO;
@@ -62,7 +65,7 @@ public final class DashboardApi {
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Customer count
+        // Customer total uses admin list size to match what staff can access.
         try {
             HttpResponse<String> cr = ApiClient.getInstance().get("/api/v1/admin/customers");
             if (cr.statusCode() == 200) {
@@ -73,7 +76,7 @@ public final class DashboardApi {
             s.totalCustomers = 0;
         }
 
-        // Product count
+        // Product total is derived from catalog rows shown in management flows.
         try {
             List<CatalogApi.ProductResponse> products = CatalogApi.fetchProducts(null, null);
             s.totalProducts = products.size();
@@ -93,10 +96,16 @@ public final class DashboardApi {
                 res.body(), new TypeReference<List<OrderApi.OrderJson>>() {});
     }
 
+    /**
+     * Maps one dashboard order payload into the shared Order model.
+     */
     public static Order toOrder(OrderApi.OrderJson j) {
         return OrderApi.toOrder(j);
     }
 
+    /**
+     * Maps embedded dashboard line items into OrderItem rows.
+     */
     public static List<OrderItem> itemsFromSummaryOrder(OrderApi.OrderJson j) {
         return OrderApi.itemsFromOrder(j);
     }

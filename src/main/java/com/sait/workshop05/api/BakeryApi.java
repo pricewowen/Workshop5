@@ -1,3 +1,6 @@
+// Contributor(s): Mason
+// Main: Mason - Admin bakery CRUD for location management screens.
+
 package com.sait.workshop05.api;
 
 import com.sait.workshop05.models.Address;
@@ -10,17 +13,23 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Admin bakery CRUD via {@code /api/v1/bakeries}.
+ * Admin bakery create update and delete. Uses paths under /api/v1/bakeries.
  */
 public final class BakeryApi {
 
     private BakeryApi() {}
 
+    /**
+     * Returns all bakeries mapped into desktop Bakery models.
+     */
     public static List<Bakery> listAll() throws Exception {
         List<CatalogApi.BakeryResponse> rows = CatalogApi.fetchBakeries(null);
         return rows.stream().map(BakeryApi::toBakery).collect(Collectors.toList());
     }
 
+    /**
+     * Maps a catalog bakery payload into the desktop Bakery model.
+     */
     public static Bakery toBakery(CatalogApi.BakeryResponse b) {
         Address addr;
         if (b.address != null) {
@@ -43,6 +52,9 @@ public final class BakeryApi {
         return s != null ? s : "";
     }
 
+    /**
+     * Creates one bakery and returns the stored bakery row.
+     */
     public static Bakery create(Bakery bakery) throws Exception {
         Map<String, Object> body = upsertBody(bakery);
         HttpResponse<String> res = ApiClient.getInstance().postAuthenticated("/api/v1/bakeries", body);
@@ -53,6 +65,9 @@ public final class BakeryApi {
         return toBakery(resp);
     }
 
+    /**
+     * Updates one bakery row by id.
+     */
     public static void update(int id, Bakery bakery) throws Exception {
         Map<String, Object> body = upsertBody(bakery);
         HttpResponse<String> res = ApiClient.getInstance().put("/api/v1/bakeries/" + id, body);
@@ -61,6 +76,9 @@ public final class BakeryApi {
         }
     }
 
+    /**
+     * Deletes one bakery row by id.
+     */
     public static void delete(int id) throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().delete("/api/v1/bakeries/" + id);
         if (res.statusCode() >= 400) {

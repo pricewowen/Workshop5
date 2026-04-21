@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - REST helpers for staff chat against Workshop 7.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -11,6 +14,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Static helpers for chat threads and messages. Maps JSON from Workshop 7 chat endpoints.
+ */
 public final class ChatApi {
 
     private ChatApi() {}

@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - User-facing error dialogs for API and UI failures.
+
 package com.sait.workshop05.util;
 
 import com.sait.workshop05.logging.LogData;
@@ -11,13 +14,12 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Centralised error handling utility (Phase 12).
- * Provides consistent dialog display and DB error translation.
+ * Shared JavaFX alerts and short user-safe messages for HTTP SQL and validation failures.
  */
 public class ErrorHandler {
 
     /**
-     * Show an error dialog with title and message.
+     * Displays a basic error alert with sanitized message text.
      */
     public static void showErrorDialog(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -28,8 +30,7 @@ public class ErrorHandler {
     }
 
     /**
-     * Show an error dialog with title, header, and detailed content.
-     * Content is sanitized to remove raw server/HTTP responses.
+     * Displays an error alert with header and sanitized detail text.
      */
     public static void showErrorDialog(String title, String header, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -40,8 +41,7 @@ public class ErrorHandler {
     }
 
     /**
-     * Same as {@link #showErrorDialog(String, String, String)} but derives a short, user-safe
-     * detail line from {@code cause} (HTTP codes, JSON {@code message}, SQL states, stack-trace trim).
+     * Builds user-facing detail from exception causes and common HTTP or SQL failures.
      */
     public static void showErrorDialog(String title, String header, Throwable cause) {
         if (cause == null) {
@@ -52,7 +52,7 @@ public class ErrorHandler {
     }
 
     /**
-     * Short detail text for inline labels or custom dialogs (no UI).
+     * Returns short safe detail text for inline UI and custom dialogs.
      */
     public static String userFacingMessage(Throwable t) {
         if (t == null) {
@@ -62,7 +62,7 @@ public class ErrorHandler {
     }
 
     /**
-     * Show a formatted list of validation errors.
+     * Displays validation errors as a numbered warning list.
      */
     public static void showValidationErrors(List<String> errors) {
         if (errors == null || errors.isEmpty()) return;
@@ -89,7 +89,7 @@ public class ErrorHandler {
     }
 
     /**
-     * Show a warning dialog.
+     * Displays a warning alert with plain message text.
      */
     public static void showWarning(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -100,7 +100,7 @@ public class ErrorHandler {
     }
 
     /**
-     * Show an informational dialog.
+     * Displays an informational alert for non-error confirmations.
      */
     public static void showInfo(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -111,15 +111,14 @@ public class ErrorHandler {
     }
 
     /**
-     * Translate a SQLException into a user-friendly message.
-     * Follows the friendlyDbMessage() pattern from EmployeeManagementController.
+     * Maps SQL failures into user-safe guidance for common database cases.
      */
     public static String friendlyDbMessage(SQLException ex) {
         String sqlState = ex.getSQLState();
         String msg = (ex.getMessage() == null) ? "" : ex.getMessage().toLowerCase();
 
         if (sqlState != null && sqlState.startsWith("23")) {
-            // Integrity constraint violations
+            // Constraint failures usually mean duplicates or linked records.
             if (msg.contains("duplicate")) {
                 return "A record with those values already exists (duplicate entry).";
             }
@@ -133,7 +132,7 @@ public class ErrorHandler {
         }
 
         if (sqlState != null && sqlState.startsWith("42")) {
-            // Syntax or access errors
+            // Syntax or permission failures often indicate schema drift.
             if (msg.contains("doesn't exist") || msg.contains("does not exist")) {
                 return "A required database table does not exist. Check the database schema.";
             }
@@ -152,7 +151,7 @@ public class ErrorHandler {
     }
 
     /**
-     * Handle an exception: log it and show a dialog.
+     * Logs an exception and shows a user-safe error alert.
      */
     public static void handleException(String context, Exception e) {
         LogData.handleException(context, e);
@@ -212,7 +211,7 @@ public class ErrorHandler {
             int code = extractHttpStatusCode(message);
             if (code == 401 || code == 403) return "You do not have permission to perform this action.";
             if (code == 404) return "The requested resource was not found.";
-            if (code == 409) return "A conflict occurred — this record may already exist.";
+            if (code == 409) return "A conflict occurred. This record may already exist.";
             if (code >= 500) return "A server error occurred. Please try again later.";
             if (code > 0) return "Request failed (HTTP " + code + "). Please try again.";
         }
@@ -221,7 +220,7 @@ public class ErrorHandler {
     }
 
     /**
-     * Pull a short server message out of JSON error bodies (e.g. Spring {@code {"message":"..."}}).
+     * Pulls a short message field from JSON error payloads.
      */
     private static String tryExtractJsonMessage(String raw) {
         int i = raw.indexOf('{');

@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Admin login account create and active toggle.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.UserManagementApi;
@@ -26,9 +29,12 @@ import javafx.scene.layout.VBox;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Admin-only user accounts list with create and active toggle workflows.
+ */
 public class UserManagementController {
 
-    // ── Table ──────────────────────────────────────────────────
+    // User table controls.
     @FXML private TableView<UserRow> tblUsers;
     @FXML private TableColumn<UserRow, String> colUsername;
     @FXML private TableColumn<UserRow, String> colEmail;
@@ -36,7 +42,7 @@ public class UserManagementController {
     @FXML private TableColumn<UserRow, String> colStatus;
     @FXML private TableColumn<UserRow, Void>   colActions;
 
-    // ── Toolbar ────────────────────────────────────────────────
+    // Toolbar controls.
     @FXML private TextField txtSearch;
     @FXML private Label     lblStatus;
     @FXML private Label     lblPolicy;
@@ -46,9 +52,7 @@ public class UserManagementController {
     private final ObservableList<UserRow> master = FXCollections.observableArrayList();
     private FilteredList<UserRow> filtered;
 
-    // ────────────────────────────────────────────────────────────
-    // Initialization
-    // ────────────────────────────────────────────────────────────
+    // Initialization.
 
     @FXML
     void initialize() {
@@ -150,9 +154,7 @@ public class UserManagementController {
         tblUsers.getSortOrder().setAll(colUsername);
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Data
-    // ────────────────────────────────────────────────────────────
+    // Data.
 
     private void updateUserTablePlaceholder() {
         if (tblUsers == null || filtered == null) {
@@ -245,9 +247,7 @@ public class UserManagementController {
         loadUsers();
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Create User Dialog
-    // ────────────────────────────────────────────────────────────
+    // Create user dialog.
 
     @FXML
     private void onNewUser() {
@@ -364,9 +364,7 @@ public class UserManagementController {
         });
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Toggle Active
-    // ────────────────────────────────────────────────────────────
+    // Toggle active state.
 
     private void handleToggleActive(UserRow row) {
         if (!UserSession.getInstance().isAdmin()) {
@@ -447,9 +445,7 @@ public class UserManagementController {
         Thread.ofVirtual().name("user-toggle-active").start(toggleTask);
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Helpers
-    // ────────────────────────────────────────────────────────────
+    // Helpers.
 
     private GridPane buildFormGrid() {
         GridPane grid = new GridPane();
@@ -475,9 +471,7 @@ public class UserManagementController {
         grid.add(node, 1, row);
     }
 
-    // ────────────────────────────────────────────────────────────
-    // View model
-    // ────────────────────────────────────────────────────────────
+    // View model.
 
     public static final class UserRow {
         private final String id;

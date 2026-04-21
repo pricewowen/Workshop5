@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Legacy staff messaging inbox UI.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.MessageApi;
@@ -27,7 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
- * Staff messaging backed by {@code /api/v1/messages}.
+ * Staff messaging inbox and thread view backed by the messages API.
  */
 public class MessagingController {
 
@@ -84,7 +87,7 @@ public class MessagingController {
                 top.setAlignment(Pos.CENTER_LEFT);
                 cellBox.setPadding(new Insets(4, 6, 4, 6));
                 cellBox.getChildren().addAll(top, timeLabel);
-                // Re-apply styles whenever selection changes (selected ↔ deselected)
+                // Reapply styles on selection changes to avoid stale row state.
                 selectedProperty().addListener((obs, wasSelected, selected) -> applyStyles(selected));
             }
 
@@ -186,9 +189,7 @@ public class MessagingController {
         }
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Async conversation loading
-    // ────────────────────────────────────────────────────────────
+    // Async conversation loading.
 
     private void refreshConversationsAsync() {
         if (currentUserUuid == null || currentUserUuid.isBlank()) {
@@ -268,7 +269,7 @@ public class MessagingController {
             @Override
             protected List<MessageApi.LegacyMessageJson> call() throws Exception {
                 List<MessageApi.LegacyMessageJson> rows = MessageApi.conversation(partnerId);
-                // Mark unread messages as read in the same pass — no second fetch needed
+                // Mark unread messages as read in the same pass to avoid a second fetch.
                 for (MessageApi.LegacyMessageJson m : rows) {
                     if (m.receiverId != null && m.receiverId.equals(me) && !m.read && m.id != null) {
                         MessageApi.markRead(m.id);
@@ -302,7 +303,7 @@ public class MessagingController {
                 scrollMessages.layout();
                 scrollMessages.setVvalue(1.0);
 
-                // Refresh sidebar counts to clear the unread badge
+                // Refresh sidebar counts so unread badges clear after open.
                 refreshConversationsAsync();
 
                 for (ConversationSummary cs : conversationList) {
@@ -525,9 +526,7 @@ public class MessagingController {
         return m.senderId;
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Inner types
-    // ────────────────────────────────────────────────────────────
+    // Inner types.
 
     private static final class ConversationData {
         final List<MessageApi.LegacyMessageJson> messages;

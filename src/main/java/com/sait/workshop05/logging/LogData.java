@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Structured logging and Sentry integration for staff actions.
+
 package com.sait.workshop05.logging;
 
 import com.sait.workshop05.models.Log;
@@ -9,12 +12,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+/**
+ * File-backed audit lines plus Sentry forwarding for staff action and error paths.
+ */
 public class LogData {
     final static String fileName = "Log.txt";
 
     /**
-     * saves a log in the Log.txt file
-     * @param log the log to be saved
+     * Appends one audit line to Log.txt when user action and target are present.
+     *
+     * @param log row to append
      */
     public static void saveLog(Log log) {
         if (log.getUser() != null && log.getAction() != null && log.getTarget() != null) {
@@ -30,8 +37,9 @@ public class LogData {
     }
 
     /**
-     * Logs errors in the Log.txt file
-     * @param log the log to be saved
+     * Appends an error line to Log.txt and falls back to stderr on write failure.
+     *
+     * @param log row to append
      */
     public static void logError(Log log) {
         if (log.getUser() != null && log.getAction() != null && log.getTarget() != null) {
@@ -55,10 +63,10 @@ public class LogData {
     }
 
     /**
-     * Log error messages to the log file
-//     * @param user User logged in
-     * @param action action being attempted
-     * @param e error message returned
+     * Reports exceptions to Sentry and mirrors failure context into Log.txt.
+     *
+     * @param action short label for the failed operation
+     * @param e      caught exception
      */
     public static void handleException(String action, Exception e) {
         Sentry.withScope(scope -> {
@@ -70,10 +78,10 @@ public class LogData {
     }
 
     /**
-     * Save an action to the log file
-//     * @param user the user logged in
-     * @param action the action attempted
-     * @param target the table/entity being affected
+     * Writes a structured action line for the current user.
+     *
+     * @param action verb such as CREATE or READ
+     * @param target table or entity name
      */
     public static void logAction(String action, String target) {
         saveLog(new Log(action, target));

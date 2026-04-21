@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Catalog products tags bakeries hours and product specials API.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.databind.JavaType;
@@ -12,8 +15,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Thin wrappers around the Peelin Good REST API for catalog reads.
- * Uses {@link ApiClient} with JWT when set (public GETs work without a token).
+ * Wrappers for catalog and specials endpoints. Uses ApiClient with JWT when set.
+ * Many GET routes stay public so some calls work before login.
  */
 public final class CatalogApi {
 
@@ -104,10 +107,8 @@ public final class CatalogApi {
     }
 
     /**
-     * Returns all rows from the product specials API ({@code GET /api/v1/product-specials/all}).
-     * Each entry contains full product details plus the date it is featured and its discount
-     * percentage. The internal primary key is present in the raw response but is not surfaced
-     * in the desktop UI.
+     * Loads all product specials from GET /api/v1/product-specials/all.
+     * Each row includes product fields plus featured date and discount. Some ids stay in JSON only.
      */
     public static List<ProductSpecialResponse> fetchProductSpecials() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/product-specials/all");
@@ -119,8 +120,7 @@ public final class CatalogApi {
     }
 
     /**
-     * Creates a new product special ({@code POST /api/v1/product-specials}).
-     * Returns the created entry with its server-assigned primary key.
+     * POST /api/v1/product-specials. Response includes the server-assigned special id.
      */
     public static ProductSpecialResponse createProductSpecial(int productId, String featuredOn,
                                                               double discountPercent) throws Exception {
@@ -137,8 +137,7 @@ public final class CatalogApi {
     }
 
     /**
-     * Replaces all mutable fields on an existing product special
-     * ({@code PUT /api/v1/product-specials/{id}}).
+     * PUT /api/v1/product-specials with id in the path replaces the whole special row.
      */
     public static ProductSpecialResponse updateProductSpecial(int productSpecialId, int productId,
                                                               String featuredOn,
@@ -156,9 +155,7 @@ public final class CatalogApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), ProductSpecialResponse.class);
     }
 
-    /**
-     * Permanently removes a product special ({@code DELETE /api/v1/product-specials/{id}}).
-     */
+    /** DELETE /api/v1/product-specials by id. */
     public static void deleteProductSpecial(int productSpecialId) throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().delete(
                 "/api/v1/product-specials/" + productSpecialId);
@@ -168,7 +165,7 @@ public final class CatalogApi {
         }
     }
 
-    /** tag name → id for admin product form */
+    /** Maps each tag name to its id for product forms. */
     public static Map<String, Integer> tagNameToIdMap() throws Exception {
         List<TagResponse> tags = fetchTags();
         return tags.stream().collect(Collectors.toMap(t -> t.name, t -> t.id, (a, b) -> a));
@@ -179,7 +176,7 @@ public final class CatalogApi {
         return mapper.readValue(json, type);
     }
 
-    /** JSON shape for GET /api/v1/products */
+    /** JSON for GET /api/v1/products. */
     public static class ProductResponse {
         public Integer id;
         public String name;
@@ -218,8 +215,7 @@ public final class CatalogApi {
     }
 
     /**
-     * Returns the weekly operating hours for a bakery ({@code GET /api/v1/bakeries/{id}/hours}).
-     * Returns an empty list when no hours are configured (validation is skipped in that case).
+     * GET operating hours for one bakery id. Empty list means no rows returned yet.
      */
     public static List<BakeryHourJson> fetchBakeryHours(int bakeryId) throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/bakeries/" + bakeryId + "/hours");
@@ -230,20 +226,23 @@ public final class CatalogApi {
         return readList(ApiClient.getInstance().getMapper(), res.body(), BakeryHourJson.class);
     }
 
-    /** JSON shape for GET /api/v1/bakeries/{id}/hours */
+    /** JSON for bakery hours rows. */
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class BakeryHourJson {
         public Integer id;
-        public short dayOfWeek;    // 1 = Monday … 7 = Sunday (ISO)
-        public String openTime;    // "HH:mm:ss"
-        public String closeTime;   // "HH:mm:ss"
+        // ISO weekday numbering preserves backend ordering across locales.
+        public short dayOfWeek;
+        // Times stay as API strings so UI formatting can choose local display rules.
+        public String openTime;
+        public String closeTime;
         public boolean closed;
     }
 
-    /** JSON shape for GET /api/v1/product-specials/all. */
+    /** JSON for GET /api/v1/product-specials/all. */
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class ProductSpecialResponse {
-        public Integer productSpecialId;   // present in JSON but not shown in the UI
+        // Kept for update and delete calls even when table view does not show it.
+        public Integer productSpecialId;
         public String featuredOn;
         public java.math.BigDecimal discountPercent;
         public Integer productId;

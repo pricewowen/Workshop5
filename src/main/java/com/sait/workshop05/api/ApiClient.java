@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Shared HTTP client for Workshop 7 with JWT bearer on protected routes.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,15 +17,15 @@ import java.nio.file.Files;
 import java.time.Duration;
 
 /**
- * Singleton HTTP client for the Spring Boot API.
- * Uses the configured base URL and attaches the JWT on authenticated requests.
+ * Singleton HTTP client for the Workshop 7 Spring Boot API (springdoc OpenAPI on the server).
+ * Base URL comes from env file JVM property or built-in default.
+ * Sends JSON and optional {@code Authorization: Bearer} token on protected routes.
  */
 public class ApiClient {
 
     private static ApiClient instance;
 
-    // Deployed Workshop 7 API (uncomment and swap with local below when testing against DO):
-    // private static final String API_BASE_URL = "https://peelin-good-kdeft.ondigitalocean.app";
+    // Switch this base URL to the deployed API host when desktop testing needs production data.
     private static final String API_BASE_URL = "http://localhost:8080";
 
     private final HttpClient http;
@@ -37,15 +40,9 @@ public class ApiClient {
                 .build();
         this.mapper = new ObjectMapper();
         this.baseUrl = resolveBaseUrl().replaceAll("/+$", "");
-        System.out.println("[DEBUG_LOG] ApiClient base URL: " + this.baseUrl);
     }
 
-    /**
-     * Resolve API base URL. Priority:
-     * 1. API_URL from .env.local (project root)
-     * 2. API_URL system property / environment variable
-     * 3. API_BASE_URL fallback
-     */
+    // Order is .env.local API_URL then JVM or OS env then the compile-time default.
     private static String resolveBaseUrl() {
         String envPath = System.getProperty("user.dir") + "/.env.local";
         try (BufferedReader reader = new BufferedReader(new FileReader(envPath))) {
@@ -66,6 +63,7 @@ public class ApiClient {
         return API_BASE_URL;
     }
 
+    /** Returns the shared instance. */
     public static ApiClient getInstance() {
         if (instance == null) {
             instance = new ApiClient();
@@ -73,28 +71,27 @@ public class ApiClient {
         return instance;
     }
 
+    /** Stores JWT for authenticated requests. */
     public void setToken(String token) {
         this.jwtToken = token;
     }
 
+    /** Clears JWT so only public endpoints work until login again. */
     public void clearToken() {
         this.jwtToken = null;
     }
 
-    /** Base URL for the API (no trailing slash). */
+    /** Base URL with no trailing slash. */
     public String getBaseUrl() {
         return baseUrl;
     }
 
     /**
-     * POST with a body object serialized to JSON. No auth header (used for login).
+     * POST JSON without Authorization. Used for login and other public POST routes.
      */
     public HttpResponse<String> post(String path, Object body) throws Exception {
         String json = mapper.writeValueAsString(body);
         String url = baseUrl + path;
-
-        System.out.println("[DEBUG_LOG] API POST Request: " + url);
-        // System.out.println("[DEBUG_LOG] Request Body: " + json);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -104,26 +101,19 @@ public class ApiClient {
 
         try {
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("[DEBUG_LOG] API POST Response Status: " + response.statusCode());
             if (response.statusCode() >= 400) {
-                System.err.println("[DEBUG_LOG] API Error Response Body: " + response.body());
             }
             return response;
         } catch (Exception e) {
-            System.err.println("[DEBUG_LOG] API Request Failed: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
     }
 
-    /**
-     * POST with JWT authorization header.
-     */
+    /** POST JSON with Bearer token. */
     public HttpResponse<String> postAuthenticated(String path, Object body) throws Exception {
         String json = mapper.writeValueAsString(body);
         String url = baseUrl + path;
-
-        System.out.println("[DEBUG_LOG] API POST Authenticated: " + url);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -134,25 +124,20 @@ public class ApiClient {
 
         try {
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("[DEBUG_LOG] API POST Authenticated Response Status: " + response.statusCode());
             if (response.statusCode() >= 400) {
-                System.err.println("[DEBUG_LOG] API Error Response Body: " + response.body());
             }
             return response;
         } catch (Exception e) {
-            System.err.println("[DEBUG_LOG] API Request Failed: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
     }
 
     /**
-     * GET with JWT authorization header.
+     * GET with Accept JSON. Sends Bearer when a token is set so some routes work before login.
      */
     public HttpResponse<String> get(String path) throws Exception {
         String url = baseUrl + path;
-        System.out.println("[DEBUG_LOG] API GET Request: " + url);
-
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Accept", "application/json")
@@ -164,26 +149,19 @@ public class ApiClient {
 
         try {
             HttpResponse<String> response = http.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            System.out.println("[DEBUG_LOG] API GET Response Status: " + response.statusCode());
             if (response.statusCode() >= 400) {
-                System.err.println("[DEBUG_LOG] API Error Response Body: " + response.body());
             }
             return response;
         } catch (Exception e) {
-            System.err.println("[DEBUG_LOG] API Request Failed: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
     }
 
-    /**
-     * PUT with JWT authorization header.
-     */
+    /** PUT JSON with Bearer token. */
     public HttpResponse<String> put(String path, Object body) throws Exception {
         String json = mapper.writeValueAsString(body);
         String url = baseUrl + path;
-
-        System.out.println("[DEBUG_LOG] API PUT Request: " + url);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -194,25 +172,18 @@ public class ApiClient {
 
         try {
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("[DEBUG_LOG] API PUT Response Status: " + response.statusCode());
             if (response.statusCode() >= 400) {
-                System.err.println("[DEBUG_LOG] API Error Response Body: " + response.body());
             }
             return response;
         } catch (Exception e) {
-            System.err.println("[DEBUG_LOG] API Request Failed: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
     }
 
-    /**
-     * DELETE with JWT authorization header.
-     */
+    /** DELETE with Bearer token. */
     public HttpResponse<String> delete(String path) throws Exception {
         String url = baseUrl + path;
-        System.out.println("[DEBUG_LOG] API DELETE Request: " + url);
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("Authorization", "Bearer " + jwtToken)
@@ -221,21 +192,16 @@ public class ApiClient {
 
         try {
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("[DEBUG_LOG] API DELETE Response Status: " + response.statusCode());
             if (response.statusCode() >= 400) {
-                System.err.println("[DEBUG_LOG] API Error Response Body: " + response.body());
             }
             return response;
         } catch (Exception e) {
-            System.err.println("[DEBUG_LOG] API Request Failed: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
     }
 
-    /**
-     * PATCH with JWT authorization header.
-     */
+    /** PATCH JSON with Bearer token. */
     public HttpResponse<String> patch(String path, Object body) throws Exception {
         String json = mapper.writeValueAsString(body);
 
@@ -250,12 +216,8 @@ public class ApiClient {
     }
 
     /**
-     * POST a single file as multipart/form-data with JWT authorization header.
-     *
-     * @param path      API path (e.g. {@code /api/v1/products/1/image})
-     * @param fieldName multipart field name expected by the server
-     * @param file      file to upload (JPG or PNG)
-     * @return raw HTTP response
+     * POST multipart form data with one file part and Bearer auth.
+     * Field name must match what the server expects for that path.
      */
     public HttpResponse<String> postMultipart(String path, String fieldName, File file) throws Exception {
         String boundary = "----JavaFXBoundary" + Long.toHexString(System.currentTimeMillis());
@@ -263,7 +225,7 @@ public class ApiClient {
 
         byte[] fileBytes = Files.readAllBytes(file.toPath());
 
-        // Build the multipart body: opening part header, file bytes, and closing boundary
+        // Manual multipart so java.net.http can send bytes without extra deps.
         String partHeader = "--" + boundary + "\r\n"
                 + "Content-Disposition: form-data; name=\"" + fieldName
                 + "\"; filename=\"" + file.getName() + "\"\r\n"
@@ -296,6 +258,7 @@ public class ApiClient {
     }
 
 
+    /** Shared Jackson mapper for DTO parsing. */
     public ObjectMapper getMapper() {
         return mapper;
     }

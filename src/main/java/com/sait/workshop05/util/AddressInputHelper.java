@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Address field binding and validation helpers.
+
 package com.sait.workshop05.util;
 
 import com.sait.workshop05.models.AddressOption;
@@ -12,8 +15,7 @@ import javafx.util.StringConverter;
 import java.util.List;
 
 /**
- * Editable {@link ComboBox} helper: type-to-filter against a master address list.
- * Does not write to the database; persistence stays in Create/Update/Place Order handlers.
+ * Editable ComboBox helper with type to filter over a master address list. Saving stays in create update and place order handlers.
  */
 public final class AddressInputHelper {
 
@@ -23,6 +25,9 @@ public final class AddressInputHelper {
 
     private AddressInputHelper() {}
 
+    /**
+     * Configures an editable address ComboBox with filtering and safe keyboard behavior.
+     */
     public static void configureEditableAddressCombo(ComboBox<AddressOption> combo) {
         combo.setEditable(true);
 
@@ -70,7 +75,7 @@ public final class AddressInputHelper {
             fl.setPredicate(a -> q.isEmpty() || matches(a, q));
         });
 
-        // Do not commit / default-button activate from the address field; saving is via form buttons only.
+        // Do not trigger submit from the address field, save actions stay on the form buttons.
         combo.getEditor().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 event.consume();
@@ -78,6 +83,9 @@ public final class AddressInputHelper {
         });
     }
 
+    /**
+     * Replaces the master address list used by the combo filter.
+     */
     public static void setAddressItems(ComboBox<AddressOption> combo, List<AddressOption> addresses) {
         ObservableList<AddressOption> master = getMaster(combo);
         if (master == null) {
@@ -86,18 +94,27 @@ public final class AddressInputHelper {
         master.setAll(addresses);
     }
 
+    /**
+     * Returns the current trimmed editor text for free-typed addresses.
+     */
     public static String getTypedText(ComboBox<AddressOption> combo) {
         if (combo.getEditor() == null) return "";
         String text = combo.getEditor().getText();
         return text == null ? "" : text.trim();
     }
 
+    /**
+     * Formats one address option into the display string used by the combo.
+     */
     public static String formatAddress(AddressOption option) {
         if (option == null) return "";
         String city = option.getCity() == null ? "" : option.getCity().trim();
         return option.getLine1() + ", " + city + ", " + option.getProvince() + " " + option.getPostalCode();
     }
 
+    /**
+     * Runs an action while suppressing reactive filter updates.
+     */
     public static void runWithSuppress(ComboBox<AddressOption> combo, Runnable action) {
         combo.getProperties().put(KEY_SUPPRESS, true);
         try {
@@ -138,6 +155,9 @@ public final class AddressInputHelper {
         });
     }
 
+    /**
+     * Clears selection and editor text while resetting the visible filter.
+     */
     public static void clearAddressField(ComboBox<AddressOption> combo) {
         FilteredList<AddressOption> fl = getFiltered(combo);
         runWithSuppress(combo, () -> {

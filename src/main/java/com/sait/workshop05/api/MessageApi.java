@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Legacy staff messaging REST helpers for /api/v1/messages.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -13,7 +16,7 @@ import java.util.Map;
 import com.sait.workshop05.models.Message;
 
 /**
- * Staff messaging via {@code /api/v1/messages} (legacy message API).
+ * Staff messaging via /api/v1/messages. Prefer ChatApi for the new support chat flow.
  */
 public final class MessageApi {
 
@@ -30,6 +33,9 @@ public final class MessageApi {
         public boolean read;
     }
 
+    /**
+     * Returns inbox rows for the authenticated staff member.
+     */
     public static List<LegacyMessageJson> myMessages() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/messages");
         if (res.statusCode() >= 400) {
@@ -38,6 +44,9 @@ public final class MessageApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), new TypeReference<List<LegacyMessageJson>>() {});
     }
 
+    /**
+     * Returns a conversation thread with one partner id.
+     */
     public static List<LegacyMessageJson> conversation(String otherUserId) throws Exception {
         String path = "/api/v1/messages/with/" + otherUserId;
         HttpResponse<String> res = ApiClient.getInstance().get(path);
@@ -47,6 +56,9 @@ public final class MessageApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), new TypeReference<List<LegacyMessageJson>>() {});
     }
 
+    /**
+     * Sends one legacy message and returns the created payload.
+     */
     public static LegacyMessageJson send(String receiverId, String subject, String content) throws Exception {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("receiverId", receiverId);
@@ -59,6 +71,9 @@ public final class MessageApi {
         return ApiClient.getInstance().getMapper().readValue(res.body(), LegacyMessageJson.class);
     }
 
+    /**
+     * Marks one legacy message row as read.
+     */
     public static void markRead(String messageId) throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().patch("/api/v1/messages/" + messageId + "/read", Map.of());
         if (res.statusCode() >= 400) {
@@ -66,6 +81,9 @@ public final class MessageApi {
         }
     }
 
+    /**
+     * Maps legacy message JSON into the desktop Message model.
+     */
     public static Message toModel(LegacyMessageJson j) {
         Message m = new Message();
         m.setMessageId(j.id != null ? j.id : "");

@@ -1,3 +1,6 @@
+// Contributor(s): Owen
+// Main: Owen - Local database utility helpers for Workshop 5.
+
 package com.sait.workshop05.database;
 
 import java.io.BufferedReader;
@@ -8,9 +11,12 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Loads DB_URL DB_USER and DB_PASSWORD from .env.local in the process working directory and opens JDBC connections.
+ */
 public class DBUtil {
 
-    // Look for .env.local in project root
+    // Use the working directory env file so local runs and IDE runs share credentials.
     private static final String ENV_PATH =
             System.getProperty("user.dir") + "/.env.local";
 

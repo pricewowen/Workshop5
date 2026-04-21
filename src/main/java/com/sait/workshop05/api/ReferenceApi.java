@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Cached reference lists for admin screens and order enrichment.
+
 package com.sait.workshop05.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -53,7 +56,7 @@ public final class ReferenceApi {
         public String id;
         public String username;
         public String email;
-        /** API role: {@code admin}, {@code employee}, or {@code customer}. */
+        /** API role string such as admin employee or customer. */
         public String role;
     }
 
@@ -74,7 +77,7 @@ public final class ReferenceApi {
     }
 
     /**
-     * All admin-visible users (admin sees staff + customers; employees see customers only).
+     * Full user list for admin. Role filters happen in callers for employee views.
      */
     public static List<UserSummaryJson> fetchAdminUserSummaries() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/admin/users");
@@ -86,8 +89,7 @@ public final class ReferenceApi {
     }
 
     /**
-     * User ids that already have an employee or customer profile (two cheap indexed queries on the server,
-     * not a full customer list).
+     * User ids that already link to a profile row. Uses a small indexed endpoint instead of full scans.
      */
     private static Set<String> fetchProfileLinkedUserIds() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/admin/users/profile-linked-ids");
@@ -100,7 +102,7 @@ public final class ReferenceApi {
     }
 
     /**
-     * Staff logins ({@code admin} or {@code employee}) not already tied to an employee or customer profile.
+     * Admin or employee logins that still need a new employee profile row.
      */
     public static List<UserOption> loadUnlinkedStaffUsersForNewEmployee() throws Exception {
         HttpResponse<String> res = ApiClient.getInstance().get("/api/v1/admin/users/staff");
@@ -128,7 +130,7 @@ public final class ReferenceApi {
     }
 
     /**
-     * {@code customer}-role logins that are not linked to any employee or customer profile yet.
+     * Customer-role logins that are not linked to any profile yet.
      */
     public static List<UserOption> loadUnlinkedCustomerRoleUsersForNewCustomer() throws Exception {
         Set<String> taken = fetchProfileLinkedUserIds();

@@ -1,3 +1,6 @@
+// Contributor(s): Samantha
+// Main: Samantha - Product specials featured dates and discounts.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.ApiClient;
@@ -36,15 +39,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * View for rows in the {@code product_special} table.
- * Supports read, create, update, and delete via the
- * {@code /api/v1/product-specials} endpoints.
- * The internal primary key ({@code productSpecialId}) is stored in the model
- * for API calls but is not displayed in any column or dialog.
+ * Product specials CRUD for featured discounts and dates. The product special id stays in the model for API
+ * calls and does not appear as its own column.
  */
 public class ProductSpecialsController {
 
-    // ── Table ──────────────────────────────────────────────────
+    // Product specials table controls.
     @FXML private TableView<ProductSpecial>            tblProductSpecials;
     @FXML private TableColumn<ProductSpecial, String>  colProductName;
     @FXML private TableColumn<ProductSpecial, String>  colDescription;
@@ -54,7 +54,7 @@ public class ProductSpecialsController {
     @FXML private TableColumn<ProductSpecial, String>  colImage;
     @FXML private TableColumn<ProductSpecial, Void>    colActions;
 
-    // ── Toolbar ────────────────────────────────────────────────
+    // Toolbar controls.
     @FXML private TextField txtSearch;
     @FXML private Label     lblStatus;
     @FXML private Button    btnRefresh;
@@ -63,14 +63,12 @@ public class ProductSpecialsController {
     private final ObservableList<ProductSpecial> master = FXCollections.observableArrayList();
     private FilteredList<ProductSpecial> filtered;
 
-    /** All products — loaded once for use in create/edit ComboBox. */
+    /** Full product list loaded once for the create and edit ComboBox. */
     private List<CatalogApi.ProductResponse> allProducts = List.of();
-    /** productId → ProductResponse lookup for auto-populating read-only fields in the dialog. */
+    /** productId to ProductResponse lookup for auto-populating read-only fields in the dialog. */
     private Map<Integer, CatalogApi.ProductResponse> productById = Map.of();
 
-    // ────────────────────────────────────────────────────────────
-    // Initialization
-    // ────────────────────────────────────────────────────────────
+    // Initialization.
 
     @FXML
     void initialize() {
@@ -85,7 +83,7 @@ public class ProductSpecialsController {
         colDescription.setCellValueFactory(new PropertyValueFactory<>("productDescription"));
         colFeaturedOn.setCellValueFactory(new PropertyValueFactory<>("featuredOn"));
 
-        // Base price — formatted as currency
+        // Base price is formatted as currency for quick scan in staff tables.
         colBasePrice.setCellValueFactory(new PropertyValueFactory<>("productBasePrice"));
         colBasePrice.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -95,7 +93,7 @@ public class ProductSpecialsController {
             }
         });
 
-        // Discount — formatted as percentage; rendered as "—" when zero
+        // Discount is formatted as a percentage and shows an em dash when no discount is set.
         colDiscount.setCellValueFactory(new PropertyValueFactory<>("discountPercent"));
         colDiscount.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -111,7 +109,7 @@ public class ProductSpecialsController {
             }
         });
 
-        // Image thumbnail — same async-load pattern as ProductManagementController
+        // Image thumbnails use async loading so large lists do not block table rendering.
         colImage.setCellValueFactory(new PropertyValueFactory<>("imageUrl"));
         final int thumb = 40;
         colImage.setCellFactory(col -> new TableCell<>() {
@@ -231,9 +229,7 @@ public class ProductSpecialsController {
         }
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Async data loading
-    // ────────────────────────────────────────────────────────────
+    // Async data loading.
 
     /**
      * Fetches product specials and the product list in parallel on a background thread.
@@ -329,34 +325,20 @@ public class ProductSpecialsController {
     @FXML
     private void onRefresh() { loadAllAsync(); }
 
-    // ────────────────────────────────────────────────────────────
-    // Create / Edit Dialog
-    // ────────────────────────────────────────────────────────────
+    // Create and edit dialog.
 
     @FXML
     private void onNewSpecial() { showSpecialDialog(null); }
 
     /**
-     * Shows the create-or-edit dialog.
-     *
-     * <p>Editable fields:
-     * <ul>
-     *   <li>Product — ComboBox populated from the full product list</li>
-     *   <li>Featured On — DatePicker</li>
-     *   <li>Discount % — numeric text field (0–100)</li>
-     * </ul>
-     *
-     * <p>Read-only fields (auto-populated when a product is selected):
-     * <ul>
-     *   <li>Description</li>
-     *   <li>Base Price</li>
-     * </ul>
+     * Opens create or edit dialog. Editable fields are product ComboBox featured date and discount percent from
+     * zero to one hundred. Description and base price fill from the selected product.
      */
     private void showSpecialDialog(ProductSpecial existing) {
         boolean isNew = existing == null;
 
-        // ── Editable fields ──────────────────────────────────────
-        // Product ComboBox — display names, keyed by ProductResponse
+        // Editable fields.
+        // Product ComboBox  -  display names, keyed by ProductResponse
         ComboBox<CatalogApi.ProductResponse> cbProduct = new ComboBox<>(
                 FXCollections.observableArrayList(allProducts));
         cbProduct.setMaxWidth(Double.MAX_VALUE);
@@ -379,7 +361,7 @@ public class ProductSpecialsController {
                 isNew ? "0.00" : String.format("%.2f", existing.getDiscountPercent()));
         tfDiscount.setPromptText("0.00 – 50.00");
 
-        // ── Read-only product detail fields ──────────────────────
+        // Read-only product detail fields.
         Label lblDescValue  = new Label();
         lblDescValue.setWrapText(true);
         lblDescValue.setStyle("-fx-text-fill: #5A534E;");
@@ -414,7 +396,7 @@ public class ProductSpecialsController {
         Label lblDiscountHint = new Label("Max 50%");
         lblDiscountHint.setStyle("-fx-font-size: 11px; -fx-text-fill: #8A8178;");
 
-        // ── Layout ───────────────────────────────────────────────
+        // Layout.
         GridPane grid = buildFormGrid();
         int row = 0;
         addRow(grid, row++, "Product *",     cbProduct);
@@ -433,7 +415,7 @@ public class ProductSpecialsController {
         VBox content = new VBox(12, grid, lblError);
         content.setPadding(new Insets(20, 24, 8, 24));
 
-        // ── Dialog setup ─────────────────────────────────────────
+        // Dialog setup.
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle(isNew ? "New Product Special" : "Edit Product Special");
         dialog.getDialogPane().setContent(content);
@@ -511,9 +493,7 @@ public class ProductSpecialsController {
         return null;
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Delete
-    // ────────────────────────────────────────────────────────────
+    // Delete.
 
     private void handleDeleteSpecial(ProductSpecial ps) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
@@ -546,9 +526,7 @@ public class ProductSpecialsController {
         }
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Helpers
-    // ────────────────────────────────────────────────────────────
+    // Helpers.
 
     private GridPane buildFormGrid() {
         GridPane grid = new GridPane();
@@ -581,9 +559,7 @@ public class ProductSpecialsController {
         return u.startsWith("/") ? base + u : base + "/" + u;
     }
 
-    // ────────────────────────────────────────────────────────────
-    // Inner types
-    // ────────────────────────────────────────────────────────────
+    // Inner types.
 
     private static final class SpecialLoadData {
         final List<CatalogApi.ProductSpecialResponse> specials;

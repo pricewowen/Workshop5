@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Order list status updates and staff checkout.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.api.OrderApi;
@@ -30,6 +33,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Order list filtering status updates and staff checkout with manual discount aligned to server rules.
+ */
 public class OrderManagementController {
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -37,8 +43,8 @@ public class OrderManagementController {
     private static final List<String> STATUS_FLOW = OrderStatus.ALL_STATUSES;
 
     /**
-     * Staff checkout with manual discount — must match {@code OrderService} (tax on net after discount;
-     * delivery fee when method is delivery and net is under threshold).
+     * Staff checkout with manual discount. Tax and delivery fee rules must stay aligned with OrderService
+     * on the server so totals match validation and receipts.
      */
     private static final BigDecimal STAFF_CHECKOUT_TAX_PERCENT = new BigDecimal("5");
     private static final BigDecimal DELIVERY_FEE = new BigDecimal("7.00");
@@ -47,9 +53,7 @@ public class OrderManagementController {
     /** Maximum manual discount as a percent of cart subtotal (matches validation and UI hint). */
     private static final double MAX_STAFF_DISCOUNT_PERCENT = 50.0;
 
-    // ════════════════════════════════════════════════════════════
-    // TAB 1: All Orders — FXML bindings
-    // ════════════════════════════════════════════════════════════
+    // Tab 1 FXML bindings for all orders.
 
     @FXML private TabPane tabPane;
 
@@ -69,7 +73,7 @@ public class OrderManagementController {
     @FXML private Label lblOrderStatus;
     @FXML private Button btnRefreshOrders;
 
-    // Order detail / items
+    // Order detail and line item controls.
     @FXML private Label lblOrderDetailTitle;
     @FXML private TableView<OrderItem> tblOrderItems;
     @FXML private TableColumn<OrderItem, String> colItemProduct;
@@ -80,9 +84,7 @@ public class OrderManagementController {
     @FXML private ComboBox<String> cboNewStatus;
     @FXML private Button btnUpdateStatus;
 
-    // ════════════════════════════════════════════════════════════
-    // TAB 2: New Order — FXML bindings
-    // ════════════════════════════════════════════════════════════
+    // Tab 2 FXML bindings for new order creation.
 
     @FXML private ComboBox<CustomerOption> cboNewCustomer;
     @FXML private ComboBox<BakeryOption> cboNewBakery;
@@ -92,7 +94,7 @@ public class OrderManagementController {
     @FXML private ComboBox<AddressOption> cboNewAddress;
     @FXML private TextField txtNewComment;
 
-    // Product catalog
+    // Product catalog controls.
     @FXML private TextField txtProductSearch;
     @FXML private TableView<Product> tblCatalog;
     @FXML private TableColumn<Product, String> colCatName;
@@ -101,7 +103,7 @@ public class OrderManagementController {
     @FXML private Spinner<Integer> spnQuantity;
     @FXML private Button btnAddToOrder;
 
-    // Cart
+    // Cart controls.
     @FXML private TableView<OrderItem> tblCart;
     @FXML private TableColumn<OrderItem, String> colCartProduct;
     @FXML private TableColumn<OrderItem, Integer> colCartQty;
@@ -109,7 +111,7 @@ public class OrderManagementController {
     @FXML private TableColumn<OrderItem, Double> colCartLineTotal;
     @FXML private Button btnRemoveFromOrder;
 
-    // Summary
+    // Summary controls.
     @FXML private Label lblSubtotal;
     @FXML private Spinner<Integer> spnDiscountPercent;
     @FXML private TextField txtDiscount;
@@ -121,19 +123,17 @@ public class OrderManagementController {
     @FXML private Button btnPlaceOrder;
     @FXML private Label lblNewOrderStatus;
 
-    // ════════════════════════════════════════════════════════════
-    // State
-    // ════════════════════════════════════════════════════════════
+    // Controller state.
 
-    // Tab 1
+    // Tab 1 state.
     private final ObservableList<Order> orderMaster = FXCollections.observableArrayList();
     private FilteredList<Order> orderFiltered;
 
-    // Tab 2 catalog
+    // Tab 2 catalog state.
     private final ObservableList<Product> catalogMaster = FXCollections.observableArrayList();
     private FilteredList<Product> catalogFiltered;
 
-    // Tab 2 cart
+    // Tab 2 cart state.
     private final ObservableList<OrderItem> cartItems = FXCollections.observableArrayList();
 
     /** Prevents discount $ field and % spinner from ping-ponging while syncing. */
@@ -154,9 +154,7 @@ public class OrderManagementController {
     private static final int TAB_ALL_ORDERS = 0;
     private static final int TAB_NEW_ORDER = 1;
 
-    // ════════════════════════════════════════════════════════════
-    // Initialization
-    // ════════════════════════════════════════════════════════════
+    // Initialization.
 
     @FXML
     void initialize() {
@@ -222,9 +220,7 @@ public class OrderManagementController {
         b.getStyleClass().addAll("btn-muted", "toolbar-action");
     }
 
-    // ────────────────────────────────────────────────────────────
-    // TAB 1 Setup
-    // ────────────────────────────────────────────────────────────
+    // Tab 1 setup.
 
     private void setupTab1() {
         // Column bindings
@@ -276,7 +272,7 @@ public class OrderManagementController {
         tblOrders.setPlaceholder(new Label("Loading orders…"));
         tblOrderItems.setPlaceholder(new Label("Select an order above to view line items."));
 
-        // Selection binding -> load items
+        // Selection changes reload line items for the active order.
         tblOrders.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, selected) -> {
             if (selected == null) {
                 tblOrderItems.getItems().clear();
@@ -373,9 +369,7 @@ public class OrderManagementController {
         }
     }
 
-    // ────────────────────────────────────────────────────────────
-    // TAB 2 Setup
-    // ────────────────────────────────────────────────────────────
+    // Tab 2 setup.
 
     private void setupTab2() {
         // Method ComboBox
@@ -420,7 +414,7 @@ public class OrderManagementController {
         tblCatalog.setItems(sortedCatalog);
         tblCatalog.setPlaceholder(new Label("Loading catalog…"));
 
-        // Customer selection -> show reward balance and auto-populate their address
+        // Customer selection shows reward balance and preloads their address.
         cboNewCustomer.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 lblRewardInfo.setText("Balance: " + newVal.getRewardBalance() + " pts");
@@ -446,7 +440,7 @@ public class OrderManagementController {
             refreshDollarDiscountFromPercentOnly();
         });
 
-        // Discount $ field (sync % spinner when user types dollars)
+        // Discount amount field syncs the percent spinner.
         txtDiscount.textProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null && !newVal.matches("\\d*\\.?\\d{0,2}")) {
                 txtDiscount.setText(oldVal);
@@ -553,9 +547,7 @@ public class OrderManagementController {
         applyTab2References(fetchTab2References());
     }
 
-    // ════════════════════════════════════════════════════════════
-    // TAB 1 Actions
-    // ════════════════════════════════════════════════════════════
+    // Tab 1 actions.
 
     private record OrdersAndTab2(List<Order> orders, Tab2References tab2) {}
 
@@ -681,7 +673,7 @@ public class OrderManagementController {
             return;
         }
 
-        // Validate status transition
+        // Block backward transitions so staff changes match server workflow rules.
         String currentStatus = selected.getOrderStatus();
         if (!isValidStatusTransition(currentStatus, newStatus)) {
             ErrorHandler.showWarning("Invalid Transition",
@@ -758,9 +750,7 @@ public class OrderManagementController {
         return -1;
     }
 
-    // ════════════════════════════════════════════════════════════
-    // TAB 2 Actions
-    // ════════════════════════════════════════════════════════════
+    // Tab 2 actions.
 
     @FXML
     private void onAddToOrder() {
@@ -933,7 +923,7 @@ public class OrderManagementController {
 
     /**
      * Mirrors backend staff order: list subtotal, manual discount capped at subtotal, tax 5% on net,
-     * delivery $7 when method is Delivery and net &lt; $50 (Pickup/Dine-in → no delivery line).
+     * delivery $7 when method is Delivery and net &lt; $50 (Pickup or Dine-in keeps no delivery line).
      */
     private NewOrderEstimate estimateNewOrderCheckout() {
         double rawSubtotal = cartSubtotalRaw();
@@ -979,7 +969,7 @@ public class OrderManagementController {
 
     @FXML
     private void onPlaceOrder() {
-        // Validate
+        // Fail fast on required fields before building the staff checkout payload.
         CustomerOption customer = cboNewCustomer.getValue();
         BakeryOption bakery = cboNewBakery.getValue();
         String method = cboNewMethod.getValue();
@@ -1003,9 +993,9 @@ public class OrderManagementController {
 
         NewOrderEstimate est = estimateNewOrderCheckout();
 
-        // Validation: discount cannot exceed MAX_STAFF_DISCOUNT_PERCENT of subtotal (0–50% inclusive)
+        // Discount cannot exceed MAX_STAFF_DISCOUNT_PERCENT of subtotal.
         double maxDiscount = est.subtotal * (MAX_STAFF_DISCOUNT_PERCENT / 100.0);
-        // Round both sides to 2 decimal places before comparing to avoid floating-point false positives
+        // Round both sides to two decimals before compare to avoid floating point mismatches.
         double discountRounded  = Math.round(est.discount  * 100.0) / 100.0;
         double maxDiscountRounded = Math.round(maxDiscount * 100.0) / 100.0;
         if (discountRounded > maxDiscountRounded) {
@@ -1016,7 +1006,7 @@ public class OrderManagementController {
             return;
         }
 
-        // Parse scheduled date/time (both fields required)
+        // Parse scheduled date and time, both fields are required.
         LocalDate schedDate = dpScheduledDate.getValue();
         String timeStr = txtScheduledTime.getText() != null ? txtScheduledTime.getText().trim() : "";
 
@@ -1039,13 +1029,13 @@ public class OrderManagementController {
 
         LocalDateTime scheduledDateTime = LocalDateTime.of(schedDate, schedTime);
 
-        // Validation: scheduled date must be after now
+        // Scheduled date and time must be in the future.
         if (scheduledDateTime.isBefore(LocalDateTime.now())) {
             ErrorHandler.showWarning("Validation", "Scheduled date/time must be in the future.");
             return;
         }
 
-        // Validation: scheduled time must fall within the selected bakery's hours of operation
+        // Scheduled time must be within selected bakery operating hours.
         try {
             String hoursError = validateScheduledTimeAgainstBakeryHours(
                     scheduledDateTime, bakery.getBakeryId());
@@ -1059,7 +1049,7 @@ public class OrderManagementController {
                     "Could not verify bakery hours. Please confirm the scheduled time is correct.");
         }
 
-        // Delivery address — required when method is Delivery
+        // Delivery address is required when method is Delivery.
         boolean isDeliveryMethod = "Delivery".equalsIgnoreCase(method);
         AddressOption address;
         try {
@@ -1181,16 +1171,14 @@ public class OrderManagementController {
         recalculateTotals();
     }
 
-    // ════════════════════════════════════════════════════════════
-    // Helpers
-    // ════════════════════════════════════════════════════════════
+    // Helpers.
 
     private static boolean contains(String field, String q) {
         if (field == null) return false;
         return field.toLowerCase().contains(q);
     }
 
-    // ── Reusable cell factories ────────────────────────────────
+    // Reusable cell factories.
 
     private static class CurrencyCell<S> extends TableCell<S, Double> {
         @Override
@@ -1226,7 +1214,7 @@ public class OrderManagementController {
                 com.sait.workshop05.api.CatalogApi.fetchBakeryHours(bakeryId);
 
         if (hours == null || hours.isEmpty()) {
-            return null; // no hours configured — skip validation
+            return null; // no hours configured so skip validation
         }
 
         int dow = scheduledDateTime.getDayOfWeek().getValue(); // 1=Mon … 7=Sun (ISO)

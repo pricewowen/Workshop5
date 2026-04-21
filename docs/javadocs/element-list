@@ -1,0 +1,10 @@
+module:com.sait.workshop05
+com.sait.workshop05
+com.sait.workshop05.api
+com.sait.workshop05.api.dto
+com.sait.workshop05.controllers
+com.sait.workshop05.database
+com.sait.workshop05.logging
+com.sait.workshop05.models
+com.sait.workshop05.session
+com.sait.workshop05.util

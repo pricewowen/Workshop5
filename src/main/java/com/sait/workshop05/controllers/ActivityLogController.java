@@ -1,3 +1,6 @@
+// Contributor(s): Robbie
+// Main: Robbie - Activity log view for staff actions.
+
 package com.sait.workshop05.controllers;
 
 import com.sait.workshop05.logging.LogData;
@@ -15,6 +18,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
+/**
+ * Activity log lines from the server log file with admin versus employee filtering.
+ */
 public class ActivityLogController {
 
     @FXML
@@ -67,27 +73,25 @@ public class ActivityLogController {
     }
 
     /**
-     * Reads the logs from the Log.txt file only for USER=username
-     * @param username of the USER to show logs for
-     * @return an ArrayList of Strings containing all the logs for the specific Employee
+     * Returns only log lines for the selected employee username.
      */
     private static ArrayList<String> readEmpLogs(String username) {
-        // empty list
+        // Start empty so file read failures still return a safe result.
         ArrayList<String> logs = new ArrayList<String>();
 
         String line;
         String[] fields;
         Log tempLog;
 
-        // read the logs from the text file
+        // Read from newest persisted desktop activity log file.
         try (BufferedReader in = new BufferedReader(new FileReader("Log.txt"))) {
             line = in.readLine();
 
             while (line != null) {
 
-                // sort file by username
+                // Filter lines to the active employee marker used in log entries.
                 if (line.contains("USER=" + username.toUpperCase())) {
-                    // add the line
+                    // Keep the full raw entry so UI preserves original context.
                     logs.add(line);
                 }
                 line = in.readLine();
@@ -100,18 +104,17 @@ public class ActivityLogController {
     }
 
     /**
-     * reads the logs from the Log.txt file
-     * @return an ArrayList of Strings containing all the logs
+     * Returns all activity log lines for admin views.
      */
     public static ArrayList<String> readLogs() {
-        // empty list
+        // Start empty so read errors degrade to an empty log view.
         ArrayList<String> logs = new ArrayList<String>();
 
         String line;
         String[] fields;
         Log tempLog;
 
-        // read the logs from the text file
+        // Read the full activity file without employee level filtering.
         try (BufferedReader in = new BufferedReader(new FileReader("Log.txt"))) {
             line = in.readLine();
 
